@@ -41,3 +41,6 @@ $(LIB): XBMC_VDR_xvdr.pvr
 	cp -f XBMC_VDR_xvdr.pvr $(LIB)
 
 all: $(LIB)
+
+clean-local:
+	-rm -f $(LIB) XBMC_VDR_xvdr.pvr
