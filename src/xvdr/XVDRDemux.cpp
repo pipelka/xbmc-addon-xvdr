@@ -86,12 +86,12 @@ DemuxPacket* cXVDRDemux::Read()
   cResponsePacket *resp = ReadMessage();
 
   if(resp == NULL)
-    return NULL;
+    return PVR->AllocateDemuxPacket(0);
 
   if (resp->getChannelID() != XVDR_CHANNEL_STREAM)
   {
     delete resp;
-    return NULL;
+    return PVR->AllocateDemuxPacket(0);
   }
 
   if (resp->getOpCodeID() == XVDR_STREAM_CHANGE)
