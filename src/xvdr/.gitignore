@@ -1,0 +1,7 @@
+*.o
+*.lo
+*.deps
+.deps
+.libs
+XBMC_VDR_xvdr.pvr
+*.la
