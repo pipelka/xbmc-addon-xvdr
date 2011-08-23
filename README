@@ -1,13 +1,7 @@
-XBMC Video Disk Recorder ('VDR') PVR Add-on
+XBMC Video Disk Recorder XVDR PVR Add-on
 ------------------------------------------
 
-THIS IS A PRELIMINARY README AND IS SUBJECT TO CHANGE!!!
-
-Written by:                  Alwin Esch (Team XBMC)
-
-Project's homepage:          
-
-Latest version available at: 
+Written by: Alexander Pipelka, Alwin Esch
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,55 +11,28 @@ See the file COPYING for more information.
 
 ------------------------------------------
 
-This is a PVR Add-on for XBMC to add VDR (http://www.cadsoft.de/vdr) as a TV/PVR Backend to
-XBMC based upon the new VNSI Protocol.
+This is a PVR add-on for XBMC to add VDR (http://www.cadsoft.de/vdr) as a TV/PVR Backend to XBMC.
 
-It want to add support for Live TV watching, replaying of Recordings, programming Timers and.
+It adds support for Live TV watching, replaying of Recordings, programming Timers and
 EPG TV Guide to use on same computer or over the Network.
 
-The connection of this AddOn depend upon a installed VNSI-Server-Plugin on the VDR which
-is included inside the "vdr-plugin-vnsiserver" directory of this Addon.
-VDR itself need no patches or modification to use all current features.
+This add-on requires the installed "vdr-plugin-xvdr" plugin on the VDR server.
+VDR itself doen't need any patches or modification to use all the current features.
 
-VDR Versions older as 1.6.0 are not supported by this plugin.
+VDR Versions older as 1.6.0 are not supported by this addon and the VDR plugin.
 
-------------------------------------------
-PLUGIN INSTALLATION INSTRUCTIONS:
+---------------------------------------------
+ADDON COMPILATION & INSTALLATION INSTRUCTIONS
 
-Copy the "vdr-plugin-vnsiserver" directory to your "VDR/plugins/src" directory and
-rename it to "vnsiserver".
+Currently only Linux is supported (but Windows versions should be possible).
 
-Run a "make plugins" and depented on your environment a "make install".
+- Clone the GIT repository
+- cd xbmc-addon-xvdr
+- sh autogen.sh
+- ./configure --prefix=$HOME/.xbmc
+- make
+- make install
 
-And add "-P'vnsiserver'" to your startup options.
+This will install the plugin into you $HOME/.xbmc/addons directory
 
-
-------------------------------------------
-CHANNEL SCANNING
-
-For channel scan's a modified version of the wirbelscan plugin for VDR (Version dev-0.0.5-pre11e) is
-required. You can download the orginal source from here "http://wirbel.htpc-forum.de/wirbelscan/index2.html".
-
-The VNSI communicate with wirbelscan over VDR's plugin service interface, to add this feature
-you must patch wirbelscan with the file in "patches/vdr-wirbelscan-0.0.5-pre11e-AddServiceInterface.diff".
-
-Please load VDR with VNSI plugin together with the modified wirbelscan plugin and you can access the
-"Search Channels" option inside "Settings->TV->General"
-
-Scanning can take up to 50 minutes dependet on signal type and signal quality.
-    * DVB-T ~ 5 min
-    * DVB-C ~ 30 min (Symbolrate=AUTO, QAM=AUTO)
-    * DVB-S/S2 ~ 50 min (depend on Satellite, Beam, Hardware)
-    * Analog ~ 5 min
-
-Note: Please notice the warning on the wirbelscan plugin homepage:
-      "Development Version - kein Support. Benutzung auf eigene Verantwortung."
-      "Development Version - no support. Use at your own risk."
-      This means, the time how long the scan run and problems on VDR side are dependet on wirbelscan
-      and not part of VNSI.
-
-
-------------------------------------------
-
-Links:
-VDR:                     http://www.cadsoft.de/vdr
+Have fun, ...
