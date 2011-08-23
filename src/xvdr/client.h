@@ -34,7 +34,7 @@
 
 extern bool         m_bCreated;
 extern std::string  g_szHostname;         ///< hostname or ip-address of the server
-extern int          g_iPort;              ///< TCP port of the vnsi server
+extern int          g_iPort;              ///< TCP port of the xvdr server
 extern int          g_iConnectTimeout;    ///< Network connection / read timeout in seconds
 extern int          g_iPriority;          ///< The Priority this client have in response to other clients
 extern bool         g_bCharsetConv;       ///< Convert VDR's incoming strings to UTF8 character set

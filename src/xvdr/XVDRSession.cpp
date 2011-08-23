@@ -19,7 +19,7 @@
  *
  */
 
-#include "VNSISession.h"
+#include "XVDRSession.h"
 #include "client.h"
 
 #include <errno.h>
@@ -29,7 +29,7 @@
 
 #include "responsepacket.h"
 #include "requestpacket.h"
-#include "vnsicommand.h"
+#include "xvdrcommand.h"
 #include "tools.h"
 
 /* Needed on Mac OS/X */
@@ -38,24 +38,24 @@
 #define SOL_TCP IPPROTO_TCP
 #endif
 
-cVNSISession::cVNSISession()
+cXVDRSession::cXVDRSession()
   : m_fd(INVALID_SOCKET)
   , m_protocol(0)
   , m_connectionLost(false)
 {
 }
 
-cVNSISession::~cVNSISession()
+cXVDRSession::~cXVDRSession()
 {
   Close();
 }
 
-void cVNSISession::Abort()
+void cXVDRSession::Abort()
 {
   tcp_shutdown(m_fd);
 }
 
-void cVNSISession::Close()
+void cXVDRSession::Close()
 {
   if(!IsOpen())
     return;
@@ -64,7 +64,7 @@ void cVNSISession::Close()
   m_fd = INVALID_SOCKET;
 }
 
-bool cVNSISession::Open(const std::string& hostname, int port, const char *name)
+bool cXVDRSession::Open(const std::string& hostname, int port, const char *name)
 {
   Close();
 
@@ -87,13 +87,13 @@ bool cVNSISession::Open(const std::string& hostname, int port, const char *name)
   return true;
 }
 
-bool cVNSISession::Login()
+bool cXVDRSession::Login()
 {
   try
   {
     cRequestPacket vrp;
-    if (!vrp.init(VNSI_LOGIN))                  throw "Can't init cRequestPacket";
-    if (!vrp.add_U32(VNSIPROTOCOLVERSION))      throw "Can't add protocol version to RequestPacket";
+    if (!vrp.init(XVDR_LOGIN))                  throw "Can't init cRequestPacket";
+    if (!vrp.add_U32(XVDRPROTOCOLVERSION))      throw "Can't add protocol version to RequestPacket";
     if (!vrp.add_U8(false))                     throw "Can't add netlog flag";
     if (!m_name.empty())
     {
@@ -139,7 +139,7 @@ bool cVNSISession::Login()
   return true;
 }
 
-cResponsePacket* cVNSISession::ReadMessage()
+cResponsePacket* cXVDRSession::ReadMessage()
 {
   uint32_t channelID = 0;
   uint32_t requestID;
@@ -159,7 +159,7 @@ cResponsePacket* cVNSISession::ReadMessage()
   // Data was read
 
   channelID = ntohl(channelID);
-  if (channelID == VNSI_CHANNEL_STREAM)
+  if (channelID == XVDR_CHANNEL_STREAM)
   {
     if (!readData((uint8_t*)&m_streamPacketHeader, sizeof(m_streamPacketHeader))) return NULL;
 
@@ -170,7 +170,7 @@ cResponsePacket* cVNSISession::ReadMessage()
     dts = ntohll(*(int64_t*)m_streamPacketHeader.dts);
     userDataLength = ntohl(m_streamPacketHeader.userDataLength);
 
-    if(opCodeID == VNSI_STREAM_MUXPKT) {
+    if(opCodeID == XVDR_STREAM_MUXPKT) {
       DemuxPacket* p = PVR->AllocateDemuxPacket(userDataLength);
       userData = (uint8_t*)p;
       if (userDataLength > 0)
@@ -216,7 +216,7 @@ cResponsePacket* cVNSISession::ReadMessage()
     }
 
     vresp = new cResponsePacket();
-    if (channelID == VNSI_CHANNEL_STATUS)
+    if (channelID == XVDR_CHANNEL_STATUS)
       vresp->setStatus(requestID, userData, userDataLength);
     else
       vresp->setResponse(requestID, userData, userDataLength);
@@ -225,12 +225,12 @@ cResponsePacket* cVNSISession::ReadMessage()
   return vresp;
 }
 
-bool cVNSISession::SendMessage(cRequestPacket* vrp)
+bool cXVDRSession::SendMessage(cRequestPacket* vrp)
 {
   return (tcp_send(m_fd, vrp->getPtr(), vrp->getLen(), 0) == (int)vrp->getLen());
 }
 
-cResponsePacket* cVNSISession::ReadResult(cRequestPacket* vrp)
+cResponsePacket* cXVDRSession::ReadResult(cRequestPacket* vrp)
 {
   if(!SendMessage(vrp))
   {
@@ -243,7 +243,7 @@ cResponsePacket* cVNSISession::ReadResult(cRequestPacket* vrp)
   while((pkt = ReadMessage()))
   {
     /* Discard everything other as response packets until it is received */
-    if (pkt->getChannelID() == VNSI_CHANNEL_REQUEST_RESPONSE && pkt->getRequestID() == vrp->getSerial())
+    if (pkt->getChannelID() == XVDR_CHANNEL_REQUEST_RESPONSE && pkt->getRequestID() == vrp->getSerial())
     {
       return pkt;
     }
@@ -255,7 +255,7 @@ cResponsePacket* cVNSISession::ReadResult(cRequestPacket* vrp)
   return NULL;
 }
 
-bool cVNSISession::ReadSuccess(cRequestPacket* vrp)
+bool cXVDRSession::ReadSuccess(cRequestPacket* vrp)
 {
   cResponsePacket *pkt = NULL;
   if((pkt = ReadResult(vrp)) == NULL)
@@ -265,7 +265,7 @@ bool cVNSISession::ReadSuccess(cRequestPacket* vrp)
   uint32_t retCode = pkt->extract_U32();
   delete pkt;
 
-  if(retCode != VNSI_RET_OK)
+  if(retCode != XVDR_RET_OK)
   {
     XBMC->Log(LOG_ERROR, "%s - failed with error code '%i'", __FUNCTION__, retCode);
     return false;
@@ -273,13 +273,13 @@ bool cVNSISession::ReadSuccess(cRequestPacket* vrp)
   return true;
 }
 
-void cVNSISession::OnReconnect() {
+void cXVDRSession::OnReconnect() {
 }
 
-void cVNSISession::OnDisconnect() {
+void cXVDRSession::OnDisconnect() {
 }
 
-bool cVNSISession::TryReconnect() {
+bool cXVDRSession::TryReconnect() {
   if(!Open(m_hostname, m_port))
     return false;
 
@@ -294,7 +294,7 @@ bool cVNSISession::TryReconnect() {
   return true;
 }
 
-void cVNSISession::SignalConnectionLost()
+void cXVDRSession::SignalConnectionLost()
 {
   if(m_connectionLost)
     return;
@@ -308,12 +308,12 @@ void cVNSISession::SignalConnectionLost()
   OnDisconnect();
 }
 
-bool cVNSISession::readData(uint8_t* buffer, int totalBytes)
+bool cXVDRSession::readData(uint8_t* buffer, int totalBytes)
 {
   return (tcp_read_timeout(m_fd, buffer, totalBytes, g_iConnectTimeout * 1000) == 0);
 }
 
-void cVNSISession::SleepMs(int ms)
+void cXVDRSession::SleepMs(int ms)
 {
 #ifdef __WINDOWS__
   Sleep(ms);

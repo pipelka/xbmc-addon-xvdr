@@ -20,7 +20,7 @@
  *
  */
 
-#include "VNSISession.h"
+#include "XVDRSession.h"
 #include "thread.h"
 #include "client.h"
 
@@ -30,12 +30,12 @@
 class cResponsePacket;
 class cRequestPacket;
 
-class cVNSIData : public cVNSISession, public cThread
+class cXVDRData : public cXVDRSession, public cThread
 {
 public:
 
-  cVNSIData();
-  virtual ~cVNSIData();
+  cXVDRData();
+  virtual ~cXVDRData();
 
   bool        Open(const std::string& hostname, int port, const char* name = NULL);
   bool        Login();

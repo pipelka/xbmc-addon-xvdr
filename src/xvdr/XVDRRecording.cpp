@@ -20,34 +20,34 @@
  */
 
 #include <limits.h>
-#include "VNSIRecording.h"
+#include "XVDRRecording.h"
 #include "responsepacket.h"
 #include "requestpacket.h"
-#include "vnsicommand.h"
+#include "xvdrcommand.h"
 
 #define SEEK_POSSIBLE 0x10 // flag used to check if protocol allows seeks
 
-cVNSIRecording::cVNSIRecording()
+cXVDRRecording::cXVDRRecording()
 {
 }
 
-cVNSIRecording::~cVNSIRecording()
+cXVDRRecording::~cXVDRRecording()
 {
   Close();
 }
 
-bool cVNSIRecording::OpenRecording(const PVR_RECORDING& recinfo)
+bool cXVDRRecording::OpenRecording(const PVR_RECORDING& recinfo)
 {
   m_recinfo = recinfo;
 
-  if(!cVNSISession::Open(g_szHostname, g_iPort, "XBMC RecordingStream Receiver"))
+  if(!cXVDRSession::Open(g_szHostname, g_iPort, "XBMC RecordingStream Receiver"))
     return false;
 
-  if(!cVNSISession::Login())
+  if(!cXVDRSession::Login())
     return false;
 
   cRequestPacket vrp;
-  if (!vrp.init(VNSI_RECSTREAM_OPEN) ||
+  if (!vrp.init(XVDR_RECSTREAM_OPEN) ||
       !vrp.add_String(recinfo.strRecordingId))
   {
     return false;
@@ -58,7 +58,7 @@ bool cVNSIRecording::OpenRecording(const PVR_RECORDING& recinfo)
     return false;
 
   uint32_t returnCode = vresp->extract_U32();
-  if (returnCode == VNSI_RET_OK)
+  if (returnCode == XVDR_RET_OK)
   {
     m_currentPlayingRecordFrames    = vresp->extract_U32();
     m_currentPlayingRecordBytes     = vresp->extract_U64();
@@ -68,21 +68,21 @@ bool cVNSIRecording::OpenRecording(const PVR_RECORDING& recinfo)
     XBMC->Log(LOG_ERROR, "%s - Can't open recording '%s'", __FUNCTION__, recinfo.strTitle);
 
   delete vresp;
-  return (returnCode == VNSI_RET_OK);
+  return (returnCode == XVDR_RET_OK);
 }
 
-void cVNSIRecording::Close()
+void cXVDRRecording::Close()
 {
   if(!IsOpen())
     return;
 
   cRequestPacket vrp;
-  vrp.init(VNSI_RECSTREAM_CLOSE);
+  vrp.init(XVDR_RECSTREAM_CLOSE);
   ReadSuccess(&vrp);
-  cVNSISession::Close();
+  cXVDRSession::Close();
 }
 
-int cVNSIRecording::Read(unsigned char* buf, uint32_t buf_size)
+int cXVDRRecording::Read(unsigned char* buf, uint32_t buf_size)
 {
   if (ConnectionLost() && !TryReconnect())
   {
@@ -95,7 +95,7 @@ int cVNSIRecording::Read(unsigned char* buf, uint32_t buf_size)
     return 0;
 
   cRequestPacket vrp;
-  if (!vrp.init(VNSI_RECSTREAM_GETBLOCK) ||
+  if (!vrp.init(XVDR_RECSTREAM_GETBLOCK) ||
       !vrp.add_U64(m_currentPlayingRecordPosition) ||
       !vrp.add_U32(buf_size))
   {
@@ -123,7 +123,7 @@ int cVNSIRecording::Read(unsigned char* buf, uint32_t buf_size)
   return length;
 }
 
-long long cVNSIRecording::Seek(long long pos, uint32_t whence)
+long long cXVDRRecording::Seek(long long pos, uint32_t whence)
 {
   uint64_t nextPos = m_currentPlayingRecordPosition;
 
@@ -162,17 +162,17 @@ long long cVNSIRecording::Seek(long long pos, uint32_t whence)
   return m_currentPlayingRecordPosition;
 }
 
-long long cVNSIRecording::Position(void)
+long long cXVDRRecording::Position(void)
 {
   return m_currentPlayingRecordPosition;
 }
 
-long long cVNSIRecording::Length(void)
+long long cXVDRRecording::Length(void)
 {
   return m_currentPlayingRecordBytes;
 }
 
-void cVNSIRecording::OnReconnect()
+void cXVDRRecording::OnReconnect()
 {
   OpenRecording(m_recinfo);
 }

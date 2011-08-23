@@ -23,33 +23,33 @@
 #include <limits.h>
 #include <string.h>
 #include <libavcodec/avcodec.h> // For codec id's
-#include "VNSIDemux.h"
+#include "XVDRDemux.h"
 #include "responsepacket.h"
 #include "requestpacket.h"
-#include "vnsicommand.h"
+#include "xvdrcommand.h"
 
-cVNSIDemux::cVNSIDemux()
+cXVDRDemux::cXVDRDemux()
 {
   m_Streams.iStreamCount = 0;
 }
 
-cVNSIDemux::~cVNSIDemux()
+cXVDRDemux::~cXVDRDemux()
 {
 }
 
-bool cVNSIDemux::OpenChannel(const PVR_CHANNEL &channelinfo)
+bool cXVDRDemux::OpenChannel(const PVR_CHANNEL &channelinfo)
 {
   m_channelinfo = channelinfo;
-  if(!cVNSISession::Open(g_szHostname, g_iPort))
+  if(!cXVDRSession::Open(g_szHostname, g_iPort))
     return false;
 
-  if(!cVNSISession::Login())
+  if(!cXVDRSession::Login())
     return false;
 
   return SwitchChannel(m_channelinfo);
 }
 
-bool cVNSIDemux::GetStreamProperties(PVR_STREAM_PROPERTIES* props)
+bool cXVDRDemux::GetStreamProperties(PVR_STREAM_PROPERTIES* props)
 {
   props->iStreamCount = m_Streams.iStreamCount;
   for (unsigned int i = 0; i < m_Streams.iStreamCount; i++)
@@ -69,13 +69,13 @@ bool cVNSIDemux::GetStreamProperties(PVR_STREAM_PROPERTIES* props)
   return (props->iStreamCount > 0);
 }
 
-void cVNSIDemux::Abort()
+void cXVDRDemux::Abort()
 {
   m_Streams.iStreamCount = 0;
-  cVNSISession::Abort();
+  cXVDRSession::Abort();
 }
 
-DemuxPacket* cVNSIDemux::Read()
+DemuxPacket* cXVDRDemux::Read()
 {
   if(ConnectionLost() && !TryReconnect())
   {
@@ -88,13 +88,13 @@ DemuxPacket* cVNSIDemux::Read()
   if(resp == NULL)
     return NULL;
 
-  if (resp->getChannelID() != VNSI_CHANNEL_STREAM)
+  if (resp->getChannelID() != XVDR_CHANNEL_STREAM)
   {
     delete resp;
     return NULL;
   }
 
-  if (resp->getOpCodeID() == VNSI_STREAM_CHANGE)
+  if (resp->getOpCodeID() == XVDR_STREAM_CHANGE)
   {
     StreamChange(resp);
     DemuxPacket* pkt = PVR->AllocateDemuxPacket(0);
@@ -102,15 +102,15 @@ DemuxPacket* cVNSIDemux::Read()
     delete resp;
     return pkt;
   }
-  else if (resp->getOpCodeID() == VNSI_STREAM_STATUS)
+  else if (resp->getOpCodeID() == XVDR_STREAM_STATUS)
   {
     StreamStatus(resp);
   }
-  else if (resp->getOpCodeID() == VNSI_STREAM_SIGNALINFO)
+  else if (resp->getOpCodeID() == XVDR_STREAM_SIGNALINFO)
   {
     StreamSignalInfo(resp);
   }
-  else if (resp->getOpCodeID() == VNSI_STREAM_CONTENTINFO)
+  else if (resp->getOpCodeID() == XVDR_STREAM_CONTENTINFO)
   {
     // send stream updates only if there are changes
     if(StreamContentInfo(resp))
@@ -123,7 +123,7 @@ DemuxPacket* cVNSIDemux::Read()
       return pkt;
     }
   }
-  else if (resp->getOpCodeID() == VNSI_STREAM_MUXPKT)
+  else if (resp->getOpCodeID() == XVDR_STREAM_MUXPKT)
   {
     // figure out the stream id for this packet
     int iStreamId = -1;
@@ -158,12 +158,12 @@ DemuxPacket* cVNSIDemux::Read()
   return PVR->AllocateDemuxPacket(0);
 }
 
-bool cVNSIDemux::SwitchChannel(const PVR_CHANNEL &channelinfo)
+bool cXVDRDemux::SwitchChannel(const PVR_CHANNEL &channelinfo)
 {
   XBMC->Log(LOG_DEBUG, "changing to channel %d", channelinfo.iChannelNumber);
 
   cRequestPacket vrp;
-  if (!vrp.init(VNSI_CHANNELSTREAM_OPEN) || !vrp.add_U32(channelinfo.iUniqueId) || !ReadSuccess(&vrp))
+  if (!vrp.init(XVDR_CHANNELSTREAM_OPEN) || !vrp.add_U32(channelinfo.iUniqueId) || !ReadSuccess(&vrp))
   {
     XBMC->Log(LOG_ERROR, "%s - failed to set channel", __FUNCTION__);
     return false;
@@ -175,7 +175,7 @@ bool cVNSIDemux::SwitchChannel(const PVR_CHANNEL &channelinfo)
   return !ConnectionLost();
 }
 
-bool cVNSIDemux::GetSignalStatus(PVR_SIGNAL_STATUS &qualityinfo)
+bool cXVDRDemux::GetSignalStatus(PVR_SIGNAL_STATUS &qualityinfo)
 {
   if (m_Quality.fe_name.empty())
     return false;
@@ -193,7 +193,7 @@ bool cVNSIDemux::GetSignalStatus(PVR_SIGNAL_STATUS &qualityinfo)
   return true;
 }
 
-void cVNSIDemux::StreamChange(cResponsePacket *resp)
+void cXVDRDemux::StreamChange(cResponsePacket *resp)
 {
   m_Streams.iStreamCount = 0;
 
@@ -395,7 +395,7 @@ void cVNSIDemux::StreamChange(cResponsePacket *resp)
   }
 }
 
-void cVNSIDemux::StreamStatus(cResponsePacket *resp)
+void cXVDRDemux::StreamStatus(cResponsePacket *resp)
 {
   const char* status = resp->extract_String();
   if(status != NULL)
@@ -406,7 +406,7 @@ void cVNSIDemux::StreamStatus(cResponsePacket *resp)
   delete[] status;
 }
 
-void cVNSIDemux::StreamSignalInfo(cResponsePacket *resp)
+void cXVDRDemux::StreamSignalInfo(cResponsePacket *resp)
 {
   const char* name = resp->extract_String();
   const char* status = resp->extract_String();
@@ -422,7 +422,7 @@ void cVNSIDemux::StreamSignalInfo(cResponsePacket *resp)
   delete[] status;
 }
 
-bool cVNSIDemux::StreamContentInfo(cResponsePacket *resp)
+bool cXVDRDemux::StreamContentInfo(cResponsePacket *resp)
 {
   PVR_STREAM_PROPERTIES old = m_Streams;
 
@@ -475,7 +475,7 @@ bool cVNSIDemux::StreamContentInfo(cResponsePacket *resp)
   return (memcmp(&old, &m_Streams, sizeof(m_Streams)) != 0);
 }
 
-void cVNSIDemux::OnReconnect()
+void cXVDRDemux::OnReconnect()
 {
   SwitchChannel(m_channelinfo);
 }

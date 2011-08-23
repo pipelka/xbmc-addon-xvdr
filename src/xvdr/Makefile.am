@@ -12,13 +12,13 @@ LIB    = ../../addons/pvr.vdr.xvdr/XBMC_VDR_xvdr.pvr
 lib_LTLIBRARIES = libxvdr.la
 
 libxvdr_la_SOURCES = \
-	vnsicommand.h \
+	xvdrcommand.h \
 	client.cpp \
-	VNSIChannelScan.cpp \
-	VNSIData.cpp \
-	VNSIDemux.cpp \
-	VNSIRecording.cpp \
-	VNSISession.cpp \
+	XVDRChannelScan.cpp \
+	XVDRData.cpp \
+	XVDRDemux.cpp \
+	XVDRRecording.cpp \
+	XVDRSession.cpp \
 	requestpacket.cpp \
 	responsepacket.cpp \
 	thread.cpp \

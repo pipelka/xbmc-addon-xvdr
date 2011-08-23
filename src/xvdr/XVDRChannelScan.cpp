@@ -20,10 +20,10 @@
  */
 
 #include <limits.h>
-#include "VNSIChannelScan.h"
+#include "XVDRChannelScan.h"
 #include "responsepacket.h"
 #include "requestpacket.h"
-#include "vnsicommand.h"
+#include "xvdrcommand.h"
 
 #include <sstream>
 
@@ -58,15 +58,15 @@ extern "C" {
 #define PROGRESS_SIGNAL                 35
 #define LABEL_STATUS                    36
 
-cVNSIChannelScan::cVNSIChannelScan()
+cXVDRChannelScan::cXVDRChannelScan()
 {
 }
 
-cVNSIChannelScan::~cVNSIChannelScan()
+cXVDRChannelScan::~cXVDRChannelScan()
 {
 }
 
-bool cVNSIChannelScan::Open(const std::string& hostname, int port, const char* name)
+bool cXVDRChannelScan::Open(const std::string& hostname, int port, const char* name)
 {
   m_running         = false;
   m_Canceled        = false;
@@ -74,7 +74,7 @@ bool cVNSIChannelScan::Open(const std::string& hostname, int port, const char* n
   m_progressDone    = NULL;
   m_progressSignal  = NULL;
 
-  if(!cVNSIData::Open(hostname, port, "XBMC channel scanner"))
+  if(!cXVDRData::Open(hostname, port, "XBMC channel scanner"))
     return false;
 
   /* Load the Window as Dialog */
@@ -92,7 +92,7 @@ bool cVNSIChannelScan::Open(const std::string& hostname, int port, const char* n
   return true;
 }
 
-void cVNSIChannelScan::StartScan()
+void cXVDRChannelScan::StartScan()
 {
   m_header = XBMC->GetLocalizedString(30025);
   m_Signal = XBMC->GetLocalizedString(30029);
@@ -124,8 +124,8 @@ void cVNSIChannelScan::StartScan()
 
   cRequestPacket vrp;
   cResponsePacket* vresp = NULL;
-  uint32_t retCode = VNSI_RET_ERROR;
-  if (!vrp.init(VNSI_SCAN_START))                          goto SCANError;
+  uint32_t retCode = XVDR_RET_ERROR;
+  if (!vrp.init(XVDR_SCAN_START))                          goto SCANError;
   if (!vrp.add_U32(source))                               goto SCANError;
   if (!vrp.add_U8(m_radioButtonTV->IsSelected()))         goto SCANError;
   if (!vrp.add_U8(m_radioButtonRadio->IsSelected()))      goto SCANError;
@@ -145,7 +145,7 @@ void cVNSIChannelScan::StartScan()
     goto SCANError;
 
   retCode = vresp->extract_U32();
-  if (retCode != VNSI_RET_OK)
+  if (retCode != XVDR_RET_OK)
     goto SCANError;
 
   return;
@@ -158,10 +158,10 @@ SCANError:
   m_stopped = true;
 }
 
-void cVNSIChannelScan::StopScan()
+void cXVDRChannelScan::StopScan()
 {
   cRequestPacket vrp;
-  if (!vrp.init(VNSI_SCAN_STOP))
+  if (!vrp.init(XVDR_SCAN_STOP))
     return;
 
   cResponsePacket* vresp = ReadResult(&vrp);
@@ -169,7 +169,7 @@ void cVNSIChannelScan::StopScan()
     return;
 
   uint32_t retCode = vresp->extract_U32();
-  if (retCode != VNSI_RET_OK)
+  if (retCode != XVDR_RET_OK)
   {
     XBMC->Log(LOG_ERROR, "%s - Return error after stop (%i)", __FUNCTION__, retCode);
     m_window->SetControlLabel(LABEL_STATUS, XBMC->GetLocalizedString(24071));
@@ -180,7 +180,7 @@ void cVNSIChannelScan::StopScan()
   return;
 }
 
-void cVNSIChannelScan::ReturnFromProcessView()
+void cXVDRChannelScan::ReturnFromProcessView()
 {
   if (m_running)
   {
@@ -202,7 +202,7 @@ void cVNSIChannelScan::ReturnFromProcessView()
   }
 }
 
-void cVNSIChannelScan::SetProgress(int percent)
+void cXVDRChannelScan::SetProgress(int percent)
 {
   if (!m_progressDone)
     m_progressDone = GUI->Control_getProgress(m_window, PROGRESS_DONE);
@@ -214,7 +214,7 @@ void cVNSIChannelScan::SetProgress(int percent)
   m_progressDone->SetPercentage((float)percent);
 }
 
-void cVNSIChannelScan::SetSignal(int percent, bool locked)
+void cXVDRChannelScan::SetSignal(int percent, bool locked)
 {
   if (!m_progressSignal)
     m_progressSignal = GUI->Control_getProgress(m_window, PROGRESS_SIGNAL);
@@ -231,7 +231,7 @@ void cVNSIChannelScan::SetSignal(int percent, bool locked)
     m_window->SetProperty("Locked", "");
 }
 
-bool cVNSIChannelScan::OnClick(int controlId)
+bool cXVDRChannelScan::OnClick(int controlId)
 {
   if (controlId == SPIN_CONTROL_SOURCE_TYPE)
   {
@@ -288,12 +288,12 @@ bool cVNSIChannelScan::OnClick(int controlId)
   return true;
 }
 
-bool cVNSIChannelScan::OnFocus(int controlId)
+bool cXVDRChannelScan::OnFocus(int controlId)
 {
   return true;
 }
 
-bool cVNSIChannelScan::OnInit()
+bool cXVDRChannelScan::OnInit()
 {
   m_spinSourceType = GUI->Control_getSpin(m_window, SPIN_CONTROL_SOURCE_TYPE);
   m_spinSourceType->Clear();
@@ -375,7 +375,7 @@ bool cVNSIChannelScan::OnInit()
   return true;
 }
 
-bool cVNSIChannelScan::OnAction(int actionId)
+bool cXVDRChannelScan::OnAction(int actionId)
 {
   if (actionId == ADDON_ACTION_CLOSE_DIALOG || actionId == ADDON_ACTION_PREVIOUS_MENU)
     OnClick(BUTTON_BACK);
@@ -383,31 +383,31 @@ bool cVNSIChannelScan::OnAction(int actionId)
   return true;
 }
 
-bool cVNSIChannelScan::OnInitCB(GUIHANDLE cbhdl)
+bool cXVDRChannelScan::OnInitCB(GUIHANDLE cbhdl)
 {
-  cVNSIChannelScan* scanner = static_cast<cVNSIChannelScan*>(cbhdl);
+  cXVDRChannelScan* scanner = static_cast<cXVDRChannelScan*>(cbhdl);
   return scanner->OnInit();
 }
 
-bool cVNSIChannelScan::OnClickCB(GUIHANDLE cbhdl, int controlId)
+bool cXVDRChannelScan::OnClickCB(GUIHANDLE cbhdl, int controlId)
 {
-  cVNSIChannelScan* scanner = static_cast<cVNSIChannelScan*>(cbhdl);
+  cXVDRChannelScan* scanner = static_cast<cXVDRChannelScan*>(cbhdl);
   return scanner->OnClick(controlId);
 }
 
-bool cVNSIChannelScan::OnFocusCB(GUIHANDLE cbhdl, int controlId)
+bool cXVDRChannelScan::OnFocusCB(GUIHANDLE cbhdl, int controlId)
 {
-  cVNSIChannelScan* scanner = static_cast<cVNSIChannelScan*>(cbhdl);
+  cXVDRChannelScan* scanner = static_cast<cXVDRChannelScan*>(cbhdl);
   return scanner->OnFocus(controlId);
 }
 
-bool cVNSIChannelScan::OnActionCB(GUIHANDLE cbhdl, int actionId)
+bool cXVDRChannelScan::OnActionCB(GUIHANDLE cbhdl, int actionId)
 {
-  cVNSIChannelScan* scanner = static_cast<cVNSIChannelScan*>(cbhdl);
+  cXVDRChannelScan* scanner = static_cast<cXVDRChannelScan*>(cbhdl);
   return scanner->OnAction(actionId);
 }
 
-bool cVNSIChannelScan::ReadCountries()
+bool cXVDRChannelScan::ReadCountries()
 {
   m_spinCountries = GUI->Control_getSpin(m_window, CONTROL_SPIN_COUNTRIES);
   m_spinCountries->Clear();
@@ -416,7 +416,7 @@ bool cVNSIChannelScan::ReadCountries()
   //dvdlang = dvdlang.ToUpper();
 
   cRequestPacket vrp;
-  if (!vrp.init(VNSI_SCAN_GETCOUNTRIES))
+  if (!vrp.init(XVDR_SCAN_GETCOUNTRIES))
     return false;
 
   cResponsePacket* vresp = ReadResult(&vrp);
@@ -425,7 +425,7 @@ bool cVNSIChannelScan::ReadCountries()
 
   int startIndex = -1;
   uint32_t retCode = vresp->extract_U32();
-  if (retCode == VNSI_RET_OK)
+  if (retCode == XVDR_RET_OK)
   {
     while (!vresp->end())
     {
@@ -447,16 +447,16 @@ bool cVNSIChannelScan::ReadCountries()
     XBMC->Log(LOG_ERROR, "%s - Return error after reading countries (%i)", __FUNCTION__, retCode);
   }
   delete vresp;
-  return retCode == VNSI_RET_OK;
+  return retCode == XVDR_RET_OK;
 }
 
-bool cVNSIChannelScan::ReadSatellites()
+bool cXVDRChannelScan::ReadSatellites()
 {
   m_spinSatellites = GUI->Control_getSpin(m_window, CONTROL_SPIN_SATELLITES);
   m_spinSatellites->Clear();
 
   cRequestPacket vrp;
-  if (!vrp.init(VNSI_SCAN_GETSATELLITES))
+  if (!vrp.init(XVDR_SCAN_GETSATELLITES))
     return false;
 
   cResponsePacket* vresp = ReadResult(&vrp);
@@ -464,7 +464,7 @@ bool cVNSIChannelScan::ReadSatellites()
     return false;
 
   uint32_t retCode = vresp->extract_U32();
-  if (retCode == VNSI_RET_OK)
+  if (retCode == XVDR_RET_OK)
   {
     while (!vresp->end())
     {
@@ -482,10 +482,10 @@ bool cVNSIChannelScan::ReadSatellites()
     XBMC->Log(LOG_ERROR, "%s - Return error after reading satellites (%i)", __FUNCTION__, retCode);
   }
   delete vresp;
-  return retCode == VNSI_RET_OK;
+  return retCode == XVDR_RET_OK;
 }
 
-void cVNSIChannelScan::SetControlsVisible(scantype_t type)
+void cXVDRChannelScan::SetControlsVisible(scantype_t type)
 {
   m_spinCountries->SetVisible(type == DVB_TERR || type == DVB_CABLE || type == PVRINPUT);
   m_spinSatellites->SetVisible(type == DVB_SAT || type == DVB_ATSC);
@@ -501,35 +501,35 @@ void cVNSIChannelScan::SetControlsVisible(scantype_t type)
   m_radioButtonHD->SetVisible(type == DVB_TERR || type == DVB_CABLE || type == DVB_SAT || type == DVB_ATSC);
 }
 
-bool cVNSIChannelScan::OnResponsePacket(cResponsePacket* resp)
+bool cXVDRChannelScan::OnResponsePacket(cResponsePacket* resp)
 {
   uint32_t requestID = resp->getRequestID();
 
-  if (requestID == VNSI_SCANNER_PERCENTAGE)
+  if (requestID == XVDR_SCANNER_PERCENTAGE)
   {
     uint32_t percent = resp->extract_U32();
     if (percent >= 0 && percent <= 100)
       SetProgress(percent);
   }
-  else if (requestID == VNSI_SCANNER_SIGNAL)
+  else if (requestID == XVDR_SCANNER_SIGNAL)
   {
     uint32_t strength = resp->extract_U32();
     uint32_t locked   = resp->extract_U32();
     SetSignal(strength, locked);
   }
-  else if (requestID == VNSI_SCANNER_DEVICE)
+  else if (requestID == XVDR_SCANNER_DEVICE)
   {
     char* str = resp->extract_String();
     m_window->SetControlLabel(LABEL_DEVICE, str);
     delete[] str;
   }
-  else if (requestID == VNSI_SCANNER_TRANSPONDER)
+  else if (requestID == XVDR_SCANNER_TRANSPONDER)
   {
     char* str = resp->extract_String();
     m_window->SetControlLabel(LABEL_TRANSPONDER, str);
     delete[] str;
   }
-  else if (requestID == VNSI_SCANNER_NEWCHANNEL)
+  else if (requestID == XVDR_SCANNER_NEWCHANNEL)
   {
     uint32_t isRadio      = resp->extract_U32();
     uint32_t isEncrypted  = resp->extract_U32();
@@ -549,7 +549,7 @@ bool cVNSIChannelScan::OnResponsePacket(cResponsePacket* resp)
 
     delete[] str;
   }
-  else if (requestID == VNSI_SCANNER_FINISHED)
+  else if (requestID == XVDR_SCANNER_FINISHED)
   {
     if (!m_Canceled)
     {
@@ -562,7 +562,7 @@ bool cVNSIChannelScan::OnResponsePacket(cResponsePacket* resp)
       m_window->SetControlLabel(HEADER_LABEL, XBMC->GetLocalizedString(30042));
     }
   }
-  else if (requestID == VNSI_SCANNER_STATUS)
+  else if (requestID == XVDR_SCANNER_STATUS)
   {
     uint32_t status = resp->extract_U32();
     if (status == 0)

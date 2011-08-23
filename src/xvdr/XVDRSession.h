@@ -30,11 +30,11 @@ extern "C" {
 class cResponsePacket;
 class cRequestPacket;
 
-class cVNSISession
+class cXVDRSession
 {
 public:
-  cVNSISession();
-  virtual ~cVNSISession();
+  cXVDRSession();
+  virtual ~cXVDRSession();
 
   virtual bool      Open(const std::string& hostname, int port, const char *name = NULL);
   virtual bool      Login();

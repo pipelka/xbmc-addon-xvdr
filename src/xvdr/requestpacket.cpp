@@ -24,7 +24,7 @@
 #include <stdio.h>
 
 #include "requestpacket.h"
-#include "vnsicommand.h"
+#include "xvdrcommand.h"
 #include "tools.h"
 
 extern "C" {
@@ -67,9 +67,9 @@ bool cRequestPacket::init(uint32_t topcode, bool stream, bool setUserDataLength,
   if (!buffer) return false;
 
   if (!stream)
-    channel     = VNSI_CHANNEL_REQUEST_RESPONSE;
+    channel     = XVDR_CHANNEL_REQUEST_RESPONSE;
   else
-    channel     = VNSI_CHANNEL_STREAM;
+    channel     = XVDR_CHANNEL_STREAM;
   serialNumber  = serialNumberCounter++;
   opcode        = topcode;
 

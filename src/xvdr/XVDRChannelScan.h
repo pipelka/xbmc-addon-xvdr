@@ -20,7 +20,7 @@
  *
  */
 
-#include "VNSIData.h"
+#include "XVDRData.h"
 #include "thread.h"
 #include "client.h"
 #include <string>
@@ -37,12 +37,12 @@ typedef enum scantype
 } scantype_t;
 
 
-class cVNSIChannelScan : public cVNSIData
+class cXVDRChannelScan : public cXVDRData
 {
 public:
 
-  cVNSIChannelScan();
-  ~cVNSIChannelScan();
+  cXVDRChannelScan();
+  ~cXVDRChannelScan();
 
   bool Open(const std::string& hostname, int port, const char* name = "XBMC channel scanner");
 

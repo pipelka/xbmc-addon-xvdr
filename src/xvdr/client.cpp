@@ -21,10 +21,10 @@
 
 #include "client.h"
 #include "xbmc_pvr_dll.h"
-#include "VNSIDemux.h"
-#include "VNSIRecording.h"
-#include "VNSIData.h"
-#include "VNSIChannelScan.h"
+#include "XVDRDemux.h"
+#include "XVDRRecording.h"
+#include "XVDRData.h"
+#include "XVDRChannelScan.h"
 
 #include <sstream>
 #include <string>
@@ -51,9 +51,9 @@ CHelper_libXBMC_addon *XBMC   = NULL;
 CHelper_libXBMC_gui   *GUI    = NULL;
 CHelper_libXBMC_pvr   *PVR    = NULL;
 
-cVNSIDemux      *VNSIDemuxer       = NULL;
-cVNSIData       *VNSIData          = NULL;
-cVNSIRecording  *VNSIRecording     = NULL;
+cXVDRDemux      *XVDRDemuxer       = NULL;
+cXVDRData       *XVDRData          = NULL;
+cXVDRRecording  *XVDRRecording     = NULL;
 
 extern "C" {
 
@@ -88,7 +88,7 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
     return ADDON_STATUS_UNKNOWN;
   }
 
-  XBMC->Log(LOG_DEBUG, "Creating VDR VNSI PVR-Client");
+  XBMC->Log(LOG_DEBUG, "Creating VDR XVDR PVR-Client");
 
   m_CurStatus    = ADDON_STATUS_UNKNOWN;
 
@@ -154,26 +154,26 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
     g_bAutoChannelGroups = DEFAULT_AUTOGROUPS;
   }
 
-  VNSIData = new cVNSIData;
-  if (!VNSIData->Open(g_szHostname, g_iPort))
+  XVDRData = new cXVDRData;
+  if (!XVDRData->Open(g_szHostname, g_iPort))
   {
-    delete VNSIData;
+    delete XVDRData;
     delete PVR;
     delete XBMC;
-    VNSIData = NULL;
+    XVDRData = NULL;
     PVR = NULL;
     XBMC = NULL;
     m_CurStatus = ADDON_STATUS_LOST_CONNECTION;
     return m_CurStatus;
   }
 
-  if (!VNSIData->Login())
+  if (!XVDRData->Login())
   {
     m_CurStatus = ADDON_STATUS_LOST_CONNECTION;
     return m_CurStatus;
   }
 
-  if (!VNSIData->EnableStatusInterface(g_bHandleMessages))
+  if (!XVDRData->EnableStatusInterface(g_bHandleMessages))
   {
     m_CurStatus = ADDON_STATUS_LOST_CONNECTION;
     return m_CurStatus;
@@ -193,8 +193,8 @@ void ADDON_Destroy()
 {
   if (m_bCreated)
   {
-    delete VNSIData;
-    VNSIData = NULL;
+    delete XVDRData;
+    XVDRData = NULL;
   }
 
   if (PVR)
@@ -262,7 +262,7 @@ ADDON_STATUS ADDON_SetSetting(const char *settingName, const void *settingValue)
   {
     XBMC->Log(LOG_INFO, "Changed Setting 'handlemessages' from %u to %u", g_bHandleMessages, *(bool*) settingValue);
     g_bHandleMessages = *(bool*) settingValue;
-    if (VNSIData) VNSIData->EnableStatusInterface(g_bHandleMessages);
+    if (XVDRData) XVDRData->EnableStatusInterface(g_bHandleMessages);
   }
   else if (str == "autochannelgroups")
   {
@@ -302,7 +302,7 @@ PVR_ERROR GetAddonCapabilities(PVR_ADDON_CAPABILITIES* pCapabilities)
   pCapabilities->bSupportsChannelGroups      = true;
   pCapabilities->bHandlesInputStream         = true;
   pCapabilities->bHandlesDemuxing            = true;
-  if (VNSIData && VNSIData->SupportChannelScan())
+  if (XVDRData && XVDRData->SupportChannelScan())
     pCapabilities->bSupportsChannelScan      = true;
   else
     pCapabilities->bSupportsChannelScan      = false;
@@ -312,16 +312,16 @@ PVR_ERROR GetAddonCapabilities(PVR_ADDON_CAPABILITIES* pCapabilities)
 
 const char * GetBackendName(void)
 {
-  static std::string BackendName = VNSIData ? VNSIData->GetServerName() : "unknown";
+  static std::string BackendName = XVDRData ? XVDRData->GetServerName() : "unknown";
   return BackendName.c_str();
 }
 
 const char * GetBackendVersion(void)
 {
   static std::string BackendVersion;
-  if (VNSIData) {
+  if (XVDRData) {
     std::stringstream format;
-    format << VNSIData->GetVersion() << "(Protocol: " << VNSIData->GetProtocol() << ")";
+    format << XVDRData->GetVersion() << "(Protocol: " << XVDRData->GetProtocol() << ")";
     BackendVersion = format.str();
   }
   return BackendVersion.c_str();
@@ -332,7 +332,7 @@ const char * GetConnectionString(void)
   static std::string ConnectionString;
   std::stringstream format;
 
-  if (VNSIData) {
+  if (XVDRData) {
     format << g_szHostname << ":" << g_iPort;
   }
   else {
@@ -344,15 +344,15 @@ const char * GetConnectionString(void)
 
 PVR_ERROR GetDriveSpace(long long *iTotal, long long *iUsed)
 {
-  if (!VNSIData)
+  if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return (VNSIData->GetDriveSpace(iTotal, iUsed) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
+  return (XVDRData->GetDriveSpace(iTotal, iUsed) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
 }
 
 PVR_ERROR DialogChannelScan(void)
 {
-  cVNSIChannelScan scanner;
+  cXVDRChannelScan scanner;
   scanner.Open(g_szHostname, g_iPort);
   return PVR_ERROR_NO_ERROR;
 }
@@ -362,10 +362,10 @@ PVR_ERROR DialogChannelScan(void)
 
 PVR_ERROR GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL &channel, time_t iStart, time_t iEnd)
 {
-  if (!VNSIData)
+  if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return (VNSIData->GetEPGForChannel(handle, channel, iStart, iEnd) ? PVR_ERROR_NO_ERROR: PVR_ERROR_SERVER_ERROR);
+  return (XVDRData->GetEPGForChannel(handle, channel, iStart, iEnd) ? PVR_ERROR_NO_ERROR: PVR_ERROR_SERVER_ERROR);
 }
 
 
@@ -374,18 +374,18 @@ PVR_ERROR GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL &channel, time_t
 
 int GetChannelsAmount(void)
 {
-  if (!VNSIData)
+  if (!XVDRData)
     return 0;
 
-  return VNSIData->GetChannelsCount();
+  return XVDRData->GetChannelsCount();
 }
 
 PVR_ERROR GetChannels(PVR_HANDLE handle, bool bRadio)
 {
-  if (!VNSIData)
+  if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return (VNSIData->GetChannelsList(handle, bRadio) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
+  return (XVDRData->GetChannelsList(handle, bRadio) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
 }
 
 
@@ -394,29 +394,29 @@ PVR_ERROR GetChannels(PVR_HANDLE handle, bool bRadio)
 
 int GetChannelGroupsAmount()
 {
-  if (!VNSIData)
+  if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return VNSIData->GetChannelGroupCount(g_bAutoChannelGroups);
+  return XVDRData->GetChannelGroupCount(g_bAutoChannelGroups);
 }
 
 PVR_ERROR GetChannelGroups(PVR_HANDLE handle, bool bRadio)
 {
-  if (!VNSIData)
+  if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  if(VNSIData->GetChannelGroupCount(g_bAutoChannelGroups) > 0)
-    return VNSIData->GetChannelGroupList(handle, bRadio) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
+  if(XVDRData->GetChannelGroupCount(g_bAutoChannelGroups) > 0)
+    return XVDRData->GetChannelGroupList(handle, bRadio) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
 
   return PVR_ERROR_NO_ERROR;
 }
 
 PVR_ERROR GetChannelGroupMembers(PVR_HANDLE handle, const PVR_CHANNEL_GROUP &group)
 {
-  if (!VNSIData)
+  if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return VNSIData->GetChannelGroupMembers(handle, group) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
+  return XVDRData->GetChannelGroupMembers(handle, group) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
 }
 
 
@@ -425,42 +425,42 @@ PVR_ERROR GetChannelGroupMembers(PVR_HANDLE handle, const PVR_CHANNEL_GROUP &gro
 
 int GetTimersAmount(void)
 {
-  if (!VNSIData)
+  if (!XVDRData)
     return 0;
 
-  return VNSIData->GetTimersCount();
+  return XVDRData->GetTimersCount();
 }
 
 PVR_ERROR GetTimers(PVR_HANDLE handle)
 {
-  if (!VNSIData)
+  if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return (VNSIData->GetTimersList(handle) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
+  return (XVDRData->GetTimersList(handle) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
 }
 
 PVR_ERROR AddTimer(const PVR_TIMER &timer)
 {
-  if (!VNSIData)
+  if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return VNSIData->AddTimer(timer);
+  return XVDRData->AddTimer(timer);
 }
 
 PVR_ERROR DeleteTimer(const PVR_TIMER &timer, bool bForce)
 {
-  if (!VNSIData)
+  if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return VNSIData->DeleteTimer(timer, bForce);
+  return XVDRData->DeleteTimer(timer, bForce);
 }
 
 PVR_ERROR UpdateTimer(const PVR_TIMER &timer)
 {
-  if (!VNSIData)
+  if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return VNSIData->UpdateTimer(timer);
+  return XVDRData->UpdateTimer(timer);
 }
 
 
@@ -469,34 +469,34 @@ PVR_ERROR UpdateTimer(const PVR_TIMER &timer)
 
 int GetRecordingsAmount(void)
 {
-  if (!VNSIData)
+  if (!XVDRData)
     return 0;
 
-  return VNSIData->GetRecordingsCount();
+  return XVDRData->GetRecordingsCount();
 }
 
 PVR_ERROR GetRecordings(PVR_HANDLE handle)
 {
-  if (!VNSIData)
+  if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return VNSIData->GetRecordingsList(handle);
+  return XVDRData->GetRecordingsList(handle);
 }
 
 PVR_ERROR RenameRecording(const PVR_RECORDING &recording)
 {
-  if (!VNSIData)
+  if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return VNSIData->RenameRecording(recording, recording.strTitle);
+  return XVDRData->RenameRecording(recording, recording.strTitle);
 }
 
 PVR_ERROR DeleteRecording(const PVR_RECORDING &recording)
 {
-  if (!VNSIData)
+  if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return VNSIData->DeleteRecording(recording);
+  return XVDRData->DeleteRecording(recording);
 }
 
 /*******************************************/
@@ -506,63 +506,63 @@ bool OpenLiveStream(const PVR_CHANNEL &channel)
 {
   CloseLiveStream();
 
-  VNSIDemuxer = new cVNSIDemux;
-  return VNSIDemuxer->OpenChannel(channel);
+  XVDRDemuxer = new cXVDRDemux;
+  return XVDRDemuxer->OpenChannel(channel);
 }
 
 void CloseLiveStream(void)
 {
-  if (VNSIDemuxer)
+  if (XVDRDemuxer)
   {
-    VNSIDemuxer->Close();
-    delete VNSIDemuxer;
-    VNSIDemuxer = NULL;
+    XVDRDemuxer->Close();
+    delete XVDRDemuxer;
+    XVDRDemuxer = NULL;
   }
 }
 
 PVR_ERROR GetStreamProperties(PVR_STREAM_PROPERTIES* pProperties)
 {
-  if (!VNSIDemuxer)
+  if (!XVDRDemuxer)
     return PVR_ERROR_SERVER_ERROR;
 
-  return (VNSIDemuxer->GetStreamProperties(pProperties) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
+  return (XVDRDemuxer->GetStreamProperties(pProperties) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
 }
 
 void DemuxAbort(void)
 {
-  if (VNSIDemuxer) VNSIDemuxer->Abort();
+  if (XVDRDemuxer) XVDRDemuxer->Abort();
 }
 
 DemuxPacket* DemuxRead(void)
 {
-  if (!VNSIDemuxer)
+  if (!XVDRDemuxer)
     return NULL;
 
-  return VNSIDemuxer->Read();
+  return XVDRDemuxer->Read();
 }
 
 int GetCurrentClientChannel(void)
 {
-  if (VNSIDemuxer)
-    return VNSIDemuxer->CurrentChannel();
+  if (XVDRDemuxer)
+    return XVDRDemuxer->CurrentChannel();
 
   return -1;
 }
 
 bool SwitchChannel(const PVR_CHANNEL &channel)
 {
-  if (VNSIDemuxer)
-    return VNSIDemuxer->SwitchChannel(channel);
+  if (XVDRDemuxer)
+    return XVDRDemuxer->SwitchChannel(channel);
 
   return false;
 }
 
 PVR_ERROR SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
 {
-  if (!VNSIDemuxer)
+  if (!XVDRDemuxer)
     return PVR_ERROR_SERVER_ERROR;
 
-  return (VNSIDemuxer->GetSignalStatus(signalStatus) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
+  return (XVDRDemuxer->GetSignalStatus(signalStatus) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
 
 }
 
@@ -572,53 +572,53 @@ PVR_ERROR SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
 
 bool OpenRecordedStream(const PVR_RECORDING &recording)
 {
-  if(!VNSIData)
+  if(!XVDRData)
     return false;
 
   CloseRecordedStream();
 
-  VNSIRecording = new cVNSIRecording;
-  return VNSIRecording->OpenRecording(recording);
+  XVDRRecording = new cXVDRRecording;
+  return XVDRRecording->OpenRecording(recording);
 }
 
 void CloseRecordedStream(void)
 {
-  if (VNSIRecording)
+  if (XVDRRecording)
   {
-    VNSIRecording->Close();
-    delete VNSIRecording;
-    VNSIRecording = NULL;
+    XVDRRecording->Close();
+    delete XVDRRecording;
+    XVDRRecording = NULL;
   }
 }
 
 int ReadRecordedStream(unsigned char *pBuffer, unsigned int iBufferSize)
 {
-  if (!VNSIRecording)
+  if (!XVDRRecording)
     return -1;
 
-  return VNSIRecording->Read(pBuffer, iBufferSize);
+  return XVDRRecording->Read(pBuffer, iBufferSize);
 }
 
 long long SeekRecordedStream(long long iPosition, int iWhence /* = SEEK_SET */)
 {
-  if (VNSIRecording)
-    return VNSIRecording->Seek(iPosition, iWhence);
+  if (XVDRRecording)
+    return XVDRRecording->Seek(iPosition, iWhence);
 
   return -1;
 }
 
 long long PositionRecordedStream(void)
 {
-  if (VNSIRecording)
-    return VNSIRecording->Position();
+  if (XVDRRecording)
+    return XVDRRecording->Position();
 
   return 0;
 }
 
 long long LengthRecordedStream(void)
 {
-  if (VNSIRecording)
-    return VNSIRecording->Length();
+  if (XVDRRecording)
+    return XVDRRecording->Length();
 
   return 0;
 }

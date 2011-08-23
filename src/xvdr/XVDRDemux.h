@@ -20,32 +20,49 @@
  *
  */
 
-#include "VNSISession.h"
+#include "XVDRSession.h"
 #include "client.h"
+#include <string>
 
-class cVNSIRecording : public cVNSISession
+class cResponsePacket;
+
+struct SQuality
+{
+  std::string fe_name;
+  std::string fe_status;
+  uint32_t    fe_snr;
+  uint32_t    fe_signal;
+  uint32_t    fe_ber;
+  uint32_t    fe_unc;
+};
+
+class cXVDRDemux : public cXVDRSession
 {
 public:
 
-  cVNSIRecording();
-  ~cVNSIRecording();
+  cXVDRDemux();
+  ~cXVDRDemux();
 
-  bool OpenRecording(const PVR_RECORDING& recinfo);
-  void Close();
-
-  int Read(unsigned char* buf, uint32_t buf_size);
-  long long Seek(long long pos, uint32_t whence);
-  long long Position(void);
-  long long Length(void);
+  bool OpenChannel(const PVR_CHANNEL &channelinfo);
+  void Abort();
+  bool GetStreamProperties(PVR_STREAM_PROPERTIES* props);
+  DemuxPacket* Read();
+  bool SwitchChannel(const PVR_CHANNEL &channelinfo);
+  int CurrentChannel() { return m_channelinfo.iChannelNumber; }
+  bool GetSignalStatus(PVR_SIGNAL_STATUS &qualityinfo);
 
 protected:
 
   void OnReconnect();
 
+  void StreamChange(cResponsePacket *resp);
+  void StreamStatus(cResponsePacket *resp);
+  void StreamSignalInfo(cResponsePacket *resp);
+  bool StreamContentInfo(cResponsePacket *resp);
+
 private:
 
-  PVR_RECORDING   m_recinfo;
-  uint64_t        m_currentPlayingRecordBytes;
-  uint32_t        m_currentPlayingRecordFrames;
-  uint64_t        m_currentPlayingRecordPosition;
+  PVR_STREAM_PROPERTIES m_Streams;
+  PVR_CHANNEL           m_channelinfo;
+  SQuality              m_Quality;
 };
