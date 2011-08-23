@@ -397,13 +397,15 @@ void cXVDRDemux::StreamChange(cResponsePacket *resp)
 
 void cXVDRDemux::StreamStatus(cResponsePacket *resp)
 {
-  const char* status = resp->extract_String();
-  if(status != NULL)
-  {
-    XBMC->Log(LOG_DEBUG, "%s - %s", __FUNCTION__, status);
-    XBMC->QueueNotification(QUEUE_INFO, status);
+  uint32_t status = resp->extract_U32();
+
+  switch(status) {
+    case XVDR_STREAM_STATUS_SIGNALLOST:
+      XBMC->QueueNotification(QUEUE_INFO, "Signal lost");
+      break;
+    default:
+      break;
   }
-  delete[] status;
 }
 
 void cXVDRDemux::StreamSignalInfo(cResponsePacket *resp)
