@@ -2,7 +2,7 @@
 <addon
   id="pvr.vdr.xvdr"
   version="1.0.0"
-  name="VDR Client"
+  name="VDR XVDR Client"
   provider-name="Alexander Pipelka, Alwin Esch, Team XBMC">
   <requires>
     <c-pluff version="0.1"/>
