@@ -1,1 +1,3 @@
-SUBDIRS = src
+SUBDIRS = \
+	src \
+	addons

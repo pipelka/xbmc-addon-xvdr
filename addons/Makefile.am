@@ -1,0 +1,1 @@
+SUBDIRS = pvr.vdr.xvdr

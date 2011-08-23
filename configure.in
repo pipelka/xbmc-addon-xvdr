@@ -26,6 +26,8 @@ AC_EXEEXT
 # Finally create all the generated files
 AC_OUTPUT([
 Makefile
+addons/Makefile
+addons/pvr.vdr.xvdr/Makefile
 src/Makefile
 src/libTcpSocket/Makefile
 src/xvdr/Makefile
