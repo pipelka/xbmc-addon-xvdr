@@ -44,3 +44,5 @@ all: $(LIB)
 
 clean-local:
 	-rm -f $(LIB) XBMC_VDR_xvdr.pvr
+
+install:
