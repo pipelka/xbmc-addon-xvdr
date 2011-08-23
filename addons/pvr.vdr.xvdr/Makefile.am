@@ -1,6 +1,7 @@
 addondir = $(prefix)/addons/pvr.vdr.xvdr
 
 addon_DATA = \
+	addon.xml \
 	XBMC_VDR_xvdr.pvr \
 	icon.png \
 	pthreadVC2d.dll \
