@@ -9,7 +9,7 @@ LIBS   =-ldl
 LIBDIR = ../../addons/pvr.vdr.xvdr
 LIB    = ../../addons/pvr.vdr.xvdr/XBMC_VDR_xvdr.pvr
 
-lib_LTLIBRARIES = libxvdr.la
+noinst_LTLIBRARIES = libxvdr.la
 
 libxvdr_la_SOURCES = \
 	vnsicommand.h \
