@@ -14,15 +14,25 @@ lib_LTLIBRARIES = libxvdr.la
 libxvdr_la_SOURCES = \
 	xvdrcommand.h \
 	client.cpp \
+	client.h \
 	XVDRChannelScan.cpp \
+	XVDRChannelScan.h \
 	XVDRData.cpp \
+	XVDRData.h \
 	XVDRDemux.cpp \
+	XVDRDemux.h \
 	XVDRRecording.cpp \
+	XVDRRecording.h \
 	XVDRSession.cpp \
+	XVDRSession.h \
 	requestpacket.cpp \
+	requestpacket.h \
 	responsepacket.cpp \
+	responsepacket.h \
 	thread.cpp \
-	tools.cpp
+	thread.h \
+	tools.cpp \
+	tools.h
 
 libxvdr_la_LDFLAGS = \
 	-avoid-version
@@ -32,6 +42,9 @@ libxvdr_la_LIBADD = \
 	../libTcpSocket/libTcpSocket.la
 
 INCLUDES = -I$(srcdir)/.. -I$(srcdir)/../.. -I$(srcdir)/../../include -DUSE_DEMUX -D__STDC_CONSTANT_MACROS -D_LINUX
+
+EXTRA_DIST = \
+	project
 
 XBMC_VDR_xvdr.pvr: libxvdr.la
 	cp -f .libs/libxvdr.so XBMC_VDR_xvdr.pvr
@@ -46,3 +59,4 @@ clean-local:
 	-rm -f $(LIB) XBMC_VDR_xvdr.pvr
 
 install:
+
