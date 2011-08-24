@@ -24,6 +24,9 @@ VDR Versions older as 1.6.0 are not supported by this addon and the VDR plugin.
 ---------------------------------------------
 ADDON COMPILATION & INSTALLATION INSTRUCTIONS
 
+IMPORTANT:
+Please disable *all* PVR addons *before* installing the XVDR addon!
+
 Currently only Linux is supported (but Windows versions should be possible).
 
 - Clone the GIT repository
@@ -33,6 +36,6 @@ Currently only Linux is supported (but Windows versions should be possible).
 - make
 - make install
 
-This will install the plugin into you $HOME/.xbmc/addons directory
+This will install the plugin into your $HOME/.xbmc/addons directory
 
 Have fun, ...
