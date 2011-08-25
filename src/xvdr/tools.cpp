@@ -1,4 +1,5 @@
 /*
+ *      Copyright (C) 2000, 2003, 2006, 2008 Klaus Schmidinger
  *      Copyright (C) 2010 Alwin Esch (Team XBMC)
  *      http://www.xbmc.org
  *

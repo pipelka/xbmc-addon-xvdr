@@ -1,6 +1,8 @@
 #pragma once
 /*
+ *      Copyright (C) 2007 Chris Tallon
  *      Copyright (C) 2010 Alwin Esch (Team XBMC)
+ *      Copyright (C) 2011 Alexander Pipelka
  *      http://www.xbmc.org
  *
  *  This Program is free software; you can redistribute it and/or modify
