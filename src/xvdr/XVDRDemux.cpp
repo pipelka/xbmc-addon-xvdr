@@ -402,7 +402,11 @@ void cXVDRDemux::StreamStatus(cResponsePacket *resp)
 
   switch(status) {
     case XVDR_STREAM_STATUS_SIGNALLOST:
-      XBMC->QueueNotification(QUEUE_INFO, "Signal lost");
+      XBMC->QueueNotification(QUEUE_INFO, "TV Signal lost");
+      break;
+    case XVDR_STREAM_STATUS_SIGNALRESTORED:
+      XBMC->QueueNotification(QUEUE_INFO, "TV Signal restored");
+      SwitchChannel(m_channelinfo);
       break;
     default:
       break;
