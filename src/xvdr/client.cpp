@@ -40,7 +40,6 @@ ADDON_STATUS m_CurStatus      = ADDON_STATUS_UNKNOWN;
  * and exported to the other source files.
  */
 std::string   g_szHostname              = DEFAULT_HOST;
-int           g_iPort                   = DEFAULT_PORT;
 bool          g_bCharsetConv            = DEFAULT_CHARCONV;     ///< Convert VDR's incoming strings to UTF8 character set
 bool          g_bHandleMessages         = DEFAULT_HANDLE_MSG;   ///< Send VDR's OSD status messages to XBMC OSD
 int           g_iConnectTimeout         = DEFAULT_TIMEOUT;      ///< The Socket connection timeout
@@ -106,14 +105,6 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
   }
   free(buffer);
 
-  /* Read setting "port" from settings.xml */
-  if (!XBMC->GetSetting("port", &g_iPort))
-  {
-    /* If setting is unknown fallback to defaults */
-    XBMC->Log(LOG_ERROR, "Couldn't get 'port' setting, falling back to '%i' as default", DEFAULT_PORT);
-    g_iPort = DEFAULT_PORT;
-  }
-
   /* Read setting "priority" from settings.xml */
   if (!XBMC->GetSetting("priority", &g_iPriority))
   {
@@ -155,7 +146,7 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
   }
 
   XVDRData = new cXVDRData;
-  if (!XVDRData->Open(g_szHostname, g_iPort))
+  if (!XVDRData->Open(g_szHostname, DEFAULT_PORT))
   {
     delete XVDRData;
     delete PVR;
@@ -233,15 +224,6 @@ ADDON_STATUS ADDON_SetSetting(const char *settingName, const void *settingValue)
     g_szHostname = (const char*) settingValue;
     if (tmp_sHostname != g_szHostname)
       return ADDON_STATUS_NEED_RESTART;
-  }
-  else if (str == "port")
-  {
-    XBMC->Log(LOG_INFO, "Changed Setting 'port' from %u to %u", g_iPort, *(int*) settingValue);
-    if (g_iPort != *(int*) settingValue)
-    {
-      g_iPort = *(int*) settingValue;
-      return ADDON_STATUS_NEED_RESTART;
-    }
   }
   else if (str == "priority")
   {
@@ -333,10 +315,10 @@ const char * GetConnectionString(void)
   std::stringstream format;
 
   if (XVDRData) {
-    format << g_szHostname << ":" << g_iPort;
+    format << g_szHostname << ":" << DEFAULT_PORT;
   }
   else {
-    format << g_szHostname << ":" << g_iPort << " (addon error!)";
+    format << g_szHostname << ":" << DEFAULT_PORT << " (addon error!)";
   }
   ConnectionString = format.str();
   return ConnectionString.c_str();
@@ -353,7 +335,7 @@ PVR_ERROR GetDriveSpace(long long *iTotal, long long *iUsed)
 PVR_ERROR DialogChannelScan(void)
 {
   cXVDRChannelScan scanner;
-  scanner.Open(g_szHostname, g_iPort);
+  scanner.Open(g_szHostname, DEFAULT_PORT);
   return PVR_ERROR_NO_ERROR;
 }
 
@@ -533,6 +515,16 @@ void DemuxAbort(void)
   if (XVDRDemuxer) XVDRDemuxer->Abort();
 }
 
+void DemuxReset(void)
+{
+  XBMC->Log(LOG_DEBUG, "DemuxReset");
+}
+
+void DemuxFlush(void)
+{
+  XBMC->Log(LOG_DEBUG, "DemuxFlush");
+}
+
 DemuxPacket* DemuxRead(void)
 {
   if (!XVDRDemuxer)
@@ -630,8 +622,6 @@ PVR_ERROR RenameChannel(const PVR_CHANNEL &channel) { return PVR_ERROR_NOT_IMPLE
 PVR_ERROR MoveChannel(const PVR_CHANNEL &channel) { return PVR_ERROR_NOT_IMPLEMENTED; }
 PVR_ERROR DialogChannelSettings(const PVR_CHANNEL &channel) { return PVR_ERROR_NOT_IMPLEMENTED; }
 PVR_ERROR DialogAddChannel(const PVR_CHANNEL &channel) { return PVR_ERROR_NOT_IMPLEMENTED; }
-void DemuxReset(void) {}
-void DemuxFlush(void) {}
 int ReadLiveStream(unsigned char *pBuffer, unsigned int iBufferSize) { return 0; }
 long long SeekLiveStream(long long iPosition, int iWhence /* = SEEK_SET */) { return -1; }
 long long PositionLiveStream(void) { return -1; }

@@ -25,7 +25,7 @@
 #include "addons/library.xbmc.pvr/libXBMC_pvr.h"
 
 #define DEFAULT_HOST          "127.0.0.1"
-#define DEFAULT_PORT          34890
+#define DEFAULT_PORT          34891
 #define DEFAULT_CHARCONV      false
 #define DEFAULT_HANDLE_MSG    true
 #define DEFAULT_PRIORITY      99
@@ -34,7 +34,6 @@
 
 extern bool         m_bCreated;
 extern std::string  g_szHostname;         ///< hostname or ip-address of the server
-extern int          g_iPort;              ///< TCP port of the xvdr server
 extern int          g_iConnectTimeout;    ///< Network connection / read timeout in seconds
 extern int          g_iPriority;          ///< The Priority this client have in response to other clients
 extern bool         g_bCharsetConv;       ///< Convert VDR's incoming strings to UTF8 character set

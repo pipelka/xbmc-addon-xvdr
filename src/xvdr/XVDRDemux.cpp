@@ -40,7 +40,7 @@ cXVDRDemux::~cXVDRDemux()
 bool cXVDRDemux::OpenChannel(const PVR_CHANNEL &channelinfo)
 {
   m_channelinfo = channelinfo;
-  if(!cXVDRSession::Open(g_szHostname, g_iPort))
+  if(!cXVDRSession::Open(g_szHostname, DEFAULT_PORT))
     return false;
 
   if(!cXVDRSession::Login())
