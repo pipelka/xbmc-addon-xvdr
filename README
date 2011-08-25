@@ -32,10 +32,10 @@ Currently only Linux is supported (but Windows versions should be possible).
 - Clone the GIT repository
 - cd xbmc-addon-xvdr
 - sh autogen.sh
-- ./configure --prefix=$HOME/.xbmc
+- ./configure --prefix=/usr/lib/xbmc (or $HOME/.xbmc)
 - make
 - make install
 
-This will install the plugin into your $HOME/.xbmc/addons directory
+This will install the plugin into your /usr/lib/xbmc/addons or $HOME/.xbmc/addons directory
 
 Have fun, ...
