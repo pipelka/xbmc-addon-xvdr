@@ -12,6 +12,7 @@ LIB    = ../../addons/pvr.vdr.xvdr/XBMC_VDR_xvdr.pvr
 lib_LTLIBRARIES = libxvdr.la
 
 libxvdr_la_SOURCES = \
+	codecids.h \
 	xvdrcommand.h \
 	client.cpp \
 	client.h \

@@ -23,7 +23,7 @@
 #include <stdint.h>
 #include <limits.h>
 #include <string.h>
-#include <libavcodec/avcodec.h> // For codec id's
+#include "codecids.h" // For codec id's
 #include "XVDRDemux.h"
 #include "responsepacket.h"
 #include "requestpacket.h"
