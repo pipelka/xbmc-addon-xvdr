@@ -14,3 +14,6 @@ override_dh_auto_build:
 
 override_dh_auto_clean:
 	$(MAKE) -o .dependencies clean $(MAKE_OPTIONS)
+
+override_dh_shlibdeps:
+	dpkg-shlibdeps -Tdebian/xbmc-addon-xvdr.substvars $(CURDIR)/debian/xbmc-addon-xvdr/usr/lib/xbmc/addons/pvr.vdr.xvdr/XBMC_VDR_xvdr.pvr
