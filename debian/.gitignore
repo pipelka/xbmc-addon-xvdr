@@ -1,0 +1,6 @@
+stamp-patched
+*.log
+*.substvars
+patched
+files
+xbmc-addon-xvdr

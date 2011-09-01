@@ -6,3 +6,4 @@ autotools
 config.*
 libtool
 Makefile
+xbmc-addon-xvdr-*.tar.gz

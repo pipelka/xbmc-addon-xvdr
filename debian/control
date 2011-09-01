@@ -1,0 +1,12 @@
+Source: xbmc-addon-xvdr
+Section: misc
+Priority: extra
+Maintainer: Alexander Pipelka <alexander.pipelka@gmail.com>
+Build-Depends: debhelper (>= 5), cdbs
+Standards-Version: 3.8.0
+
+Package: xbmc-addon-xvdr
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: XVDR addon for XBMC
+ This addon allows XBMC to connect to VDR Server running the XVDR plugin.
