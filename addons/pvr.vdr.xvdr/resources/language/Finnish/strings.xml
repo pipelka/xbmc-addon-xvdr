@@ -2,7 +2,6 @@
 <strings>
     <!-- settings labels -->
     <string id="30000">VDR-palvelimen nimi tai IP-osoite</string>
-    <string id="30001">VNSI-portti</string>
     <string id="30002">Tärkeysaste</string>
     <string id="30003">Kirjainmerkistön muunnos</string>
     <string id="30004">Yhteyden aikakatkaisu (s)</string>

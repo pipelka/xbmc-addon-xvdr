@@ -24,6 +24,16 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_EXEEXT
 
+dnl Check for zlib
+zlib_found=yes
+ZLIB_LIBS=
+AC_CHECK_HEADER(zlib.h,,[zlib_found="no"])
+if test x$zlib_found = xyes; then
+        AC_SEARCH_LIBS(compress, z, [AC_DEFINE([HAVE_ZLIB], 1, [haev zlib compression library installed])])
+        ZLIB_LIBS="-lz"
+        AC_SUBST(ZLIB_LIBS)
+fi
+
 # Finally create all the generated files
 AC_OUTPUT([
 Makefile

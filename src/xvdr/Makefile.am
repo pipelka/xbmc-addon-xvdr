@@ -40,7 +40,8 @@ libxvdr_la_LDFLAGS = \
 
 libxvdr_la_LIBADD = \
 	-lpthread \
-	../libTcpSocket/libTcpSocket.la
+	../libTcpSocket/libTcpSocket.la \
+	$(ZLIB_LIBS)
 
 INCLUDES = -I$(srcdir)/.. -I$(srcdir)/../.. -I$(srcdir)/../../include -DUSE_DEMUX -D__STDC_CONSTANT_MACROS -D_LINUX
 

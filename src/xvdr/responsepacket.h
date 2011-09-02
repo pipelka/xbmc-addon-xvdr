@@ -60,6 +60,8 @@ class cResponsePacket
 
     bool      end();
 
+    bool      uncompress();
+
     // If you call this, the memory becomes yours. Free with free()
     uint8_t* getUserData();
 

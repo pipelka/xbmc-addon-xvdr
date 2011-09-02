@@ -2,7 +2,6 @@
 <strings>
     <!-- settings labels -->
     <string id="30000">VDR hostnaam of IP adres</string>
-    <string id="30001">VNSI Poort</string>
     <string id="30002">Prioriteit</string>
     <string id="30003">Character Set Conversie</string>
     <string id="30004">Connectie timeout (s)</string>

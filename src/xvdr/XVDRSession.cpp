@@ -95,7 +95,11 @@ bool cXVDRSession::Login()
     cRequestPacket vrp;
     if (!vrp.init(XVDR_LOGIN))                  throw "Can't init cRequestPacket";
     if (!vrp.add_U32(XVDRPROTOCOLVERSION))      throw "Can't add protocol version to RequestPacket";
-    if (!vrp.add_U8(false))                     throw "Can't add netlog flag";
+#ifdef HAVE_ZLIB
+    if (!vrp.add_U8(g_iCompression))            throw "Can't add compression parameter";
+#else
+    if (!vrp.add_U8(0))                         throw "Can't add compression parameter";
+#endif
     if (!m_name.empty())
     {
       if (!vrp.add_String(m_name.c_str()))      throw "Can't add client name to RequestPacket";
@@ -159,7 +163,13 @@ cResponsePacket* cXVDRSession::ReadMessage()
 
   // Data was read
 
+  bool compressed = (channelID & htonl(0x80000000));
+
+  if(compressed)
+    channelID ^= htonl(0x80000000);
+
   channelID = ntohl(channelID);
+
   if (channelID == XVDR_CHANNEL_STREAM)
   {
     if (!readData((uint8_t*)&m_streamPacketHeader, sizeof(m_streamPacketHeader))) return NULL;
@@ -221,6 +231,9 @@ cResponsePacket* cXVDRSession::ReadMessage()
       vresp->setStatus(requestID, userData, userDataLength);
     else
       vresp->setResponse(requestID, userData, userDataLength);
+
+    if(compressed)
+      vresp->uncompress();
   }
 
   return vresp;

@@ -46,6 +46,7 @@ bool          g_bHandleMessages         = DEFAULT_HANDLE_MSG;   ///< Send VDR's 
 int           g_iConnectTimeout         = DEFAULT_TIMEOUT;      ///< The Socket connection timeout
 int           g_iPriority               = DEFAULT_PRIORITY;     ///< The Priority this client have in response to other clients
 bool          g_bAutoChannelGroups      = DEFAULT_AUTOGROUPS;
+int           g_iCompression            = DEFAULT_COMPRESSION;
 
 CHelper_libXBMC_addon *XBMC   = NULL;
 CHelper_libXBMC_gui   *GUI    = NULL;
@@ -105,6 +106,16 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
     g_szHostname = DEFAULT_HOST;
   }
   free(buffer);
+
+  /* Read setting "compression" from settings.xml */
+  if (!XBMC->GetSetting("compression", &g_iCompression))
+  {
+    /* If setting is unknown fallback to defaults */
+    XBMC->Log(LOG_ERROR, "Couldn't get 'compression' setting, falling back to %i as default", DEFAULT_COMPRESSION);
+    g_iCompression = DEFAULT_COMPRESSION;
+  }
+  else
+    g_iCompression *= 3;
 
   /* Read setting "priority" from settings.xml */
   if (!XBMC->GetSetting("priority", &g_iPriority))
@@ -224,6 +235,15 @@ ADDON_STATUS ADDON_SetSetting(const char *settingName, const void *settingValue)
     tmp_sHostname = g_szHostname;
     g_szHostname = (const char*) settingValue;
     if (tmp_sHostname != g_szHostname)
+      return ADDON_STATUS_NEED_RESTART;
+  }
+  else if (str == "compression")
+  {
+    XBMC->Log(LOG_INFO, "Changed Setting 'compression' from %u to %u", g_iCompression, *(int*) settingValue);
+    int old_value = g_iCompression;
+    g_iCompression = (*(int*) settingValue) * 3;
+
+    if (old_value != g_iCompression)
       return ADDON_STATUS_NEED_RESTART;
   }
   else if (str == "priority")

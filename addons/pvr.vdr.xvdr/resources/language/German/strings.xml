@@ -2,7 +2,7 @@
 <strings>
     <!-- settings labels -->
     <string id="30000">VDR Hostname oder IP</string>
-    <string id="30001">VNSI Port</string>
+    <string id="30001">Protokoll Kompression</string>
     <string id="30002">Priorität</string>
     <string id="30003">Textkonvertierung (UTF-8)</string>
     <string id="30004">Verbindungszeitüberlauf (s)</string>
