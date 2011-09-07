@@ -665,6 +665,8 @@ PVR_ERROR cXVDRData::GetRecordingsList(PVR_HANDLE handle)
     tag.strDirectory    = vresp->extract_String();
     tag.strRecordingId  = vresp->extract_String();
     tag.strStreamURL    = "";
+    tag.iGenreType      = 0;
+    tag.iGenreSubType   = 0;
 
     PVR->TransferRecordingEntry(handle, &tag);
 
