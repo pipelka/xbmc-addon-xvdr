@@ -14,4 +14,5 @@ uninstall-hook:
 
 EXTRA_DIST = \
 	resources \
-	$(addon_DATA)
+	addon.xml \
+	icon.png
