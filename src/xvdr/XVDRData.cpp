@@ -141,7 +141,7 @@ bool cXVDRData::GetDriveSpace(long long *total, long long *used)
   cResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
-    XBMC->Log(LOG_ERROR, "%s - Can't get response packed", __FUNCTION__);
+    XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return false;
   }
 
@@ -172,7 +172,7 @@ bool cXVDRData::SupportChannelScan()
   cResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
-    XBMC->Log(LOG_ERROR, "%s - Can't get response packed", __FUNCTION__);
+    XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return false;
   }
 
@@ -190,7 +190,7 @@ bool cXVDRData::EnableStatusInterface(bool onOff)
   cResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
-    XBMC->Log(LOG_ERROR, "%s - Can't get response packed", __FUNCTION__);
+    XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return false;
   }
 
@@ -211,7 +211,7 @@ int cXVDRData::GetChannelsCount()
   cResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
-    XBMC->Log(LOG_ERROR, "%s - Can't get response packed", __FUNCTION__);
+    XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return -1;
   }
 
@@ -238,7 +238,7 @@ bool cXVDRData::GetChannelsList(PVR_HANDLE handle, bool radio)
   cResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
-    XBMC->Log(LOG_ERROR, "%s - Can't get response packed", __FUNCTION__);
+    XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return false;
   }
 
@@ -284,7 +284,7 @@ bool cXVDRData::GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL &channel, 
   cResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
-    XBMC->Log(LOG_ERROR, "%s - Can't get response packed", __FUNCTION__);
+    XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return false;
   }
 
@@ -331,7 +331,7 @@ int cXVDRData::GetTimersCount()
   cResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
-    XBMC->Log(LOG_ERROR, "%s - Can't get response packed", __FUNCTION__);
+    XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return -1;
   }
 
@@ -356,7 +356,7 @@ PVR_ERROR cXVDRData::GetTimerInfo(unsigned int timernumber, PVR_TIMER &tag)
   cResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
-    XBMC->Log(LOG_ERROR, "%s - Can't get response packed", __FUNCTION__);
+    XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
     delete vresp;
     return PVR_ERROR_UNKNOWN;
   }
@@ -411,7 +411,7 @@ bool cXVDRData::GetTimersList(PVR_HANDLE handle)
   if (!vresp)
   {
     delete vresp;
-    XBMC->Log(LOG_ERROR, "%s - Can't get response packed", __FUNCTION__);
+    XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return false;
   }
 
@@ -515,7 +515,7 @@ PVR_ERROR cXVDRData::AddTimer(const PVR_TIMER &timerinfo)
   if (vresp == NULL || vresp->noResponse())
   {
     delete vresp;
-    XBMC->Log(LOG_ERROR, "%s - Can't get response packed", __FUNCTION__);
+    XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return PVR_ERROR_UNKNOWN;
   }
   uint32_t returnCode = vresp->extract_U32();
@@ -625,7 +625,7 @@ int cXVDRData::GetRecordingsCount()
   cResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
-    XBMC->Log(LOG_ERROR, "%s - Can't get response packed", __FUNCTION__);
+    XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return -1;
   }
 
@@ -647,7 +647,7 @@ PVR_ERROR cXVDRData::GetRecordingsList(PVR_HANDLE handle)
   cResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
-    XBMC->Log(LOG_ERROR, "%s - Can't get response packed", __FUNCTION__);
+    XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return PVR_ERROR_UNKNOWN;
   }
 
