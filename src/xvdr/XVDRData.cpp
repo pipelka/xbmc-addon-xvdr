@@ -288,28 +288,34 @@ bool cXVDRData::GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL &channel, 
     return false;
   }
 
-  while (!vresp->end())
+  if (!vresp->serverError())
   {
-    EPG_TAG tag;
-    memset(&tag, 0 , sizeof(tag));
+    while (!vresp->end())
+    {
+      EPG_TAG tag;
+      memset(&tag, 0 , sizeof(tag));
 
-    tag.iChannelNumber      = channel.iChannelNumber;
-    tag.iUniqueBroadcastId  = vresp->extract_U32();
-    tag.startTime           = vresp->extract_U32();
-    tag.endTime             = tag.startTime + vresp->extract_U32();
-    uint32_t content        = vresp->extract_U32();
-    tag.iGenreType          = content & 0xF0;
-    tag.iGenreSubType       = content & 0x0F;
-    tag.strGenreDescription = "";
-    tag.iParentalRating     = vresp->extract_U32();
-    tag.strTitle            = vresp->extract_String();
-    tag.strPlotOutline      = vresp->extract_String();
-    tag.strPlot             = vresp->extract_String();
+      tag.iChannelNumber      = channel.iChannelNumber;
+      tag.iUniqueBroadcastId  = vresp->extract_U32();
+      tag.startTime           = vresp->extract_U32();
+      tag.endTime             = tag.startTime + vresp->extract_U32();
+      uint32_t content        = vresp->extract_U32();
+      tag.iGenreType          = content & 0xF0;
+      tag.iGenreSubType       = content & 0x0F;
+      tag.strGenreDescription = "";
+      tag.iParentalRating     = vresp->extract_U32();
+      tag.strTitle            = vresp->extract_String();
+      tag.strPlotOutline      = vresp->extract_String();
+      tag.strPlot             = vresp->extract_String();
 
-    PVR->TransferEpgEntry(handle, &tag);
-    delete[] tag.strTitle;
-    delete[] tag.strPlotOutline;
-    delete[] tag.strPlot;
+      PVR->TransferEpgEntry(handle, &tag);
+      if (tag.strTitle)
+        delete[] tag.strTitle;
+      if (tag.strPlotOutline)
+        delete[] tag.strPlotOutline;
+      if (tag.strPlot)
+        delete[] tag.strPlot;
+    }
   }
 
   delete vresp;
