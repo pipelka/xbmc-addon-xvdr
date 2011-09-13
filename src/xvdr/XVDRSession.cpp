@@ -125,7 +125,7 @@ bool cXVDRSession::Login()
     m_protocol  = protocol;
 
     if (m_name.empty())
-      XBMC->Log(LOG_NOTICE, "Logged in at '%lu+%i' to '%s' Version: '%s' with protocol version '%lu'",
+      XBMC->Log(LOG_NOTICE, "Logged in at '%u+%i' to '%s' Version: '%s' with protocol version '%u'",
         vdrTime, vdrTimeOffset, ServerName, ServerVersion, protocol);
 
     delete[] ServerName;
