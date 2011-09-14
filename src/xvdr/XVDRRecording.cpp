@@ -95,15 +95,32 @@ int cXVDRRecording::Read(unsigned char* buf, uint32_t buf_size)
   if (m_currentPlayingRecordPosition >= m_currentPlayingRecordBytes)
     return 0;
 
-  cRequestPacket vrp;
-  if (!vrp.init(XVDR_RECSTREAM_GETBLOCK) ||
-      !vrp.add_U64(m_currentPlayingRecordPosition) ||
-      !vrp.add_U32(buf_size))
+  cResponsePacket* vresp = NULL;
+
+  cRequestPacket vrp1;
+  if (vrp1.init(XVDR_RECSTREAM_UPDATE) && ((vresp = ReadResult(&vrp1)) != NULL))
+  {
+    uint32_t frames = vresp->extract_U32();
+    uint64_t bytes  = vresp->extract_U64();
+
+    if(frames != m_currentPlayingRecordFrames || bytes != m_currentPlayingRecordBytes)
+    {
+      m_currentPlayingRecordFrames = frames;
+      m_currentPlayingRecordBytes  = bytes;
+      XBMC->Log(LOG_DEBUG, "Size of recording changed: %lu bytes (%u frames)", bytes, frames);
+    }
+    delete vresp;
+  }
+
+  cRequestPacket vrp2;
+  if (!vrp2.init(XVDR_RECSTREAM_GETBLOCK) ||
+      !vrp2.add_U64(m_currentPlayingRecordPosition) ||
+      !vrp2.add_U32(buf_size))
   {
     return 0;
   }
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  vresp = ReadResult(&vrp2);
   if (!vresp)
     return -1;
 
