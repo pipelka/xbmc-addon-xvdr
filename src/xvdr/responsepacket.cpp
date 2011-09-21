@@ -165,9 +165,14 @@ uint8_t* cResponsePacket::getUserData()
 bool cResponsePacket::uncompress()
 {
 #ifdef HAVE_ZLIB
-  XBMC->Log(LOG_DEBUG, "Uncompressing packet (%i bytes) ...");
+  XBMC->Log(LOG_DEBUG, "Uncompressing packet (%i bytes) ...", userDataLength - 4);
+
   uLongf original_size = ntohl(*(uint32_t*)&userData[0]);
   uint8_t* buffer = (uint8_t*)malloc(original_size);
+
+  if(buffer == NULL)
+    return false;
+
   if(::uncompress(buffer, &original_size, userData + 4, userDataLength - 4) == Z_OK)
   {
     free(userData);
