@@ -50,7 +50,7 @@ EXTRA_DIST = \
 
 XBMC_VDR_xvdr.pvr: libxvdr.la
 	cp -f .libs/libxvdr.so XBMC_VDR_xvdr.pvr
-	$(STRIP) -s -x XBMC_VDR_xvdr.pvr
+	$(STRIP) -x XBMC_VDR_xvdr.pvr
 
 $(LIB): XBMC_VDR_xvdr.pvr
 	cp -f XBMC_VDR_xvdr.pvr $(LIB)
