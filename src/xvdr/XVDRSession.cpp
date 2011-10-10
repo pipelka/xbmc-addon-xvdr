@@ -74,7 +74,7 @@ bool cXVDRSession::Open(const std::string& hostname, int port, const char *name)
 
   if (m_fd == INVALID_SOCKET)
   {
-    XBMC->Log(LOG_ERROR, "%s - Can't connect to VSNI Server: %s", __FUNCTION__, errbuf);
+    XBMC->Log(LOG_ERROR, "%s - Can't connect to XVDR Server: %s", __FUNCTION__, errbuf);
     return false;
   }
 
