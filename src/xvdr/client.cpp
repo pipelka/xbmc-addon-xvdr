@@ -419,7 +419,8 @@ PVR_ERROR GetChannelGroupMembers(PVR_HANDLE handle, const PVR_CHANNEL_GROUP &gro
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return XVDRData->GetChannelGroupMembers(handle, group) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
+  XVDRData->GetChannelGroupMembers(handle, group);
+  return PVR_ERROR_NO_ERROR;
 }
 
 
