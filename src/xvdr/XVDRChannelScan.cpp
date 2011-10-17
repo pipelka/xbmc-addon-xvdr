@@ -32,6 +32,8 @@ extern "C" {
 #include "libTcpSocket/os-dependent_socket.h"
 }
 
+using namespace ADDON;
+
 #define BUTTON_START                    5
 #define BUTTON_BACK                     6
 #define BUTTON_CANCEL                   7

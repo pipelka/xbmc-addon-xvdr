@@ -37,6 +37,8 @@ extern "C" {
 #include "zlib.h"
 #endif
 
+using namespace ADDON;
+
 cResponsePacket::cResponsePacket()
 {
   userDataLength  = 0;

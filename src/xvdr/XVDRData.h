@@ -28,6 +28,8 @@
 #include <string>
 #include <map>
 
+using namespace ADDON;
+
 class cResponsePacket;
 class cRequestPacket;
 

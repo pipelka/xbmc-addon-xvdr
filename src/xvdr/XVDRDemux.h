@@ -25,6 +25,8 @@
 #include "client.h"
 #include <string>
 
+using namespace ADDON;
+
 class cResponsePacket;
 
 struct SQuality

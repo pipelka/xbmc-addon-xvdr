@@ -42,6 +42,6 @@ extern bool         g_bCharsetConv;       ///< Convert VDR's incoming strings to
 extern bool         g_bHandleMessages;    ///< Send VDR's OSD status messages to XBMC OSD
 extern int          g_iCompression;       ///< Protocol Compression Level
 
-extern CHelper_libXBMC_addon *XBMC;
+extern ADDON::CHelper_libXBMC_addon *XBMC;
 extern CHelper_libXBMC_gui   *GUI;
 extern CHelper_libXBMC_pvr   *PVR;

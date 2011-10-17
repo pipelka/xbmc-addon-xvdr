@@ -39,6 +39,8 @@
 #define SOL_TCP IPPROTO_TCP
 #endif
 
+using namespace ADDON;
+
 cXVDRSession::cXVDRSession()
   : m_fd(INVALID_SOCKET)
   , m_protocol(0)
