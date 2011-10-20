@@ -48,4 +48,6 @@
     <string id="30044">Verbindung zum VDR Server unterbrochen</string>
     <string id="30045">Verbindung zum VDR Server wiederhergestellt</string>
     <string id="30046">Kanalgruppen automatisch erzeugen</string>
+    <string id="30047">Kein TV Signal</string>
+    <string id="30048">TV Signal wiederhergestellt</string>
 </strings>

@@ -48,4 +48,6 @@
     <string id="30044">Lost connection to VDR Server</string>
     <string id="30045">Connection to VDR Server restored</string>
     <string id="30046">Create channelgroups automatically</string>
+    <string id="30047">TV Signal lost</string>
+    <string id="30048">TV Signal restored</string>
 </strings>
