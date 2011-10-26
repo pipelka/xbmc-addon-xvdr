@@ -208,8 +208,8 @@ void cXVDRDemux::StreamChange(cResponsePacket *resp)
 
   while (!resp->end())
   {
-    uint32_t    index = resp->extract_U32();
-    const char* type  = resp->extract_String();
+    uint32_t    id   = resp->extract_U32();
+    const char* type = resp->extract_String();
 
     struct PVR_STREAM_PROPERTIES::PVR_STREAM* stream = &m_Streams.stream[m_Streams.iStreamCount];
 
@@ -226,7 +226,7 @@ void cXVDRDemux::StreamChange(cResponsePacket *resp)
     stream->iBitsPerSample = 0;
 
     stream->iStreamIndex   = m_Streams.iStreamCount;
-    stream->iPhysicalId    = index;
+    stream->iPhysicalId    = id;
     stream->iIdentifier    = -1;
 
     memset(stream->strLanguage, 0, 4);
@@ -399,10 +399,18 @@ bool cXVDRDemux::StreamContentInfo(cResponsePacket *resp)
 
   for (unsigned int i = 0; i < m_Streams.iStreamCount && !resp->end(); i++)
   {
-    uint32_t index = resp->extract_U32();
-    struct PVR_STREAM_PROPERTIES::PVR_STREAM* stream = &m_Streams.stream[i];
+    uint32_t id = resp->extract_U32();
+    struct PVR_STREAM_PROPERTIES::PVR_STREAM* stream = NULL;
 
-    if (index != stream->iPhysicalId)
+    // find stream
+    for (unsigned int j = 0; j < m_Streams.iStreamCount; j++)
+    {
+   	   stream = &m_Streams.stream[j];
+       if (m_Streams.stream[j].iPhysicalId == id)
+    	 break;
+    }
+
+    if (stream == NULL)
       continue;
 
     const char* language    = NULL;
