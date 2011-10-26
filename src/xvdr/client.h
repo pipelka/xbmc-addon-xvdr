@@ -33,6 +33,7 @@
 #define DEFAULT_TIMEOUT       3
 #define DEFAULT_AUTOGROUPS    false
 #define DEFAULT_COMPRESSION   6
+#define DEFAULT_AUDIOTYPE     0
 
 extern bool         m_bCreated;
 extern std::string  g_szHostname;         ///< hostname or ip-address of the server
@@ -41,6 +42,7 @@ extern int          g_iPriority;          ///< The Priority this client have in 
 extern bool         g_bCharsetConv;       ///< Convert VDR's incoming strings to UTF8 character set
 extern bool         g_bHandleMessages;    ///< Send VDR's OSD status messages to XBMC OSD
 extern int          g_iCompression;       ///< Protocol Compression Level
+extern int          g_iAudioType;         ///< Preferred audio stream type
 
 extern ADDON::CHelper_libXBMC_addon *XBMC;
 extern CHelper_libXBMC_gui   *GUI;

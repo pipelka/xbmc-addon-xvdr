@@ -41,6 +41,44 @@
 
 using namespace ADDON;
 
+// language code structure
+typedef struct _langmap_t
+{
+	const char* lang;
+	const char* code;
+} langmap_t;
+
+// currently supported (known) language codes
+static langmap_t language_mapping[] =
+{
+  {"ara", "ar"},
+  {"bel", ""},
+  {"deu", "de"},
+  {"dut", "nl"},
+  {"eng", "en"},
+  {"esl", "es"},
+  {"fra", "fr"},
+  {"ita", "is"},
+  {"mis", ""},
+  {"per", "fa"},
+  {"pol", "pl"},
+  {"por", "pt"},
+  {"qaa", "l1"},
+  {"rus", "ru"},
+  {"tur", "tr"}
+};
+
+static const char* FindLanguage(const char* code)
+{
+  for(int i = 0; i < sizeof(language_mapping) / sizeof(langmap_t); i++)
+  {
+	  if(strcmp(language_mapping[i].code, code) == 0) {
+		  return language_mapping[i].lang;
+	  }
+  }
+  return NULL;
+}
+
 cXVDRSession::cXVDRSession()
   : m_fd(INVALID_SOCKET)
   , m_protocol(0)
@@ -110,6 +148,14 @@ bool cXVDRSession::Login()
     {
       if (!vrp.add_String("XBMC Media Center")) throw "Can't add client name to RequestPacket";
     }
+
+    const char* code = XBMC->GetDVDMenuLanguage();
+    const char* lang = FindLanguage(code);
+
+    XBMC->Log(LOG_INFO, "Preferred Audio Language: %s", lang);
+
+    if (!vrp.add_String((lang != NULL) ? lang : "")) throw "Can't language to RequestPacket";
+    if (!vrp.add_U8(g_iAudioType))              throw "Can't add audiotype parameter";
 
     // read welcome
     cResponsePacket* vresp = ReadResult(&vrp);

@@ -48,6 +48,7 @@ int           g_iConnectTimeout         = DEFAULT_TIMEOUT;      ///< The Socket 
 int           g_iPriority               = DEFAULT_PRIORITY;     ///< The Priority this client have in response to other clients
 bool          g_bAutoChannelGroups      = DEFAULT_AUTOGROUPS;
 int           g_iCompression            = DEFAULT_COMPRESSION;
+int           g_iAudioType              = DEFAULT_AUDIOTYPE;
 
 CHelper_libXBMC_addon *XBMC   = NULL;
 CHelper_libXBMC_gui   *GUI    = NULL;
@@ -156,6 +157,14 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
     /* If setting is unknown fallback to defaults */
     XBMC->Log(LOG_ERROR, "Couldn't get 'autochannelgroups' setting, falling back to 'false' as default");
     g_bAutoChannelGroups = DEFAULT_AUTOGROUPS;
+  }
+
+  /* Read setting "audiotype" from settings.xml */
+  if (!XBMC->GetSetting("audiotype", &g_iAudioType))
+  {
+    /* If setting is unknown fallback to defaults */
+    XBMC->Log(LOG_ERROR, "Couldn't get 'audiotype' setting, falling back to type %i as default", DEFAULT_AUDIOTYPE);
+    g_iAudioType = DEFAULT_TIMEOUT;
   }
 
   XVDRData = new cXVDRData;
@@ -276,6 +285,11 @@ ADDON_STATUS ADDON_SetSetting(const char *settingName, const void *settingValue)
       g_bAutoChannelGroups = *(bool*) settingValue;
       return ADDON_STATUS_NEED_RESTART;
     }
+  }
+  else if (str == "audiotype")
+  {
+    XBMC->Log(LOG_INFO, "Changed Setting 'audiotype' from %i to %i", g_iAudioType, *(int*) settingValue);
+    g_iAudioType = *(bool*) settingValue;
   }
 
   return ADDON_STATUS_OK;
