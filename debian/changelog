@@ -1,3 +1,9 @@
+xbmc-addon-xvdr (0.9.5-1) unstable; urgency=low
+
+  * version 0.9.5
+
+ -- Alexander Pipelka <pipelka@shuttle>  Sat, 29 Oct 2011 21:23:26 +0200
+
 xbmc-addon-xvdr (0.9.0-1) unstable; urgency=low
 
   * debianized
