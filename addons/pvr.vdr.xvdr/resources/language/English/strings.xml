@@ -51,4 +51,16 @@
     <string id="30047">TV Signal lost</string>
     <string id="30048">TV Signal restored</string>
     <string id="30049">Preferred Audiotrack</string>
+    <string id="30050">Connection</string>
+    <string id="30051">VDR</string>
+    <string id="30052">Channel update</string>
+    <string id="30053">None</string>
+    <string id="30054">Names only</string>
+    <string id="30055">PIDS only</string>
+    <string id="30056">Names and PIDs</string>
+    <string id="30057">Add new channels</string>
+    <string id="30058">Add new transponders</string>
+    <string id="30059">Low</string>
+    <string id="30060">Medium</string>
+    <string id="30061">High</string>
 </strings>
