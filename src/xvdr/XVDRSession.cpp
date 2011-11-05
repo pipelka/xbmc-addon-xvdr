@@ -317,21 +317,26 @@ cResponsePacket* cXVDRSession::ReadResult(cRequestPacket* vrp)
   return NULL;
 }
 
-bool cXVDRSession::ReadSuccess(cRequestPacket* vrp)
+bool cXVDRSession::ReadSuccess(cRequestPacket* vrp) {
+	uint32_t rc;
+	return ReadSuccess(vrp, rc);
+}
+
+bool cXVDRSession::ReadSuccess(cRequestPacket* vrp, uint32_t& rc)
 {
   cResponsePacket *pkt = NULL;
   if((pkt = ReadResult(vrp)) == NULL)
-  {
     return false;
-  }
-  uint32_t retCode = pkt->extract_U32();
+
+  rc = pkt->extract_U32();
   delete pkt;
 
-  if(retCode != XVDR_RET_OK)
+  if(rc != XVDR_RET_OK)
   {
-    XBMC->Log(LOG_ERROR, "%s - failed with error code '%i'", __FUNCTION__, retCode);
+    XBMC->Log(LOG_ERROR, "%s - failed with error code '%i'", __FUNCTION__, rc);
     return false;
   }
+
   return true;
 }
 
