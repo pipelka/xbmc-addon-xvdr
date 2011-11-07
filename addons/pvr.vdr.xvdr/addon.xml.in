@@ -25,6 +25,6 @@
     name="XVDR Add-on Repository">
     <info compressed="false">http://dl.dropbox.com/u/240579/xbmc-addon-xvdr/addons.xml</info>
     <checksum>http://dl.dropbox.com/u/240579/xbmc-addon-xvdr/addons.xml.md5</checksum>
-    <datadir zip="true">http://dl.dropbox.com/u/240579/xbmc-addon-xvdr/addons.xml</datadir>
+    <datadir zip="true">http://dl.dropbox.com/u/240579/xbmc-addon-xvdr</datadir>
   </extension>
 </addon>
