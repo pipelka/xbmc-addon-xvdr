@@ -45,3 +45,6 @@ repo-daily: all dist-zip-daily
 
 release-repo-daily: repo-daily
 	cp -r addon-repository/* ~/Dropbox/Public/xbmc-addon-xvdr
+
+repo-zip: all
+	cd addons && zip -9 -r ../repository.xvdr.zip repository.xvdr --exclude \*.am \*.in \*Makefile \*.gitignore
