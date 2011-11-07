@@ -7,3 +7,5 @@ config.*
 libtool
 Makefile
 xbmc-addon-xvdr-*.tar.gz
+addon-repository
+pvr.vdr.xvdr-*.zip

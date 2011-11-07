@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <addon
   id="pvr.vdr.xvdr"
-  version="0.9.5"
+  version="@VERSION@"
   name="VDR XVDR Client"
   provider-name="Alexander Pipelka, Alwin Esch, Team XBMC">
   <requires>
@@ -19,5 +19,12 @@
     <description lang="de">Erlaubt das wiedergeben von Live TV und Aufnahmen mittels VDR auf XBMC. Des weiteren werden EPG, Kanalsuche und Timer unterstützt.</description>
     <disclaimer>This is unstable software! The authors are in no way responsible for failed recordings, incorrect timers, wasted hours, or any other undesirable effects..</disclaimer>
     <platform>all</platform>
+  </extension>
+  <extension
+    point="xbmc.addon.repository"
+    name="XVDR Add-on Repository">
+    <info compressed="false">http://dl.dropbox.com/u/240579/xbmc-addon-xvdr/addons.xml</info>
+    <checksum>http://dl.dropbox.com/u/240579/xbmc-addon-xvdr/addons.xml.md5</checksum>
+    <datadir zip="true">http://dl.dropbox.com/u/240579/xbmc-addon-xvdr/addons.xml</datadir>
   </extension>
 </addon>
