@@ -12,12 +12,16 @@ EXTRA_DIST = \
 	include
 
 dist-zip: all
-	cd addons && zip -9 -r ../pvr.vdr.xvdr-$(VERSION).zip pvr.vdr.xvdr --exclude \*.am \*.in \*Makefile \*.gitignore
+	cp -r addons/pvr.vdr.xvdr .
+	$(STRIP) -s -x pvr.vdr.xvdr/XBMC_VDR_xvdr.pvr
+	zip -9 -r ./pvr.vdr.xvdr-$(VERSION).zip pvr.vdr.xvdr --exclude \*.am \*.in \*Makefile \*.gitignore
+	rm -Rf pvr.vdr.xvdr
 
-dist-zip-daily:
+dist-zip-daily: all
 	cp -r addons/pvr.vdr.xvdr .
 	cat pvr.vdr.xvdr/addon.xml | sed "s/$(VERSION)/$(VERSION).$(DATE)/g" > pvr.vdr.xvdr/addon.xml.new
 	mv pvr.vdr.xvdr/addon.xml.new pvr.vdr.xvdr/addon.xml
+	$(STRIP) -s -x pvr.vdr.xvdr/XBMC_VDR_xvdr.pvr
 	zip -9 -r ./pvr.vdr.xvdr-$(VERSION).$(DATE).zip pvr.vdr.xvdr --exclude \*.am \*.in \*Makefile \*.gitignore
 	rm -Rf pvr.vdr.xvdr
 
