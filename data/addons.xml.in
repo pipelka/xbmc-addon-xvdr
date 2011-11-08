@@ -6,7 +6,7 @@
     </requires>
     <extension
       point="xbmc.pvrclient"
-      library_linux="XBMC_VDR_xvdr.pvr"
+      library_linux="XBMC_VDR_xvdr.pvr"/>
     <extension point="xbmc.addon.metadata">
       <summary>PVR client to connect VDR to XBMC</summary>
       <description>VDR frontend; supporting streaming of Live TV &amp; Recordings, EPG, Timers</description>
