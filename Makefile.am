@@ -48,3 +48,6 @@ release-repo-daily: repo-daily
 
 repo-zip: all
 	cd addons && zip -9 -r ../repository.xvdr.zip repository.xvdr --exclude \*.am \*.in \*Makefile \*.gitignore
+
+repo-zip64: all
+	cd addons && zip -9 -r ../repository.xvdr64.zip repository.xvdr64 --exclude \*.am \*.in \*Makefile \*.gitignore

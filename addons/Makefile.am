@@ -1,6 +1,7 @@
 SUBDIRS = \
 	pvr.vdr.xvdr \
-	repository.xvdr
+	repository.xvdr \
+	repository.xvdr64
 
 DIST_SUBDIRS = \
 	$(SUBDIRS)

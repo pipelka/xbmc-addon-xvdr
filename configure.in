@@ -43,6 +43,7 @@ addons/Makefile
 addons/pvr.vdr.xvdr/Makefile
 addons/pvr.vdr.xvdr/addon.xml
 addons/repository.xvdr/Makefile
+addons/repository.xvdr64/Makefile
 data/addons.xml
 data/Makefile
 src/Makefile
