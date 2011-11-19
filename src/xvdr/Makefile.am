@@ -16,6 +16,8 @@ libxvdr_la_SOURCES = \
 	xvdrcommand.h \
 	client.cpp \
 	client.h \
+	iso639.cpp \
+	iso639.h \
 	XVDRChannelScan.cpp \
 	XVDRChannelScan.h \
 	XVDRData.cpp \

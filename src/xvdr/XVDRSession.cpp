@@ -32,6 +32,7 @@
 #include "requestpacket.h"
 #include "xvdrcommand.h"
 #include "tools.h"
+#include "iso639.h"
 
 /* Needed on Mac OS/X */
  
@@ -40,44 +41,6 @@
 #endif
 
 using namespace ADDON;
-
-// language code structure
-typedef struct _langmap_t
-{
-	const char* lang;
-	const char* code;
-} langmap_t;
-
-// currently supported (known) language codes
-static langmap_t language_mapping[] =
-{
-  {"ara", "ar"},
-  {"bel", ""},
-  {"deu", "de"},
-  {"dut", "nl"},
-  {"eng", "en"},
-  {"esl", "es"},
-  {"fra", "fr"},
-  {"ita", "is"},
-  {"mis", ""},
-  {"per", "fa"},
-  {"pol", "pl"},
-  {"por", "pt"},
-  {"qaa", "l1"},
-  {"rus", "ru"},
-  {"tur", "tr"}
-};
-
-static const char* FindLanguage(const char* code)
-{
-  for(int i = 0; i < sizeof(language_mapping) / sizeof(langmap_t); i++)
-  {
-	  if(strcmp(language_mapping[i].code, code) == 0) {
-		  return language_mapping[i].lang;
-	  }
-  }
-  return NULL;
-}
 
 cXVDRSession::cXVDRSession()
   : m_fd(INVALID_SOCKET)
@@ -150,7 +113,7 @@ bool cXVDRSession::Login()
     }
 
     const char* code = XBMC->GetDVDMenuLanguage();
-    const char* lang = FindLanguage(code);
+    const char* lang = ISO639_FindLanguage(code);
 
     XBMC->Log(LOG_INFO, "Preferred Audio Language: %s", lang);
 
