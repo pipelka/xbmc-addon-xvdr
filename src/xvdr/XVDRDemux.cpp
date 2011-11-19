@@ -351,18 +351,6 @@ void cXVDRDemux::StreamChange(cResponsePacket *resp)
 
       delete[] language;
     }
-    else if(!strcmp(type, "TEXTSUB"))
-    {
-      const char *language = resp->extract_String();
-
-      stream->iCodecType = AVMEDIA_TYPE_SUBTITLE;
-      stream->iCodecId   = CODEC_ID_TEXT;
-
-      memcpy(stream->strLanguage, language, 3);
-      m_Streams.iStreamCount++;
-
-      delete[] language;
-    }
     else if(!strcmp(type, "TELETEXT"))
     {
       stream->iCodecType = AVMEDIA_TYPE_SUBTITLE;
