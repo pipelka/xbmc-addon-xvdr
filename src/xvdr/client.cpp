@@ -169,7 +169,7 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
   }
 
   /* Read setting "updatechannels" from settings.xml */
-  if (!XBMC->GetSetting("updatechannels", &g_iAudioType))
+  if (!XBMC->GetSetting("updatechannels", &g_iUpdateChannels))
   {
     /* If setting is unknown fallback to defaults */
     XBMC->Log(LOG_ERROR, "Couldn't get 'updatechannels' setting, falling back to type %i as default", DEFAULT_UPDATECHANNELS);
@@ -304,7 +304,7 @@ ADDON_STATUS ADDON_SetSetting(const char *settingName, const void *settingValue)
   }
   else if (str == "updatechannels")
   {
-    XBMC->Log(LOG_INFO, "Changed Setting 'audiotype' from %i to %i", g_iAudioType, *(int*) settingValue);
+    XBMC->Log(LOG_INFO, "Changed Setting 'updatechannels' from %i to %i", g_iUpdateChannels, *(int*) settingValue);
     g_iUpdateChannels = *(bool*) settingValue;
     if (XVDRData != NULL)
       XVDRData->SetUpdateChannels(g_iUpdateChannels);
