@@ -36,6 +36,18 @@ fi
 
 AC_SUBST(VERSIONEXT)
 
+case $host in
+  arm*-*-linux-gnu*)
+    AC_SUBST(ARCH_DEFINES, "-D_ARMEL")
+    ;;
+  powerpc-*-linux-gnu*)
+    AC_SUBST(ARCH_DEFINES, "-D_POWERPC")
+    ;;
+  powerpc64-*-linux-gnu*)
+    AC_SUBST(ARCH_DEFINES, "-D_POWERPC64")
+    ;;
+esac
+
 # Finally create all the generated files
 AC_OUTPUT([
 Makefile
