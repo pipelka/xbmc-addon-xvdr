@@ -186,6 +186,7 @@ bool cXVDRDemux::SwitchChannel(const PVR_CHANNEL &channelinfo)
    	  XBMC->Log(LOG_INFO, XBMC->GetLocalizedString(30063));
       break;
     // error on switching channel
+    default:
     case XVDR_RET_ERROR:
    	  XBMC->Log(LOG_INFO, XBMC->GetLocalizedString(30064));
       break;
@@ -196,7 +197,7 @@ bool cXVDRDemux::SwitchChannel(const PVR_CHANNEL &channelinfo)
   }
 
   XBMC->Log(LOG_ERROR, "%s - failed to set channel", __FUNCTION__);
-  return false;
+  return true;
 }
 
 bool cXVDRDemux::GetSignalStatus(PVR_SIGNAL_STATUS &qualityinfo)
