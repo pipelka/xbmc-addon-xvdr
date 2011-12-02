@@ -45,6 +45,9 @@ libxvdr_la_LIBADD = \
 	../libTcpSocket/libTcpSocket.la \
 	$(ZLIB_LIBS)
 
+CPPFLAGS = \
+	$(ARCH_DEFINES)
+
 INCLUDES = -I$(srcdir)/.. -I$(srcdir)/../.. -I$(srcdir)/../../include -DUSE_DEMUX -D__STDC_CONSTANT_MACROS -D_LINUX
 
 EXTRA_DIST = \
