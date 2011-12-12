@@ -179,20 +179,20 @@ bool cXVDRDemux::SwitchChannel(const PVR_CHANNEL &channelinfo)
   {
     // active recording
     case XVDR_RET_RECRUNNING:
-   	  XBMC->Log(LOG_INFO, XBMC->GetLocalizedString(30062));
+     XBMC->QueueNotification(QUEUE_INFO, XBMC->GetLocalizedString(30062));
       break;
     // all receivers busy
     case XVDR_RET_DATALOCKED:
-   	  XBMC->Log(LOG_INFO, XBMC->GetLocalizedString(30063));
+      XBMC->QueueNotification(QUEUE_INFO, XBMC->GetLocalizedString(30063));
       break;
     // error on switching channel
     default:
     case XVDR_RET_ERROR:
-   	  XBMC->Log(LOG_INFO, XBMC->GetLocalizedString(30064));
+      XBMC->QueueNotification(QUEUE_INFO, XBMC->GetLocalizedString(30064));
       break;
     // invalid channel
     case XVDR_RET_DATAINVALID:
-      XBMC->Log(LOG_ERROR, XBMC->GetLocalizedString(30065), channelinfo.strChannelName);
+      XBMC->QueueNotification(QUEUE_ERROR, XBMC->GetLocalizedString(30065), channelinfo.strChannelName);
       break;
   }
 
