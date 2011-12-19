@@ -67,4 +67,5 @@
     <string id="30063">Alle Empfänger belegt</string>
     <string id="30064">Fehler beim wechseln des Kanals</string>
     <string id="30065">Kanal '%s' unbekannt</string>
+    <string id="30066">Kanal verschlüsselt</string>
 </strings>

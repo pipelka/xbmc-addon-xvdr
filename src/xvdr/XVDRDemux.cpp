@@ -185,6 +185,10 @@ bool cXVDRDemux::SwitchChannel(const PVR_CHANNEL &channelinfo)
     case XVDR_RET_DATALOCKED:
       XBMC->QueueNotification(QUEUE_INFO, XBMC->GetLocalizedString(30063));
       break;
+    // encrypted channel
+    case XVDR_RET_ENCRYPTED:
+      XBMC->QueueNotification(QUEUE_INFO, XBMC->GetLocalizedString(30066));
+      break;
     // error on switching channel
     default:
     case XVDR_RET_ERROR:
