@@ -16,4 +16,12 @@
         <setting id="audiotype" type="enum" label="30049" values="MP2|AC3|EAC3|AAC" default="0" />
         <setting id="updatechannels" type="enum" label="30052" lvalues="30053|30054|30055|30056|30057|30058" default="3" />
     </category>
+
+    <!-- ChannelFilter -->
+    <category label="30067">
+        <setting id="ftachannels" type="bool" label="30068" default="true" />
+        <setting id="nativelangonly" type="bool" label="30069" default="false" />
+        <setting id="encryptedchannels" type="bool" label="30071" default="true" />
+        <setting id="caids" type="text" label="30070" default="" />
+    </category>
 </settings>
