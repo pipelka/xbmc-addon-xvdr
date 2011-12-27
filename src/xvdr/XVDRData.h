@@ -27,6 +27,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
 using namespace ADDON;
 
@@ -48,6 +49,8 @@ public:
   bool        EnableStatusInterface(bool onOff);
   bool        SetUpdateChannels(uint8_t method);
   bool        GetDriveSpace(long long *total, long long *used);
+
+  bool        ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& caids);
 
   int         GetChannelsCount();
   bool        GetChannelsList(PVR_HANDLE handle, bool radio = false);

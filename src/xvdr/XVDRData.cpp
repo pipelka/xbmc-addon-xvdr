@@ -93,6 +93,8 @@ void cXVDRData::OnReconnect()
   XBMC->QueueNotification(QUEUE_INFO, XBMC->GetLocalizedString(30045));
 
   EnableStatusInterface(g_bHandleMessages);
+  ChannelFilter(g_bFTAChannels, g_bNativeLangOnly, g_vCaIDs);
+  SetUpdateChannels(g_iUpdateChannels);
 
   PVR->TriggerChannelUpdate();
   PVR->TriggerTimerUpdate();
@@ -213,6 +215,33 @@ bool cXVDRData::SetUpdateChannels(uint8_t method)
   }
 
   XBMC->Log(LOG_INFO, "Channel update method set to %i", method);
+
+  uint32_t ret = vresp->extract_U32();
+  delete vresp;
+  return ret == XVDR_RET_OK ? true : false;
+}
+
+bool cXVDRData::ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& caids)
+{
+  std::size_t count = caids.size();
+  cRequestPacket vrp;
+
+  if (!vrp.init(XVDR_CHANNELFILTER)) return false;
+  if (!vrp.add_U32(fta)) return false;
+  if (!vrp.add_U32(nativelangonly)) return false;
+  if (!vrp.add_U32(count)) return false;
+
+  for(int i = 0; i < count; i++)
+	  if (!vrp.add_U32(caids[i])) return false;
+
+  cResponsePacket* vresp = ReadResult(&vrp);
+  if (!vresp)
+  {
+    XBMC->Log(LOG_INFO, "Channel filter method not supported by server. Consider updating the XVDR server.");
+    return false;
+  }
+
+  XBMC->Log(LOG_INFO, "Channel filter set");
 
   uint32_t ret = vresp->extract_U32();
   delete vresp;
