@@ -74,7 +74,9 @@ static void ReadCaIDs(char* buffer)
    	if(n != NULL) *n = 0;
    	uint32_t caid = 0;
    	sscanf(p, "%04x", &caid);
-   	g_vCaIDs.push_back(caid);
+
+   	if(caid != 0)
+   	  g_vCaIDs.push_back(caid);
 
    	if(n == NULL)
    	  break;
