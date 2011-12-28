@@ -132,6 +132,11 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
     XBMC->Log(LOG_ERROR, "Couldn't get 'host' setting, falling back to '%s' as default", DEFAULT_HOST);
     g_szHostname = DEFAULT_HOST;
   }
+
+  /* Read setting "caids" from settings.xml */
+  if (XBMC->GetSetting("caids", buffer))
+    ReadCaIDs(buffer);
+
   free(buffer);
 
   /* Read setting "compression" from settings.xml */
@@ -216,10 +221,6 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
     g_bNativeLangOnly = DEFAULT_NATIVELANGONLY;
   }
 
-  /* Read setting "caids" from settings.xml */
-  if (XBMC->GetSetting("caids", buffer))
-	  ReadCaIDs(buffer);
-
   /* Read setting "encryptedchannels" from settings.xml */
   if (!XBMC->GetSetting("encryptedchannels", &g_bEncryptedChannels))
   {
@@ -230,8 +231,8 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
 
   if (!g_bEncryptedChannels)
   {
-	  g_vCaIDs.clear();
-	  g_vCaIDs.push_back(0xFFFF); // disable encrypted channels by invalid caid
+    g_vCaIDs.clear();
+    g_vCaIDs.push_back(0xFFFF); // disable encrypted channels by invalid caid
   }
 
   XVDRData = new cXVDRData;
