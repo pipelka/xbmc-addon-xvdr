@@ -43,11 +43,11 @@ cXVDRData::~cXVDRData()
   Close();
 }
 
-bool cXVDRData::Open(const std::string& hostname, int port, const char* name)
+bool cXVDRData::Open(const std::string& hostname, const char* name)
 {
   m_aborting = false;
 
-  if(!cXVDRSession::Open(hostname, port, name))
+  if(!cXVDRSession::Open(hostname, name))
     return false;
 
   if(name != NULL) {
@@ -92,9 +92,9 @@ void cXVDRData::OnReconnect()
 {
   XBMC->QueueNotification(QUEUE_INFO, XBMC->GetLocalizedString(30045));
 
-  EnableStatusInterface(g_bHandleMessages);
-  ChannelFilter(g_bFTAChannels, g_bNativeLangOnly, g_vCaIDs);
-  SetUpdateChannels(g_iUpdateChannels);
+  EnableStatusInterface(m_settings.HandleMessages());
+  ChannelFilter(m_settings.FTAChannels(), m_settings.NativeLangOnly(), m_settings.vcaids);
+  SetUpdateChannels(m_settings.UpdateChannels());
 
   PVR->TriggerChannelUpdate();
   PVR->TriggerTimerUpdate();
@@ -117,7 +117,7 @@ cResponsePacket* cXVDRData::ReadResult(cRequestPacket* vrp)
     return NULL;
   }
 
-  message.event->Wait(g_iConnectTimeout * 1000);
+  message.event->Wait(m_settings.ConnectTimeout() * 1000);
 
   m_Mutex.Lock();
 
@@ -232,7 +232,7 @@ bool cXVDRData::ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& c
   if (!vrp.add_U32(count)) return false;
 
   for(int i = 0; i < count; i++)
-	  if (!vrp.add_U32(caids[i])) return false;
+    if (!vrp.add_U32(caids[i])) return false;
 
   cResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
@@ -893,9 +893,6 @@ void cXVDRData::Action()
         uint32_t type = vresp->extract_U32();
         char* msgstr  = vresp->extract_String();
         std::string text = msgstr;
-
-        if (g_bCharsetConv)
-          XBMC->UnknownToUTF8(text);
 
         if (type == 2)
           XBMC->QueueNotification(QUEUE_ERROR, text.c_str());

@@ -41,7 +41,7 @@ public:
   cXVDRData();
   virtual ~cXVDRData();
 
-  bool        Open(const std::string& hostname, int port, const char* name = NULL);
+  bool        Open(const std::string& hostname, const char* name = NULL);
   bool        Login();
   void        Abort();
 

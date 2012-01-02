@@ -26,6 +26,7 @@
 #include "XVDRRecording.h"
 #include "XVDRData.h"
 #include "XVDRChannelScan.h"
+#include "XVDRSettings.h"
 
 #include <string.h>
 #include <sstream>
@@ -38,25 +39,6 @@ using namespace ADDON;
 bool m_bCreated               = false;
 ADDON_STATUS m_CurStatus      = ADDON_STATUS_UNKNOWN;
 
-/* User adjustable settings are saved here.
- * Default values are defined inside client.h
- * and exported to the other source files.
- */
-std::string      g_szHostname              = DEFAULT_HOST;
-bool             g_bCharsetConv            = DEFAULT_CHARCONV;     ///< Convert VDR's incoming strings to UTF8 character set
-bool             g_bHandleMessages         = DEFAULT_HANDLE_MSG;   ///< Send VDR's OSD status messages to XBMC OSD
-int              g_iConnectTimeout         = DEFAULT_TIMEOUT;      ///< The Socket connection timeout
-int              g_iPriority               = DEFAULT_PRIORITY;     ///< The Priority this client have in response to other clients
-bool             g_bAutoChannelGroups      = DEFAULT_AUTOGROUPS;
-int              g_iCompression            = DEFAULT_COMPRESSION;
-int              g_iAudioType              = DEFAULT_AUDIOTYPE;
-int              g_iUpdateChannels         = DEFAULT_UPDATECHANNELS;
-bool             g_bFTAChannels            = DEFAULT_FTACHANNELS;
-bool             g_bNativeLangOnly         = DEFAULT_NATIVELANGONLY;
-bool             g_bEncryptedChannels      = DEFAULT_ENCRYPTEDCHANNELS;
-std::vector<int> g_vCaIDs;
-
-
 CHelper_libXBMC_addon *XBMC   = NULL;
 CHelper_libXBMC_gui   *GUI    = NULL;
 CHelper_libXBMC_pvr   *PVR    = NULL;
@@ -65,24 +47,28 @@ cXVDRDemux      *XVDRDemuxer       = NULL;
 cXVDRData       *XVDRData          = NULL;
 cXVDRRecording  *XVDRRecording     = NULL;
 
-static void ReadCaIDs(char* buffer)
+static void ReadCaIDs(const char* buffer, std::vector<int>& array)
 {
-  char* p = buffer;
+  array.clear();
+  char* p = strdup(buffer);
+  char* s = p;
+
   for(;;)
   {
-   	char* n = strpbrk(p, ",;/");
-   	if(n != NULL) *n = 0;
-   	uint32_t caid = 0;
-   	sscanf(p, "%04x", &caid);
+    char* n = strpbrk(p, ",;/");
+    if(n != NULL) *n = 0;
+    uint32_t caid = 0;
+    sscanf(p, "%04x", &caid);
 
-   	if(caid != 0)
-   	  g_vCaIDs.push_back(caid);
+    if(caid != 0)
+      array.push_back(caid);
 
-   	if(n == NULL)
-   	  break;
+    if(n == NULL)
+      break;
 
-   	p = ++n;
+    p = ++n;
   }
+  free(s);
 }
 
 extern "C" {
@@ -120,125 +106,20 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
 
   XBMC->Log(LOG_DEBUG, "Creating VDR XVDR PVR-Client");
 
-  m_CurStatus    = ADDON_STATUS_UNKNOWN;
+  m_CurStatus = ADDON_STATUS_UNKNOWN;
 
-  /* Read setting "host" from settings.xml */
-  char * buffer = (char*) malloc(128);
-  buffer[0] = 0; /* Set the end of string */
+  cXVDRSettings& s = cXVDRSettings::GetInstance();
+  s.load();
+  ReadCaIDs(s.caids().c_str(), s.vcaids);
 
-  if (XBMC->GetSetting("host", buffer))
-    g_szHostname = buffer;
-  else
+  if (!s.EncryptedChannels())
   {
-    /* If setting is unknown fallback to defaults */
-    XBMC->Log(LOG_ERROR, "Couldn't get 'host' setting, falling back to '%s' as default", DEFAULT_HOST);
-    g_szHostname = DEFAULT_HOST;
-  }
-
-  /* Read setting "caids" from settings.xml */
-  if (XBMC->GetSetting("caids", buffer))
-    ReadCaIDs(buffer);
-
-  free(buffer);
-
-  /* Read setting "compression" from settings.xml */
-  if (!XBMC->GetSetting("compression", &g_iCompression))
-  {
-    /* If setting is unknown fallback to defaults */
-    XBMC->Log(LOG_ERROR, "Couldn't get 'compression' setting, falling back to %i as default", DEFAULT_COMPRESSION);
-    g_iCompression = DEFAULT_COMPRESSION;
-  }
-  else
-    g_iCompression *= 3;
-
-  /* Read setting "priority" from settings.xml */
-  if (!XBMC->GetSetting("priority", &g_iPriority))
-  {
-    /* If setting is unknown fallback to defaults */
-    XBMC->Log(LOG_ERROR, "Couldn't get 'priority' setting, falling back to %i as default", DEFAULT_PRIORITY);
-    g_iPriority = DEFAULT_PRIORITY;
-  }
-
-  /* Read setting "convertchar" from settings.xml */
-  if (!XBMC->GetSetting("convertchar", &g_bCharsetConv))
-  {
-    /* If setting is unknown fallback to defaults */
-    XBMC->Log(LOG_ERROR, "Couldn't get 'convertchar' setting, falling back to 'false' as default");
-    g_bCharsetConv = DEFAULT_CHARCONV;
-  }
-
-  /* Read setting "timeout" from settings.xml */
-  if (!XBMC->GetSetting("timeout", &g_iConnectTimeout))
-  {
-    /* If setting is unknown fallback to defaults */
-    XBMC->Log(LOG_ERROR, "Couldn't get 'timeout' setting, falling back to %i seconds as default", DEFAULT_TIMEOUT);
-    g_iConnectTimeout = DEFAULT_TIMEOUT;
-  }
-
-  /* Read setting "handlemessages" from settings.xml */
-  if (!XBMC->GetSetting("handlemessages", &g_bHandleMessages))
-  {
-    /* If setting is unknown fallback to defaults */
-    XBMC->Log(LOG_ERROR, "Couldn't get 'handlemessages' setting, falling back to 'true' as default");
-    g_bHandleMessages = DEFAULT_HANDLE_MSG;
-  }
-
-  /* Read setting "autochannelgroups" from settings.xml */
-  if (!XBMC->GetSetting("autochannelgroups", &g_bAutoChannelGroups))
-  {
-    /* If setting is unknown fallback to defaults */
-    XBMC->Log(LOG_ERROR, "Couldn't get 'autochannelgroups' setting, falling back to 'false' as default");
-    g_bAutoChannelGroups = DEFAULT_AUTOGROUPS;
-  }
-
-  /* Read setting "audiotype" from settings.xml */
-  if (!XBMC->GetSetting("audiotype", &g_iAudioType))
-  {
-    /* If setting is unknown fallback to defaults */
-    XBMC->Log(LOG_ERROR, "Couldn't get 'audiotype' setting, falling back to type %i as default", DEFAULT_AUDIOTYPE);
-    g_iAudioType = DEFAULT_TIMEOUT;
-  }
-
-  /* Read setting "updatechannels" from settings.xml */
-  if (!XBMC->GetSetting("updatechannels", &g_iUpdateChannels))
-  {
-    /* If setting is unknown fallback to defaults */
-    XBMC->Log(LOG_ERROR, "Couldn't get 'updatechannels' setting, falling back to type %i as default", DEFAULT_UPDATECHANNELS);
-    g_iUpdateChannels = DEFAULT_UPDATECHANNELS;
-  }
-
-  /* Read setting "ftachannels" from settings.xml */
-  if (!XBMC->GetSetting("ftachannels", &g_bFTAChannels))
-  {
-    /* If setting is unknown fallback to defaults */
-    XBMC->Log(LOG_ERROR, "Couldn't get 'ftachannels' setting, falling back to type %i as default", DEFAULT_FTACHANNELS);
-    g_bFTAChannels = DEFAULT_FTACHANNELS;
-  }
-
-  /* Read setting "nativelangonly" from settings.xml */
-  if (!XBMC->GetSetting("nativelangonly", &g_bNativeLangOnly))
-  {
-    /* If setting is unknown fallback to defaults */
-    XBMC->Log(LOG_ERROR, "Couldn't get 'nativelangonly' setting, falling back to type %i as default", DEFAULT_NATIVELANGONLY);
-    g_bNativeLangOnly = DEFAULT_NATIVELANGONLY;
-  }
-
-  /* Read setting "encryptedchannels" from settings.xml */
-  if (!XBMC->GetSetting("encryptedchannels", &g_bEncryptedChannels))
-  {
-    /* If setting is unknown fallback to defaults */
-    XBMC->Log(LOG_ERROR, "Couldn't get 'encryptedchannels' setting, falling back to type %i as default", DEFAULT_FTACHANNELS);
-    g_bEncryptedChannels = DEFAULT_ENCRYPTEDCHANNELS;
-  }
-
-  if (!g_bEncryptedChannels)
-  {
-    g_vCaIDs.clear();
-    g_vCaIDs.push_back(0xFFFF); // disable encrypted channels by invalid caid
+    s.vcaids.clear();
+    s.vcaids.push_back(0xFFFF); // disable encrypted channels by invalid caid
   }
 
   XVDRData = new cXVDRData;
-  if (!XVDRData->Open(g_szHostname, DEFAULT_PORT))
+  if (!XVDRData->Open(s.Hostname()))
   {
     delete XVDRData;
     delete PVR;
@@ -256,14 +137,14 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
     return m_CurStatus;
   }
 
-  if (!XVDRData->EnableStatusInterface(g_bHandleMessages))
+  if (!XVDRData->EnableStatusInterface(s.HandleMessages()))
   {
     m_CurStatus = ADDON_STATUS_LOST_CONNECTION;
     return m_CurStatus;
   }
 
-  XVDRData->ChannelFilter(g_bFTAChannels, g_bNativeLangOnly, g_vCaIDs);
-  XVDRData->SetUpdateChannels(g_iUpdateChannels);
+  XVDRData->ChannelFilter(s.FTAChannels(), s.NativeLangOnly(), s.vcaids);
+  XVDRData->SetUpdateChannels(s.UpdateChannels());
 
   m_CurStatus = ADDON_STATUS_OK;
   m_bCreated = true;
@@ -310,94 +191,22 @@ unsigned int ADDON_GetSettings(ADDON_StructSetting ***sSet)
 
 ADDON_STATUS ADDON_SetSetting(const char *settingName, const void *settingValue)
 {
-  string str = settingName;
-  if (str == "host")
-  {
-    string tmp_sHostname;
-    XBMC->Log(LOG_INFO, "Changed Setting 'host' from %s to %s", g_szHostname.c_str(), (const char*) settingValue);
-    tmp_sHostname = g_szHostname;
-    g_szHostname = (const char*) settingValue;
-    if (tmp_sHostname != g_szHostname)
-      return ADDON_STATUS_NEED_RESTART;
-  }
-  else if (str == "compression")
-  {
-    XBMC->Log(LOG_INFO, "Changed Setting 'compression' from %u to %u", g_iCompression, *(int*) settingValue);
-    int old_value = g_iCompression;
-    g_iCompression = (*(int*) settingValue) * 3;
+  bool bChanged = false;
+  cXVDRSettings& s = cXVDRSettings::GetInstance();
+  bChanged = s.set(settingName, settingValue);
 
-    if (old_value != g_iCompression)
-      return ADDON_STATUS_NEED_RESTART;
-  }
-  else if (str == "priority")
+  if(bChanged && (strcmp(settingName, "host") == 0))
+    return ADDON_STATUS_NEED_RESTART;
+
+  if (!s.EncryptedChannels())
   {
-    XBMC->Log(LOG_INFO, "Changed Setting 'priority' from %u to %u", g_iPriority, *(int*) settingValue);
-    g_iPriority = *(int*) settingValue;
-  }
-  else if (str == "convertchar")
-  {
-    XBMC->Log(LOG_INFO, "Changed Setting 'convertchar' from %u to %u", g_bCharsetConv, *(bool*) settingValue);
-    g_bCharsetConv = *(bool*) settingValue;
-  }
-  else if (str == "timeout")
-  {
-    XBMC->Log(LOG_INFO, "Changed Setting 'timeout' from %u to %u", g_iConnectTimeout, *(int*) settingValue);
-    g_iConnectTimeout = *(int*) settingValue;
-  }
-  else if (str == "handlemessages")
-  {
-    XBMC->Log(LOG_INFO, "Changed Setting 'handlemessages' from %u to %u", g_bHandleMessages, *(bool*) settingValue);
-    g_bHandleMessages = *(bool*) settingValue;
-    if (XVDRData) XVDRData->EnableStatusInterface(g_bHandleMessages);
-  }
-  else if (str == "autochannelgroups")
-  {
-    XBMC->Log(LOG_INFO, "Changed Setting 'autochannelgroups' from %u to %u", g_bAutoChannelGroups, *(bool*) settingValue);
-    if (g_bAutoChannelGroups != *(bool*) settingValue)
-    {
-      g_bAutoChannelGroups = *(bool*) settingValue;
-      return ADDON_STATUS_NEED_RESTART;
-    }
-  }
-  else if (str == "audiotype")
-  {
-    XBMC->Log(LOG_INFO, "Changed Setting 'audiotype' from %i to %i", g_iAudioType, *(int*) settingValue);
-    g_iAudioType = *(bool*) settingValue;
-  }
-  else if (str == "updatechannels")
-  {
-    XBMC->Log(LOG_INFO, "Changed Setting 'updatechannels' from %i to %i", g_iUpdateChannels, *(int*) settingValue);
-    g_iUpdateChannels = *(bool*) settingValue;
-    if (XVDRData != NULL)
-      XVDRData->SetUpdateChannels(g_iUpdateChannels);
-  }
-  else if (str == "ftachannels")
-  {
-    XBMC->Log(LOG_INFO, "Changed Setting 'ftachannels' from %i to %i", g_bFTAChannels, *(int*) settingValue);
-    g_bFTAChannels = *(bool*) settingValue;
-  }
-  else if (str == "nativelangonly")
-  {
-    XBMC->Log(LOG_INFO, "Changed Setting 'nativelangonly' from %i to %i", g_bNativeLangOnly, *(int*) settingValue);
-    g_bNativeLangOnly = *(bool*) settingValue;
-  }
-  else if (str == "caids")
-  {
-    XBMC->Log(LOG_INFO, "Changed Setting 'caid'");
-    ReadCaIDs((char*)settingValue);
-  }
-  else if (str == "encryptedchannels")
-  {
-    XBMC->Log(LOG_INFO, "Changed Setting 'encryptedchannels' from %i to %i", g_bFTAChannels, *(int*) settingValue);
-    g_bFTAChannels = *(bool*) settingValue;
+    s.vcaids.clear();
+    s.vcaids.push_back(0xFFFF); // disable encrypted channels by invalid caid
   }
 
-  if (!g_bEncryptedChannels)
-  {
-	  g_vCaIDs.clear();
-	  g_vCaIDs.push_back(0xFFFF); // disable encrypted channels by invalid caid
-  }
-  XVDRData->ChannelFilter(g_bFTAChannels, g_bNativeLangOnly, g_vCaIDs);
+  XVDRData->EnableStatusInterface(s.HandleMessages());
+  XVDRData->SetUpdateChannels(s.UpdateChannels());
+  XVDRData->ChannelFilter(s.FTAChannels(), s.NativeLangOnly(), s.vcaids);
 
   return ADDON_STATUS_OK;
 }
@@ -458,10 +267,10 @@ const char * GetConnectionString(void)
   std::stringstream format;
 
   if (XVDRData) {
-    format << g_szHostname << ":" << DEFAULT_PORT;
+    format << cXVDRSettings::GetInstance().Hostname();
   }
   else {
-    format << g_szHostname << ":" << DEFAULT_PORT << " (addon error!)";
+    format << cXVDRSettings::GetInstance().Hostname() << " (addon error!)";
   }
   ConnectionString = format.str();
   return ConnectionString.c_str();
@@ -478,7 +287,7 @@ PVR_ERROR GetDriveSpace(long long *iTotal, long long *iUsed)
 PVR_ERROR DialogChannelScan(void)
 {
   cXVDRChannelScan scanner;
-  scanner.Open(g_szHostname, DEFAULT_PORT);
+  scanner.Open(cXVDRSettings::GetInstance().Hostname());
   return PVR_ERROR_NO_ERROR;
 }
 
@@ -522,7 +331,7 @@ int GetChannelGroupsAmount()
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return XVDRData->GetChannelGroupCount(g_bAutoChannelGroups);
+  return XVDRData->GetChannelGroupCount(cXVDRSettings::GetInstance().AutoChannelGroups());
 }
 
 PVR_ERROR GetChannelGroups(PVR_HANDLE handle, bool bRadio)
@@ -530,7 +339,7 @@ PVR_ERROR GetChannelGroups(PVR_HANDLE handle, bool bRadio)
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  if(XVDRData->GetChannelGroupCount(g_bAutoChannelGroups) > 0)
+  if(XVDRData->GetChannelGroupCount(cXVDRSettings::GetInstance().AutoChannelGroups()) > 0)
     return XVDRData->GetChannelGroupList(handle, bRadio) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
 
   return PVR_ERROR_NO_ERROR;

@@ -43,7 +43,7 @@ bool cXVDRRecording::OpenRecording(const PVR_RECORDING& recinfo)
 {
   m_recinfo = recinfo;
 
-  if(!cXVDRSession::Open(g_szHostname, DEFAULT_PORT, "XBMC RecordingStream Receiver"))
+  if(!cXVDRSession::Open(m_settings.Hostname(), "XBMC RecordingStream Receiver"))
     return false;
 
   if(!cXVDRSession::Login())

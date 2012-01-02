@@ -25,33 +25,7 @@
 #include "addons/library.xbmc.gui/libXBMC_gui.h"
 #include "addons/library.xbmc.pvr/libXBMC_pvr.h"
 
-#define DEFAULT_HOST              "127.0.0.1"
-#define DEFAULT_PORT              34891
-#define DEFAULT_CHARCONV          false
-#define DEFAULT_HANDLE_MSG        true
-#define DEFAULT_PRIORITY          99
-#define DEFAULT_TIMEOUT           3
-#define DEFAULT_AUTOGROUPS        false
-#define DEFAULT_COMPRESSION       6
-#define DEFAULT_AUDIOTYPE         0
-#define DEFAULT_UPDATECHANNELS    3
-#define DEFAULT_FTACHANNELS       true
-#define DEFAULT_NATIVELANGONLY    false
-#define DEFAULT_ENCRYPTEDCHANNELS true
-
-extern bool             m_bCreated;
-extern std::string      g_szHostname;         ///< hostname or ip-address of the server
-extern int              g_iConnectTimeout;    ///< Network connection / read timeout in seconds
-extern int              g_iPriority;          ///< The Priority this client have in response to other clients
-extern bool             g_bCharsetConv;       ///< Convert VDR's incoming strings to UTF8 character set
-extern bool             g_bHandleMessages;    ///< Send VDR's OSD status messages to XBMC OSD
-extern int              g_iCompression;       ///< Protocol Compression Level
-extern int              g_iAudioType;         ///< Preferred audio stream type
-extern int              g_iUpdateChannels;    ///< Channel scan method
-extern bool             g_bFTAChannels;       ///< Display Free To Air channels in channel list
-extern bool             g_bNativeLangOnly;    ///< Display only channels with native language
-extern bool             g_bEncryptedChannels; ///< Display encrypted channels in channel list
-extern std::vector<int> g_vCaIDs;             ///< List of supported CaIDs
+//extern bool             m_bCreated;
 
 extern ADDON::CHelper_libXBMC_addon *XBMC;
 extern CHelper_libXBMC_gui   *GUI;

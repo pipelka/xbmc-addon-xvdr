@@ -43,10 +43,12 @@
 using namespace ADDON;
 
 cXVDRSession::cXVDRSession()
-  : m_fd(INVALID_SOCKET)
+  : m_settings(cXVDRSettings::GetInstance())
+  , m_fd(INVALID_SOCKET)
   , m_protocol(0)
   , m_connectionLost(false)
 {
+  m_port = 34891;
 }
 
 cXVDRSession::~cXVDRSession()
@@ -68,12 +70,12 @@ void cXVDRSession::Close()
   m_fd = INVALID_SOCKET;
 }
 
-bool cXVDRSession::Open(const std::string& hostname, int port, const char *name)
+bool cXVDRSession::Open(const std::string& hostname, const char *name)
 {
   Close();
 
   char errbuf[128];
-  m_fd = tcp_connect(hostname.c_str(), port, errbuf, sizeof(errbuf), g_iConnectTimeout * 1000);
+  m_fd = tcp_connect(hostname.c_str(), m_port, errbuf, sizeof(errbuf), m_settings.ConnectTimeout() * 1000);
 
   if (m_fd == INVALID_SOCKET)
   {
@@ -83,7 +85,6 @@ bool cXVDRSession::Open(const std::string& hostname, int port, const char *name)
 
   // store connection data
   m_hostname = hostname;
-  m_port = port;
 
   if(name != NULL)
     m_name = name;
@@ -99,7 +100,7 @@ bool cXVDRSession::Login()
     if (!vrp.init(XVDR_LOGIN))                  throw "Can't init cRequestPacket";
     if (!vrp.add_U32(XVDRPROTOCOLVERSION))      throw "Can't add protocol version to RequestPacket";
 #ifdef HAVE_ZLIB
-    if (!vrp.add_U8(g_iCompression))            throw "Can't add compression parameter";
+    if (!vrp.add_U8(m_settings.Compression()*3))  throw "Can't add compression parameter";
 #else
     if (!vrp.add_U8(0))                         throw "Can't add compression parameter";
 #endif
@@ -118,7 +119,7 @@ bool cXVDRSession::Login()
     XBMC->Log(LOG_INFO, "Preferred Audio Language: %s", lang);
 
     if (!vrp.add_String((lang != NULL) ? lang : "")) throw "Can't language to RequestPacket";
-    if (!vrp.add_U8(g_iAudioType))              throw "Can't add audiotype parameter";
+    if (!vrp.add_U8(m_settings.AudioType()))    throw "Can't add audiotype parameter";
 
     // read welcome
     cResponsePacket* vresp = ReadResult(&vrp);
@@ -310,7 +311,7 @@ void cXVDRSession::OnDisconnect() {
 }
 
 bool cXVDRSession::TryReconnect() {
-  if(!Open(m_hostname, m_port))
+  if(!Open(m_hostname))
     return false;
 
   if(!Login())
@@ -340,7 +341,7 @@ void cXVDRSession::SignalConnectionLost()
 
 bool cXVDRSession::readData(uint8_t* buffer, int totalBytes)
 {
-  return (tcp_read_timeout(m_fd, buffer, totalBytes, g_iConnectTimeout * 1000) == 0);
+  return (tcp_read_timeout(m_fd, buffer, totalBytes, m_settings.ConnectTimeout() * 1000) == 0);
 }
 
 void cXVDRSession::SleepMs(int ms)

@@ -20,6 +20,7 @@
  *
  */
 
+#include "XVDRSettings.h"
 #include "XVDRResponsePacket.h"
 #include "client.h"
 
@@ -28,7 +29,7 @@ protected:
 
   void ConvertToUTF8(std::string& value)
   {
-    if (g_bCharsetConv)
+    if (cXVDRSettings::GetInstance().CharsetConv())
       XBMC->UnknownToUTF8(value);
   }
 
