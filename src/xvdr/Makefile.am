@@ -26,11 +26,12 @@ libxvdr_la_SOURCES = \
 	XVDRDemux.h \
 	XVDRRecording.cpp \
 	XVDRRecording.h \
+	XVDRResponsePacket.cpp \
+	XVDRResponsePacket.h \
 	XVDRSession.cpp \
 	XVDRSession.h \
 	requestpacket.cpp \
 	requestpacket.h \
-	responsepacket.cpp \
 	responsepacket.h \
 	thread.cpp \
 	thread.h \
