@@ -24,12 +24,13 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <string>
 
-class cResponsePacket
+class cXVDRResponsePacket
 {
   public:
-    cResponsePacket();
-    ~cResponsePacket();
+    cXVDRResponsePacket();
+    ~cXVDRResponsePacket();
 
     void setResponse(uint32_t requestID, uint8_t* packet, uint32_t packetLength);
     void setStatus(uint32_t requestID, uint8_t* packet, uint32_t packetLength);
@@ -50,7 +51,9 @@ class cResponsePacket
 
     uint32_t  getPacketPos()      { return packetPos; }
 
+    bool      extract_String(std::string& value);
     char*     extract_String();
+
     uint8_t   extract_U8();
     uint32_t  extract_U32();
     uint64_t  extract_U64();
@@ -64,6 +67,8 @@ class cResponsePacket
 
     // If you call this, the memory becomes yours. Free with free()
     uint8_t* getUserData();
+
+    virtual void ConvertToUTF8(std::string& value);
 
   private:
     uint8_t* userData;

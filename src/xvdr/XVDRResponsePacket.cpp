@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "responsepacket.h"
+#include "XVDRResponsePacket.h"
 #include "xvdrcommand.h"
 #include "tools.h"
 #include "client.h"
@@ -39,7 +39,7 @@ extern "C" {
 
 using namespace ADDON;
 
-cResponsePacket::cResponsePacket()
+cXVDRResponsePacket::cXVDRResponsePacket()
 {
   userDataLength  = 0;
   packetPos       = 0;
@@ -50,14 +50,14 @@ cResponsePacket::cResponsePacket()
   streamID        = 0;
 }
 
-cResponsePacket::~cResponsePacket()
+cXVDRResponsePacket::~cXVDRResponsePacket()
 {
   if (!ownBlock) return; // don't free if it's a getblock
 
   if (userData) free(userData);
 }
 
-void cResponsePacket::setResponse(uint32_t trequestID, uint8_t* tuserData, uint32_t tuserDataLength)
+void cXVDRResponsePacket::setResponse(uint32_t trequestID, uint8_t* tuserData, uint32_t tuserDataLength)
 {
   channelID       = XVDR_CHANNEL_REQUEST_RESPONSE;
   requestID       = trequestID;
@@ -65,7 +65,7 @@ void cResponsePacket::setResponse(uint32_t trequestID, uint8_t* tuserData, uint3
   userDataLength  = tuserDataLength;
 }
 
-void cResponsePacket::setStatus(uint32_t trequestID, uint8_t* tuserData, uint32_t tuserDataLength)
+void cXVDRResponsePacket::setStatus(uint32_t trequestID, uint8_t* tuserData, uint32_t tuserDataLength)
 {
   channelID       = XVDR_CHANNEL_STATUS;
   requestID       = trequestID;
@@ -73,7 +73,7 @@ void cResponsePacket::setStatus(uint32_t trequestID, uint8_t* tuserData, uint32_
   userDataLength  = tuserDataLength;
 }
 
-void cResponsePacket::setStream(uint32_t topcodeID, uint32_t tstreamID, uint32_t tduration, int64_t tdts, int64_t tpts, uint8_t* tuserData, uint32_t tuserDataLength)
+void cXVDRResponsePacket::setStream(uint32_t topcodeID, uint32_t tstreamID, uint32_t tduration, int64_t tdts, int64_t tpts, uint8_t* tuserData, uint32_t tuserDataLength)
 {
   channelID       = XVDR_CHANNEL_STREAM;
   opcodeID        = topcodeID;
@@ -85,30 +85,47 @@ void cResponsePacket::setStream(uint32_t topcodeID, uint32_t tstreamID, uint32_t
   userDataLength  = tuserDataLength;
 }
 
-bool cResponsePacket::end()
+bool cXVDRResponsePacket::end()
 {
   return (packetPos >= userDataLength);
 }
 
-int cResponsePacket::serverError()
+int cXVDRResponsePacket::serverError()
 {
   if ((packetPos == 0) && (userDataLength == 4) && !ntohl(*(uint32_t*)userData)) return 1;
   else return 0;
 }
 
-char* cResponsePacket::extract_String()
+void cXVDRResponsePacket::ConvertToUTF8(std::string& value)
 {
-  if (serverError()) return NULL;
+}
 
-  int length = strlen((char*)&userData[packetPos]);
-  if ((packetPos + length) > userDataLength) return NULL;
-  char* str = new char[length + 1];
-  strcpy(str, (char*)&userData[packetPos]);
-  packetPos += length + 1;
+char* cXVDRResponsePacket::extract_String()
+{
+  std::string s;
+  if(!extract_String(s))
+    return NULL;
+
+  char* str = new char[s.size()+1];
+  strcpy(str, s.c_str());
+
   return str;
 }
 
-uint8_t cResponsePacket::extract_U8()
+bool cXVDRResponsePacket::extract_String(std::string& value)
+{
+  value.clear();
+  if (serverError()) return false;
+
+  int length = strlen((char*)&userData[packetPos]);
+  if ((packetPos + length) > userDataLength) return NULL;
+  value = (char*)&userData[packetPos];
+  packetPos += length + 1;
+
+  return true;
+}
+
+uint8_t cXVDRResponsePacket::extract_U8()
 {
   if ((packetPos + sizeof(uint8_t)) > userDataLength) return 0;
   uint8_t uc = userData[packetPos];
@@ -116,7 +133,7 @@ uint8_t cResponsePacket::extract_U8()
   return uc;
 }
 
-uint32_t cResponsePacket::extract_U32()
+uint32_t cXVDRResponsePacket::extract_U32()
 {
   if ((packetPos + sizeof(uint32_t)) > userDataLength) return 0;
   uint32_t ul = ntohl(*(uint32_t*)&userData[packetPos]);
@@ -124,7 +141,7 @@ uint32_t cResponsePacket::extract_U32()
   return ul;
 }
 
-uint64_t cResponsePacket::extract_U64()
+uint64_t cXVDRResponsePacket::extract_U64()
 {
   if ((packetPos + sizeof(uint64_t)) > userDataLength) return 0;
   uint64_t ull = ntohll(*(uint64_t*)&userData[packetPos]);
@@ -132,7 +149,7 @@ uint64_t cResponsePacket::extract_U64()
   return ull;
 }
 
-double cResponsePacket::extract_Double()
+double cXVDRResponsePacket::extract_Double()
 {
   if ((packetPos + sizeof(uint64_t)) > userDataLength) return 0;
   uint64_t ull = ntohll(*(uint64_t*)&userData[packetPos]);
@@ -142,7 +159,7 @@ double cResponsePacket::extract_Double()
   return d;
 }
 
-int32_t cResponsePacket::extract_S32()
+int32_t cXVDRResponsePacket::extract_S32()
 {
   if ((packetPos + sizeof(int32_t)) > userDataLength) return 0;
   int32_t l = ntohl(*(int32_t*)&userData[packetPos]);
@@ -150,7 +167,7 @@ int32_t cResponsePacket::extract_S32()
   return l;
 }
 
-int64_t cResponsePacket::extract_S64()
+int64_t cXVDRResponsePacket::extract_S64()
 {
   if ((packetPos + sizeof(int64_t)) > userDataLength) return 0;
   int64_t ll = ntohll(*(int64_t*)&userData[packetPos]);
@@ -158,13 +175,13 @@ int64_t cResponsePacket::extract_S64()
   return ll;
 }
 
-uint8_t* cResponsePacket::getUserData()
+uint8_t* cXVDRResponsePacket::getUserData()
 {
   ownBlock = false;
   return userData;
 }
 
-bool cResponsePacket::uncompress()
+bool cXVDRResponsePacket::uncompress()
 {
 #ifdef HAVE_ZLIB
   XBMC->Log(LOG_DEBUG, "Uncompressing packet (%i bytes) ...", userDataLength - 4);
