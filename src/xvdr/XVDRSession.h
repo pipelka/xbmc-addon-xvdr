@@ -54,9 +54,9 @@ public:
   const std::string& GetServerName() { return m_server; }
   const std::string& GetVersion()    { return m_version; }
 
-protected:
+  static void SleepMs(int ms);
 
-  void SleepMs(int ms);
+protected:
 
   bool TryReconnect();
   bool IsOpen() { return m_fd != INVALID_SOCKET; }
