@@ -28,6 +28,8 @@ libxvdr_la_SOURCES = \
 	XVDRRecording.h \
 	XVDRResponsePacket.cpp \
 	XVDRResponsePacket.h \
+	XVDRSettings.cpp \
+	XVDRSettings.h \
 	XVDRSession.cpp \
 	XVDRSession.h \
 	requestpacket.cpp \
