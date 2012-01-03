@@ -119,8 +119,13 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
   }
 
   XVDRData = new cXVDRData;
-  if (!XVDRData->Open(s.Hostname()))
-  {
+  cTimeMs RetryTimeout;
+  bool bConnected = false;
+
+  while (!(bConnected = XVDRData->Open(s.Hostname())) && RetryTimeout.Elapsed() < (uint)s.ConnectTimeout() * 1000)
+    cXVDRSession::SleepMs(100);
+
+  if (!bConnected){
     delete XVDRData;
     delete PVR;
     delete XBMC;
