@@ -99,4 +99,5 @@ private:
   SMessages       m_queue;
   std::string     m_videodir;
   bool            m_aborting;
+  uint32_t        m_timercount;
 };

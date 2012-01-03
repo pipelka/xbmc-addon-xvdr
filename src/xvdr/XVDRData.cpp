@@ -33,6 +33,7 @@ extern "C" {
 
 cXVDRData::cXVDRData()
  : m_aborting(false)
+ , m_timercount(0)
 {
 }
 
@@ -85,7 +86,6 @@ void cXVDRData::SignalConnectionLost()
 void cXVDRData::OnDisconnect()
 {
   XBMC->QueueNotification(QUEUE_ERROR, XBMC->GetLocalizedString(30044));
-  PVR->TriggerTimerUpdate();
 }
 
 void cXVDRData::OnReconnect()
@@ -96,7 +96,6 @@ void cXVDRData::OnReconnect()
   ChannelFilter(m_settings.FTAChannels(), m_settings.NativeLangOnly(), m_settings.vcaids);
   SetUpdateChannels(m_settings.UpdateChannels());
 
-  PVR->TriggerChannelUpdate();
   PVR->TriggerTimerUpdate();
   PVR->TriggerRecordingUpdate();
 }
@@ -376,6 +375,10 @@ bool cXVDRData::GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL &channel, 
 
 int cXVDRData::GetTimersCount()
 {
+  // return caches values on connection loss
+  if(ConnectionLost())
+    return m_timercount;
+
   cRequestPacket vrp;
   if (!vrp.init(XVDR_TIMER_GETCOUNT))
   {
@@ -387,13 +390,13 @@ int cXVDRData::GetTimersCount()
   if (!vresp)
   {
     XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
-    return -1;
+    return m_timercount;
   }
 
-  uint32_t count = vresp->extract_U32();
+  m_timercount = vresp->extract_U32();
 
   delete vresp;
-  return count;
+  return m_timercount;
 }
 
 PVR_ERROR cXVDRData::GetTimerInfo(unsigned int timernumber, PVR_TIMER &tag)
