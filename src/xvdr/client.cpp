@@ -36,7 +36,6 @@
 using namespace std;
 using namespace ADDON;
 
-bool m_bCreated               = false;
 ADDON_STATUS m_CurStatus      = ADDON_STATUS_UNKNOWN;
 
 CHelper_libXBMC_addon *XBMC   = NULL;
@@ -74,7 +73,7 @@ static void ReadCaIDs(const char* buffer, std::vector<int>& array)
 extern "C" {
 
 /***********************************************************
- * Standart AddOn related public library functions
+ * Standard AddOn related public library functions
  ***********************************************************/
 
 ADDON_STATUS ADDON_Create(void* hdl, void* props)
@@ -152,7 +151,6 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
   XVDRData->SetUpdateChannels(s.UpdateChannels());
 
   m_CurStatus = ADDON_STATUS_OK;
-  m_bCreated = true;
   return m_CurStatus;
 }
 
@@ -163,24 +161,13 @@ ADDON_STATUS ADDON_GetStatus()
 
 void ADDON_Destroy()
 {
-  if (m_bCreated)
-  {
-    delete XVDRData;
-    XVDRData = NULL;
-  }
+  delete XVDRData;
+  delete PVR;
+  delete XBMC;
 
-  if (PVR)
-  {
-    delete PVR;
-    PVR = NULL;
-  }
-
-  if (XBMC)
-  {
-    delete XBMC;
-    XBMC = NULL;
-  }
-
+  XVDRData = NULL;
+  PVR = NULL;
+  XBMC = NULL;
   m_CurStatus = ADDON_STATUS_UNKNOWN;
 }
 
@@ -222,7 +209,6 @@ void ADDON_Stop()
 
 void ADDON_FreeSettings()
 {
-
 }
 
 /***********************************************************

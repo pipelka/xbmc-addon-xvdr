@@ -94,64 +94,50 @@ bool cXVDRSession::Open(const std::string& hostname, const char *name)
 
 bool cXVDRSession::Login()
 {
-  try
-  {
-    cRequestPacket vrp;
-    if (!vrp.init(XVDR_LOGIN))                  throw "Can't init cRequestPacket";
-    if (!vrp.add_U32(XVDRPROTOCOLVERSION))      throw "Can't add protocol version to RequestPacket";
+  cRequestPacket vrp;
+
+  if (!vrp.init(XVDR_LOGIN))
+    return false;
+  if (!vrp.add_U32(XVDRPROTOCOLVERSION))
+    return false;
 #ifdef HAVE_ZLIB
-    if (!vrp.add_U8(m_settings.Compression()*3))  throw "Can't add compression parameter";
+  if (!vrp.add_U8(m_settings.Compression()*3))
+    return false;
 #else
-    if (!vrp.add_U8(0))                         throw "Can't add compression parameter";
+  if (!vrp.add_U8(0))
+    return false
 #endif
-    if (!m_name.empty())
-    {
-      if (!vrp.add_String(m_name.c_str()))      throw "Can't add client name to RequestPacket";
-    }
-    else
-    {
-      if (!vrp.add_String("XBMC Media Center")) throw "Can't add client name to RequestPacket";
-    }
+  if (!vrp.add_String(m_name.empty() ? "XBMC Media Center" : m_name.c_str()))
+    return false;
 
-    const char* code = XBMC->GetDVDMenuLanguage();
-    const char* lang = ISO639_FindLanguage(code);
+  const char* code = XBMC->GetDVDMenuLanguage();
+  const char* lang = ISO639_FindLanguage(code);
 
-    XBMC->Log(LOG_INFO, "Preferred Audio Language: %s", lang);
+  XBMC->Log(LOG_INFO, "Preferred Audio Language: %s", lang);
 
-    if (!vrp.add_String((lang != NULL) ? lang : "")) throw "Can't language to RequestPacket";
-    if (!vrp.add_U8(m_settings.AudioType()))    throw "Can't add audiotype parameter";
+  if (!vrp.add_String((lang != NULL) ? lang : ""))
+    return false;
+  if (!vrp.add_U8(m_settings.AudioType()))
+    return false;
 
-    // read welcome
-    cResponsePacket* vresp = ReadResult(&vrp);
-    if (!vresp)
-      throw "failed to read greeting from server";
-
-    uint32_t    protocol      = vresp->extract_U32();
-    uint32_t    vdrTime       = vresp->extract_U32();
-    int32_t     vdrTimeOffset = vresp->extract_S32();
-    const char *ServerName    = vresp->extract_String();
-    const char *ServerVersion = vresp->extract_String();
-
-    m_server    = ServerName;
-    m_version   = ServerVersion;
-    m_protocol  = protocol;
-
-    if (m_name.empty())
-      XBMC->Log(LOG_NOTICE, "Logged in at '%u+%i' to '%s' Version: '%s' with protocol version '%u'",
-        vdrTime, vdrTimeOffset, ServerName, ServerVersion, protocol);
-
-    delete[] ServerName;
-    delete[] ServerVersion;
-
-    delete vresp;
-  }
-  catch (const char * str)
+  // read welcome
+  cResponsePacket* vresp = ReadResult(&vrp);
+  if (!vresp)
   {
-    XBMC->Log(LOG_ERROR, "%s - %s", __FUNCTION__,str);
-    tcp_close(m_fd);
-    m_fd = INVALID_SOCKET;
+    XBMC->Log(LOG_ERROR, "failed to read greeting from server");
     return false;
   }
+
+  m_protocol                = vresp->extract_U32();
+  uint32_t    vdrTime       = vresp->extract_U32();
+  int32_t     vdrTimeOffset = vresp->extract_S32();
+                              vresp->extract_String(m_server);
+                              vresp->extract_String(m_version);
+
+  if (m_name.empty())
+    XBMC->Log(LOG_NOTICE, "Logged in at '%u+%i' to '%s' Version: '%s' with protocol version '%u'", vdrTime, vdrTimeOffset, m_server.c_str(), m_version.c_str(), m_protocol);
+
+  delete vresp;
 
   return true;
 }
@@ -282,8 +268,8 @@ cResponsePacket* cXVDRSession::ReadResult(cRequestPacket* vrp)
 }
 
 bool cXVDRSession::ReadSuccess(cRequestPacket* vrp) {
-	uint32_t rc;
-	return ReadSuccess(vrp, rc);
+  uint32_t rc;
+  return ReadSuccess(vrp, rc);
 }
 
 bool cXVDRSession::ReadSuccess(cRequestPacket* vrp, uint32_t& rc)

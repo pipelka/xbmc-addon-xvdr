@@ -25,8 +25,6 @@
 #include "addons/library.xbmc.gui/libXBMC_gui.h"
 #include "addons/library.xbmc.pvr/libXBMC_pvr.h"
 
-//extern bool             m_bCreated;
-
 extern ADDON::CHelper_libXBMC_addon *XBMC;
 extern CHelper_libXBMC_gui   *GUI;
 extern CHelper_libXBMC_pvr   *PVR;
