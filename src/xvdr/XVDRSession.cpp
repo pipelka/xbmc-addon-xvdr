@@ -105,7 +105,7 @@ bool cXVDRSession::Login()
     return false;
 #else
   if (!vrp.add_U8(0))
-    return false
+    return false;
 #endif
   if (!vrp.add_String(m_name.empty() ? "XBMC Media Center" : m_name.c_str()))
     return false;
