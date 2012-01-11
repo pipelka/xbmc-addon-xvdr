@@ -25,9 +25,12 @@
 #include <string.h>
 #include "codecids.h" // For codec id's
 #include "XVDRDemux.h"
+#include "XVDRSettings.h"
 #include "responsepacket.h"
 #include "requestpacket.h"
 #include "xvdrcommand.h"
+
+static int priotable[] = { -1,0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,99,100 };
 
 cXVDRDemux::cXVDRDemux()
 {
@@ -163,11 +166,13 @@ DemuxPacket* cXVDRDemux::Read()
 
 bool cXVDRDemux::SwitchChannel(const PVR_CHANNEL &channelinfo)
 {
-  XBMC->Log(LOG_DEBUG, "changing to channel %d", channelinfo.iChannelNumber);
+  int32_t priority = priotable[cXVDRSettings::GetInstance().Priority()];
+  XBMC->Log(LOG_DEBUG, "changing to channel %d (priority %i)", channelinfo.iChannelNumber, priority);
 
   cRequestPacket vrp;
   uint32_t rc = 0;
-  if (vrp.init(XVDR_CHANNELSTREAM_OPEN) && vrp.add_U32(channelinfo.iUniqueId) && ReadSuccess(&vrp, rc))
+
+  if (vrp.init(XVDR_CHANNELSTREAM_OPEN) && vrp.add_U32(channelinfo.iUniqueId) && vrp.add_S32(priority) && ReadSuccess(&vrp, rc))
   {
     m_channelinfo = channelinfo;
     m_Streams.iStreamCount  = 0;

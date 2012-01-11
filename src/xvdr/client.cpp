@@ -117,6 +117,10 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
     s.vcaids.push_back(0xFFFF); // disable encrypted channels by invalid caid
   }
 
+  // check priority setting (and set a sane value)
+  if(s.Priority() > 22)
+    s.Priority.set(11);
+
   XVDRData = new cXVDRData;
   cTimeMs RetryTimeout;
   bool bConnected = false;

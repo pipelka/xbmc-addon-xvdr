@@ -84,11 +84,16 @@ public:
 
   bool set(const void* value)
   {
-    if(m_value == (*(T*)value))
+    return set(*(T*)value);
+  }
+
+  bool set(T value)
+  {
+    if(m_value == value)
       return false;
 
     XBMC->Log(LOG_INFO, "Changed Setting '%s'", m_setting.c_str());
-    m_value = *(T*)value;
+    m_value = value;
     return true;
   }
 
@@ -139,7 +144,7 @@ protected:
   ConnectTimeout("timeout", 3),
   CharsetConv("convertchar", false),
   HandleMessages("handlemessages", true),
-  Priority("priority", -1),
+  Priority("priority", 50),
   Compression("compression", 2),
   AutoChannelGroups("autochannelgroups", false),
   AudioType("audiotype", 0),
