@@ -22,14 +22,13 @@
  */
 
 #include "XVDRSession.h"
-#include "thread.h"
-#include "client.h"
+#include "XVDRThread.h"
 
 #include <string>
 #include <map>
 #include <vector>
 
-using namespace ADDON;
+#include "xbmc_pvr_types.h"
 
 class cXVDRResponsePacket;
 class cRequestPacket;
@@ -53,14 +52,14 @@ public:
   bool        GetDriveSpace(long long *total, long long *used);
 
   int         GetChannelsCount();
-  bool        GetChannelsList(PVR_HANDLE handle, bool radio = false);
-  bool        GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL &channel, time_t start, time_t end);
+  bool        GetChannelsList(bool radio = false);
+  bool        GetEPGForChannel(const PVR_CHANNEL &channel, time_t start, time_t end);
 
   int         GetChannelGroupCount(bool automatic);
-  bool        GetChannelGroupList(PVR_HANDLE handle, bool bRadio);
-  bool        GetChannelGroupMembers(PVR_HANDLE handle, const PVR_CHANNEL_GROUP &group);
+  bool        GetChannelGroupList(bool bRadio);
+  bool        GetChannelGroupMembers(const PVR_CHANNEL_GROUP &group);
 
-  bool        GetTimersList(PVR_HANDLE handle);
+  bool        GetTimersList();
   int         GetTimersCount();
   PVR_ERROR   AddTimer(const PVR_TIMER &timerinfo);
   PVR_ERROR   GetTimerInfo(unsigned int timernumber, PVR_TIMER &tag);
@@ -68,7 +67,7 @@ public:
   PVR_ERROR   UpdateTimer(const PVR_TIMER &timerinfo);
 
   int         GetRecordingsCount();
-  PVR_ERROR   GetRecordingsList(PVR_HANDLE handle);
+  PVR_ERROR   GetRecordingsList();
   PVR_ERROR   RenameRecording(const PVR_RECORDING& recinfo, const char* newname);
   PVR_ERROR   DeleteRecording(const PVR_RECORDING& recinfo);
 
@@ -100,7 +99,6 @@ private:
 
   cMutex          m_Mutex;
   SMessages       m_queue;
-  std::string     m_videodir;
   bool            m_aborting;
   uint32_t        m_timercount;
   uint8_t         m_updatechannels;

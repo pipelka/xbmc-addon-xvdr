@@ -219,14 +219,14 @@ static ISO639 ISO639_map[] =
 };
 
 
-const char* ISO639_FindLanguage(const char* code)
+const char* ISO639_FindLanguage(const std::string& code)
 {
-  if(code == NULL)
+  if(code.empty())
     return NULL;
 
   for(int i = 0; i < sizeof(ISO639_map) / sizeof(ISO639); i++)
   {
-	  if(strcmp(ISO639_map[i].code, code) == 0) {
+	  if(strcmp(ISO639_map[i].code, code.c_str()) == 0) {
 		  return ISO639_map[i].lang;
 	  }
   }

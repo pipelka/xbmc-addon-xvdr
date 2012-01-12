@@ -23,9 +23,7 @@
 #include <list>
 #include <vector>
 #include <string>
-#include "client.h"
-
-using namespace ADDON;
+#include "XVDRCallbacks.h"
 
 class cXVDRConfigParameterBase
 {
@@ -73,10 +71,10 @@ public:
 
   bool load()
   {
-    if (XBMC->GetSetting(m_setting.c_str(), &m_value))
+    if (XVDRGetSetting(m_setting.c_str(), &m_value))
       return true;
 
-    XBMC->Log(LOG_ERROR, "Couldn't get '%s' setting, falling back to default", m_setting.c_str());
+    XVDRLog(XVDR_ERROR, "Couldn't get '%s' setting, falling back to default", m_setting.c_str());
     m_value = m_default;
 
     return true;
@@ -92,7 +90,7 @@ public:
     if(m_value == value)
       return false;
 
-    XBMC->Log(LOG_INFO, "Changed Setting '%s'", m_setting.c_str());
+    XVDRLog(XVDR_INFO, "Changed Setting '%s'", m_setting.c_str());
     m_value = value;
     return true;
   }

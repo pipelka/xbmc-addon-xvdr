@@ -9,54 +9,36 @@ LIBS   =-ldl
 LIBDIR = ../../addons/pvr.vdr.xvdr
 LIB    = ../../addons/pvr.vdr.xvdr/XBMC_VDR_xvdr.pvr
 
-lib_LTLIBRARIES = libxvdr.la
+lib_LTLIBRARIES = libxvdraddon.la
 
-libxvdr_la_SOURCES = \
-	codecids.h \
-	xvdrcommand.h \
-	client.cpp \
-	client.h \
-	iso639.cpp \
-	iso639.h \
-	XVDRChannelScan.cpp \
-	XVDRChannelScan.h \
-	XVDRData.cpp \
-	XVDRData.h \
-	XVDRDemux.cpp \
-	XVDRDemux.h \
-	XVDRRecording.cpp \
-	XVDRRecording.h \
-	XVDRResponsePacket.cpp \
-	XVDRResponsePacket.h \
-	XVDRSettings.cpp \
-	XVDRSettings.h \
-	XVDRSession.cpp \
-	XVDRSession.h \
-	requestpacket.cpp \
-	requestpacket.h \
-	thread.cpp \
-	thread.h \
-	tools.cpp \
-	tools.h
+libxvdraddon_la_SOURCES = \
+	XBMCAddon.cpp \
+	XBMCAddon.h \
+	XBMCCallbacks.cpp \
+	XBMCCallbacks.h \
+	XBMCChannelScan.cpp \
+	XBMCChannelScan.h
 
-libxvdr_la_LDFLAGS = \
+libxvdraddon_la_LDFLAGS = \
 	-avoid-version
 
-libxvdr_la_LIBADD = \
+libxvdraddon_la_LIBADD = \
+	../libxvdr/src/libxvdrstatic.la
 	-lpthread \
-	../libTcpSocket/libTcpSocket.la \
 	$(ZLIB_LIBS)
 
 CPPFLAGS = \
 	$(ARCH_DEFINES)
 
-INCLUDES = -I$(srcdir)/.. -I$(srcdir)/../.. -I$(srcdir)/../../include -DUSE_DEMUX -D__STDC_CONSTANT_MACROS -D_LINUX
+INCLUDES = \
+	-I. -I$(top_srcdir)/src/libxvdr/include -I$(top_srcdir) -I$(srcdir)/include -DUSE_DEMUX -D__STDC_CONSTANT_MACROS -D_LINUX
 
 EXTRA_DIST = \
+	include \
 	project
 
-XBMC_VDR_xvdr.pvr: libxvdr.la
-	cp -f .libs/libxvdr.so XBMC_VDR_xvdr.pvr
+XBMC_VDR_xvdr.pvr: libxvdraddon.la
+	cp -f .libs/libxvdraddon.so XBMC_VDR_xvdr.pvr
 	$(STRIP) -x XBMC_VDR_xvdr.pvr
 
 $(LIB): XBMC_VDR_xvdr.pvr
@@ -68,4 +50,3 @@ clean-local:
 	-rm -f $(LIB) XBMC_VDR_xvdr.pvr
 
 install:
-

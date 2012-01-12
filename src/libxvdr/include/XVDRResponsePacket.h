@@ -67,8 +67,6 @@ class cXVDRResponsePacket
     // If you call this, the memory becomes yours. Free with free()
     uint8_t* getUserData();
 
-    virtual void ConvertToUTF8(std::string& value);
-
   private:
     uint8_t* userData;
     uint32_t userDataLength;

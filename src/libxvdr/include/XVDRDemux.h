@@ -22,10 +22,9 @@
  */
 
 #include "XVDRSession.h"
-#include "client.h"
 #include <string>
 
-using namespace ADDON;
+#include "xbmc_pvr_types.h"
 
 class cXVDRResponsePacket;
 

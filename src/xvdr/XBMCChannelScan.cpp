@@ -21,16 +21,12 @@
  */
 
 #include <limits.h>
-#include "XVDRChannelScan.h"
+#include "XBMCChannelScan.h"
 #include "XVDRResponsePacket.h"
 #include "requestpacket.h"
 #include "xvdrcommand.h"
 
 #include <sstream>
-
-extern "C" {
-#include "libTcpSocket/os-dependent_socket.h"
-}
 
 using namespace ADDON;
 

@@ -21,14 +21,14 @@
  */
 
 #include <limits.h>
+#include <stdlib.h>
 #include "XVDRRecording.h"
+#include "XVDRCallbacks.h"
 #include "XVDRResponsePacket.h"
 #include "requestpacket.h"
 #include "xvdrcommand.h"
 
 #define SEEK_POSSIBLE 0x10 // flag used to check if protocol allows seeks
-
-using namespace ADDON;
 
 cXVDRRecording::cXVDRRecording()
 {
@@ -43,7 +43,7 @@ bool cXVDRRecording::OpenRecording(const std::string& hostname, const PVR_RECORD
 {
   m_recinfo = recinfo;
 
-  if(!cXVDRSession::Open(hostname, "XBMC RecordingStream Receiver"))
+  if(!cXVDRSession::Open(hostname, "XVDR RecordingStream Receiver"))
     return false;
 
   if(!cXVDRSession::Login())
@@ -68,7 +68,7 @@ bool cXVDRRecording::OpenRecording(const std::string& hostname, const PVR_RECORD
     m_currentPlayingRecordPosition  = 0;
   }
   else
-    XBMC->Log(LOG_ERROR, "%s - Can't open recording '%s'", __FUNCTION__, recinfo.strTitle);
+    XVDRLog(XVDR_ERROR, "%s - Can't open recording '%s'", __FUNCTION__, recinfo.strTitle);
 
   delete vresp;
   return (returnCode == XVDR_RET_OK);
@@ -109,7 +109,7 @@ int cXVDRRecording::Read(unsigned char* buf, uint32_t buf_size)
     {
       m_currentPlayingRecordFrames = frames;
       m_currentPlayingRecordBytes  = bytes;
-      XBMC->Log(LOG_DEBUG, "Size of recording changed: %lu bytes (%u frames)", bytes, frames);
+      XVDRLog(XVDR_DEBUG, "Size of recording changed: %lu bytes (%u frames)", bytes, frames);
     }
     delete vresp;
   }
@@ -130,7 +130,7 @@ int cXVDRRecording::Read(unsigned char* buf, uint32_t buf_size)
   uint8_t *data   = vresp->getUserData();
   if (length > buf_size)
   {
-    XBMC->Log(LOG_ERROR, "%s: PANIC - Received more bytes as requested", __FUNCTION__);
+    XVDRLog(XVDR_ERROR, "%s: PANIC - Received more bytes as requested", __FUNCTION__);
     free(data);
     delete vresp;
     return 0;

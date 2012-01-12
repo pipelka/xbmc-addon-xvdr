@@ -21,7 +21,9 @@
 
 #include "XVDRSettings.h"
 #include <algorithm>
+#include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 
 std::list<cXVDRConfigParameterBase*> cXVDRConfigParameterBase::m_parameters;
 
@@ -129,13 +131,13 @@ template<>
 bool cXVDRConfigParameter<std::string>::load()
 {
   char buffer[512];
-  if (XBMC->GetSetting(m_setting.c_str(), buffer))
+  if (XVDRGetSetting(m_setting.c_str(), buffer))
   {
     m_value = buffer;
     return true;
   }
 
-  XBMC->Log(LOG_ERROR, "Couldn't get '%s' setting, falling back to default", m_setting.c_str());
+  XVDRLog(XVDR_ERROR, "Couldn't get '%s' setting, falling back to default", m_setting.c_str());
   m_value = m_default;
 
   return true;
@@ -148,7 +150,7 @@ bool cXVDRConfigParameter<std::string>::set(const void* value)
   if(strcmp(str, m_value.c_str()) == 0)
     return false;
 
-  XBMC->Log(LOG_INFO, "Changed Setting '%s'", m_setting.c_str());
+  XVDRLog(XVDR_INFO, "Changed Setting '%s'", m_setting.c_str());
   m_value = str;
   return true;
 }

@@ -24,9 +24,8 @@
  * Most of this code is taken from tools.c in the Video Disk Recorder ('VDR')
  */
 
-#include "tools.h"
+#include "XVDRThread.h"
 #include "libPlatform/os-dependent.h"
-#include "client.h"
 
 /* Byte order (just for windows)*/
 #ifdef __WINDOWS__

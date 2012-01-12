@@ -25,9 +25,12 @@
 #include <string.h>
 #include "codecids.h" // For codec id's
 #include "XVDRDemux.h"
+#include "XVDRCallbacks.h"
 #include "XVDRResponsePacket.h"
 #include "requestpacket.h"
 #include "xvdrcommand.h"
+
+#define DVD_TIME_BASE 1000000
 
 cXVDRDemux::cXVDRDemux() : m_priority(50)
 {
@@ -79,18 +82,18 @@ DemuxPacket* cXVDRDemux::Read()
   if(ConnectionLost())
   {
     SleepMs(100);
-    return PVR->AllocateDemuxPacket(0);
+    return XVDRAllocatePacket(0);
   }
 
   cXVDRResponsePacket *resp = ReadMessage();
 
   if(resp == NULL)
-    return PVR->AllocateDemuxPacket(0);
+    return XVDRAllocatePacket(0);
 
   if (resp->getChannelID() != XVDR_CHANNEL_STREAM)
   {
     delete resp;
-    return PVR->AllocateDemuxPacket(0);
+    return XVDRAllocatePacket(0);
   }
 
   DemuxPacket* pkt = NULL;
@@ -100,7 +103,7 @@ DemuxPacket* cXVDRDemux::Read()
   {
     case XVDR_STREAM_CHANGE:
       StreamChange(resp);
-      pkt = PVR->AllocateDemuxPacket(0);
+      pkt = XVDRAllocatePacket(0);
       pkt->iStreamId  = DMX_SPECIALID_STREAMCHANGE;
       delete resp;
       return pkt;
@@ -118,7 +121,7 @@ DemuxPacket* cXVDRDemux::Read()
       if(!StreamContentInfo(resp))
         break;
 
-      pkt = PVR->AllocateDemuxPacket(sizeof(PVR_STREAM_PROPERTIES));
+      pkt = XVDRAllocatePacket(sizeof(PVR_STREAM_PROPERTIES));
       memcpy(pkt->pData, &m_Streams, sizeof(PVR_STREAM_PROPERTIES));
       pkt->iStreamId  = DMX_SPECIALID_STREAMINFO;
       pkt->iSize      = sizeof(PVR_STREAM_PROPERTIES);
@@ -152,18 +155,18 @@ DemuxPacket* cXVDRDemux::Read()
       }
       else
       {
-        XBMC->Log(LOG_DEBUG, "stream id %i not found", resp->getStreamID());
+        XVDRLog(XVDR_DEBUG, "stream id %i not found", resp->getStreamID());
       }
       break;
   }
 
   delete resp;
-  return PVR->AllocateDemuxPacket(0);
+  return XVDRAllocatePacket(0);
 }
 
 bool cXVDRDemux::SwitchChannel(const PVR_CHANNEL &channelinfo)
 {
-  XBMC->Log(LOG_DEBUG, "changing to channel %d (priority %i)", channelinfo.iChannelNumber, m_priority);
+  XVDRLog(XVDR_DEBUG, "changing to channel %d (priority %i)", channelinfo.iChannelNumber, m_priority);
 
   cRequestPacket vrp;
   uint32_t rc = 0;
@@ -180,28 +183,28 @@ bool cXVDRDemux::SwitchChannel(const PVR_CHANNEL &channelinfo)
   {
     // active recording
     case XVDR_RET_RECRUNNING:
-     XBMC->QueueNotification(QUEUE_INFO, XBMC->GetLocalizedString(30062));
+     XVDRNotification(XVDR_INFO, XVDRGetLocalizedString(30062));
       break;
     // all receivers busy
     case XVDR_RET_DATALOCKED:
-      XBMC->QueueNotification(QUEUE_INFO, XBMC->GetLocalizedString(30063));
+      XVDRNotification(XVDR_INFO, XVDRGetLocalizedString(30063));
       break;
     // encrypted channel
     case XVDR_RET_ENCRYPTED:
-      XBMC->QueueNotification(QUEUE_INFO, XBMC->GetLocalizedString(30066));
+      XVDRNotification(XVDR_INFO, XVDRGetLocalizedString(30066));
       break;
     // error on switching channel
     default:
     case XVDR_RET_ERROR:
-      XBMC->QueueNotification(QUEUE_INFO, XBMC->GetLocalizedString(30064));
+      XVDRNotification(XVDR_INFO, XVDRGetLocalizedString(30064));
       break;
     // invalid channel
     case XVDR_RET_DATAINVALID:
-      XBMC->QueueNotification(QUEUE_ERROR, XBMC->GetLocalizedString(30065), channelinfo.strChannelName);
+      XVDRNotification(XVDR_ERROR, XVDRGetLocalizedString(30065), channelinfo.strChannelName);
       break;
   }
 
-  XBMC->Log(LOG_ERROR, "%s - failed to set channel", __FUNCTION__);
+  XVDRLog(XVDR_ERROR, "%s - failed to set channel", __FUNCTION__);
   return true;
 }
 
@@ -365,7 +368,7 @@ void cXVDRDemux::StreamChange(cXVDRResponsePacket *resp)
 
     if (m_Streams.iStreamCount >= PVR_STREAM_MAX_STREAMS)
     {
-      XBMC->Log(LOG_ERROR, "%s - max amount of streams reached", __FUNCTION__);
+      XVDRLog(XVDR_ERROR, "%s - max amount of streams reached", __FUNCTION__);
       break;
     }
   }
@@ -377,10 +380,10 @@ void cXVDRDemux::StreamStatus(cXVDRResponsePacket *resp)
 
   switch(status) {
     case XVDR_STREAM_STATUS_SIGNALLOST:
-      XBMC->QueueNotification(QUEUE_ERROR, XBMC->GetLocalizedString(30047));
+      XVDRNotification(XVDR_ERROR, XVDRGetLocalizedString(30047));
       break;
     case XVDR_STREAM_STATUS_SIGNALRESTORED:
-      XBMC->QueueNotification(QUEUE_INFO, XBMC->GetLocalizedString(30048));
+      XVDRNotification(XVDR_INFO, XVDRGetLocalizedString(30048));
       SwitchChannel(m_channelinfo);
       break;
     default:

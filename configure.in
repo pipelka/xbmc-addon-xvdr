@@ -59,6 +59,9 @@ addons/repository.xvdr64/Makefile
 data/addons.xml
 data/Makefile
 src/Makefile
-src/libTcpSocket/Makefile
+src/libxvdr/Makefile
+src/libxvdr/src/libTcpSocket/Makefile
+src/libxvdr/include/Makefile
+src/libxvdr/src/Makefile
 src/xvdr/Makefile
 ])

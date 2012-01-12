@@ -25,9 +25,10 @@
 #include <string.h>
 
 #include "XVDRResponsePacket.h"
+#include "XVDRCallbacks.h"
+#include "XVDRSettings.h"
+#include "XVDRThread.h"
 #include "xvdrcommand.h"
-#include "tools.h"
-#include "client.h"
 
 extern "C" {
 #include "libTcpSocket/os-dependent_socket.h"
@@ -36,8 +37,6 @@ extern "C" {
 #ifdef HAVE_ZLIB
 #include "zlib.h"
 #endif
-
-using namespace ADDON;
 
 cXVDRResponsePacket::cXVDRResponsePacket()
 {
@@ -94,10 +93,6 @@ int cXVDRResponsePacket::serverError()
 {
   if ((packetPos == 0) && (userDataLength == 4) && !ntohl(*(uint32_t*)userData)) return 1;
   else return 0;
-}
-
-void cXVDRResponsePacket::ConvertToUTF8(std::string& value)
-{
 }
 
 const char* cXVDRResponsePacket::extract_String()
@@ -170,7 +165,7 @@ uint8_t* cXVDRResponsePacket::getUserData()
 bool cXVDRResponsePacket::uncompress()
 {
 #ifdef HAVE_ZLIB
-  XBMC->Log(LOG_DEBUG, "Uncompressing packet (%i bytes) ...", userDataLength - 4);
+  XVDRLog(XVDR_DEBUG, "Uncompressing packet (%i bytes) ...", userDataLength - 4);
 
   uLongf original_size = ntohl(*(uint32_t*)&userData[0]);
   uint8_t* buffer = (uint8_t*)malloc(original_size);
@@ -183,11 +178,11 @@ bool cXVDRResponsePacket::uncompress()
     free(userData);
     userData        = buffer;
     userDataLength  = original_size;
-    XBMC->Log(LOG_DEBUG, "Done. (Now %i bytes)", original_size);
+    XVDRLog(XVDR_DEBUG, "Done. (Now %i bytes)", original_size);
     return true;
   }
   else
-    XBMC->Log(LOG_DEBUG, "Failed!");
+    XVDRLog(XVDR_DEBUG, "Failed!");
 
   free(buffer);
 #endif

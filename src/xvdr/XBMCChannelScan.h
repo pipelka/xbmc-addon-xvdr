@@ -22,8 +22,9 @@
  */
 
 #include "XVDRData.h"
-#include "thread.h"
-#include "client.h"
+#include "XVDRResponsePacket.h"
+#include "XVDRThread.h"
+#include "XBMCAddon.h"
 #include <string>
 #include <map>
 

@@ -8,8 +8,11 @@ DIST_SUBDIRS = \
 	$(SUBDIRS) \
 	data
 
-EXTRA_DIST = \
-	include
+install-lib:
+	make -C src/libxvdr/src install-lib
+
+install-include:
+	make -C src/libxvdr/src install-include
 
 dist-zip: all
 	cp -r addons/pvr.vdr.xvdr .

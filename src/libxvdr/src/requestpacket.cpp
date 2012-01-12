@@ -27,7 +27,7 @@
 
 #include "requestpacket.h"
 #include "xvdrcommand.h"
-#include "tools.h"
+#include "XVDRThread.h"
 
 extern "C" {
 #include "libTcpSocket/os-dependent_socket.h"

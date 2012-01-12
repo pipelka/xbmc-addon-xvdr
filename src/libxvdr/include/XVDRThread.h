@@ -25,9 +25,23 @@
 
 #include <stdio.h>
 #include <sys/types.h>
-#include "tools.h"
-#include "libPlatform/os-dependent.h"
-#include "client.h"
+#include "stdint.h"
+
+uint64_t ntohll(uint64_t a);
+uint64_t htonll(uint64_t a);
+
+class cTimeMs
+{
+private:
+  uint64_t begin;
+public:
+  cTimeMs(int Ms = 0);
+      ///< Creates a timer with ms resolution and an initial timeout of Ms.
+  static uint64_t Now(void);
+  void Set(int Ms = 0);
+  bool TimedOut(void);
+  uint64_t Elapsed(void);
+};
 
 class cCondWait {
 private:

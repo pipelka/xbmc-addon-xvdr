@@ -20,11 +20,13 @@
  *
  */
 
+#include "XVDRCallbacks.h"
 #include "XVDRSession.h"
 #include "XVDRResponsePacket.h"
-#include "client.h"
+#include "XVDRThread.h"
 
 #include <unistd.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/types.h>
@@ -32,16 +34,17 @@
 
 #include "requestpacket.h"
 #include "xvdrcommand.h"
-#include "tools.h"
 #include "iso639.h"
+
+extern "C" {
+#include "libTcpSocket/os-dependent_socket.h"
+}
 
 /* Needed on Mac OS/X */
  
 #ifndef SOL_TCP
 #define SOL_TCP IPPROTO_TCP
 #endif
-
-using namespace ADDON;
 
 cXVDRSession::cXVDRSession()
   : m_timeout(3000)
@@ -86,7 +89,7 @@ bool cXVDRSession::Open(const std::string& hostname, const char *name)
 
   if (m_fd == INVALID_SOCKET)
   {
-    XBMC->Log(LOG_ERROR, "%s - Can't connect to XVDR Server: %s", __FUNCTION__, errbuf);
+    XVDRLog(XVDR_ERROR, "%s - Can't connect to XVDR Server: %s", __FUNCTION__, errbuf);
     return false;
   }
 
@@ -97,6 +100,11 @@ bool cXVDRSession::Open(const std::string& hostname, const char *name)
     m_name = name;
 
   return true;
+}
+
+bool cXVDRSession::IsOpen()
+{
+  return m_fd != INVALID_SOCKET;
 }
 
 bool cXVDRSession::Login()
@@ -117,7 +125,7 @@ bool cXVDRSession::Login()
   if (!vrp.add_String(m_name.empty() ? "XBMC Media Center" : m_name.c_str()))
     return false;
 
-  const char* code = XBMC->GetDVDMenuLanguage();
+  std::string code = XVDRGetLanguageCode();
   const char* lang = ISO639_FindLanguage(code);
 
   if (!vrp.add_String((lang != NULL) ? lang : ""))
@@ -129,7 +137,7 @@ bool cXVDRSession::Login()
   cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
-    XBMC->Log(LOG_ERROR, "failed to read greeting from server");
+    XVDRLog(XVDR_ERROR, "failed to read greeting from server");
     return false;
   }
 
@@ -140,9 +148,9 @@ bool cXVDRSession::Login()
   m_version                 = vresp->extract_String();
 
   if (m_name.empty())
-    XBMC->Log(LOG_NOTICE, "Logged in at '%u+%i' to '%s' Version: '%s' with protocol version '%u'", vdrTime, vdrTimeOffset, m_server.c_str(), m_version.c_str(), m_protocol);
+    XVDRLog(XVDR_INFO, "Logged in at '%u+%i' to '%s' Version: '%s' with protocol version '%u'", vdrTime, vdrTimeOffset, m_server.c_str(), m_version.c_str(), m_protocol);
 
-  XBMC->Log(LOG_INFO, "Preferred Audio Language: %s", lang);
+  XVDRLog(XVDR_INFO, "Preferred Audio Language: %s", lang);
 
   delete vresp;
 
@@ -187,14 +195,14 @@ cXVDRResponsePacket* cXVDRSession::ReadMessage()
     userDataLength = ntohl(m_streamPacketHeader.userDataLength);
 
     if(opCodeID == XVDR_STREAM_MUXPKT) {
-      DemuxPacket* p = PVR->AllocateDemuxPacket(userDataLength);
+      DemuxPacket* p = XVDRAllocatePacket(userDataLength);
       userData = (uint8_t*)p;
       if (userDataLength > 0)
       {
         if (!userData) return NULL;
         if (!readData(p->pData, userDataLength))
         {
-          PVR->FreeDemuxPacket(p);
+          XVDRFreePacket(p);
           return NULL;
         }
       }
@@ -290,7 +298,7 @@ bool cXVDRSession::ReadSuccess(cRequestPacket* vrp, uint32_t& rc)
 
   if(rc != XVDR_RET_OK)
   {
-    XBMC->Log(LOG_ERROR, "%s - failed with error code '%i'", __FUNCTION__, rc);
+    XVDRLog(XVDR_ERROR, "%s - failed with error code '%i'", __FUNCTION__, rc);
     return false;
   }
 
@@ -310,7 +318,7 @@ bool cXVDRSession::TryReconnect() {
   if(!Login())
     return false;
 
-  XBMC->Log(LOG_DEBUG, "%s - reconnected", __FUNCTION__);
+  XVDRLog(XVDR_DEBUG, "%s - reconnected", __FUNCTION__);
   m_connectionLost = false;
 
   OnReconnect();
@@ -323,7 +331,7 @@ void cXVDRSession::SignalConnectionLost()
   if(m_connectionLost)
     return;
 
-  XBMC->Log(LOG_ERROR, "%s - connection lost !!!", __FUNCTION__);
+  XVDRLog(XVDR_ERROR, "%s - connection lost !!!", __FUNCTION__);
 
   m_connectionLost = true;
   Abort();

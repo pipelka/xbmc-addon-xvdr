@@ -24,9 +24,9 @@
 #include <stdint.h>
 #include <string>
 
-extern "C" {
-#include "libTcpSocket/os-dependent_socket.h"
-}
+//extern "C" {
+//#include "libTcpSocket/os-dependent_socket.h"
+//}
 
 class cXVDRResponsePacket;
 class cRequestPacket;
@@ -62,7 +62,7 @@ public:
 protected:
 
   bool TryReconnect();
-  bool IsOpen() { return m_fd != INVALID_SOCKET; }
+  bool IsOpen();
 
   virtual void OnDisconnect();
   virtual void OnReconnect();
@@ -79,7 +79,7 @@ private:
 
   bool readData(uint8_t* buffer, int totalBytes);
 
-  socket_t    m_fd;
+  int         m_fd;
   int         m_protocol;
   std::string m_server;
   std::string m_version;

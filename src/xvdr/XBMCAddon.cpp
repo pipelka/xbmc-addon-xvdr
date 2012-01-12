@@ -20,13 +20,18 @@
  *
  */
 
-#include "client.h"
-#include "xbmc_pvr_dll.h"
+#include "XBMCAddon.h"
+#include "XBMCCallbacks.h"
+#include "XBMCChannelScan.h"
+
 #include "XVDRDemux.h"
 #include "XVDRRecording.h"
 #include "XVDRData.h"
-#include "XVDRChannelScan.h"
 #include "XVDRSettings.h"
+#include "XVDRThread.h"
+
+#include "xbmc_pvr_dll.h"
+#include "xbmc_addon_types.h"
 
 #include <string.h>
 #include <sstream>
@@ -45,6 +50,7 @@ CHelper_libXBMC_pvr   *PVR    = NULL;
 cXVDRDemux      *XVDRDemuxer       = NULL;
 cXVDRData       *XVDRData          = NULL;
 cXVDRRecording  *XVDRRecording     = NULL;
+cXBMCCallbacks  *Callbacks         = NULL;
 cMutex          XVDRMutex;
 cMutex          XVDRMutexDemux;
 cMutex          XVDRMutexRec;
@@ -86,6 +92,9 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
 
   XBMC->Log(LOG_DEBUG, "Creating VDR XVDR PVR-Client");
 
+  Callbacks = new cXBMCCallbacks;
+  cXVDRCallbacks::Register(Callbacks);
+
   m_CurStatus = ADDON_STATUS_UNKNOWN;
 
   cXVDRSettings& s = cXVDRSettings::GetInstance();
@@ -106,6 +115,7 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
     delete XVDRData;
     delete PVR;
     delete XBMC;
+    delete Callbacks;
     XVDRData = NULL;
     PVR = NULL;
     XBMC = NULL;
@@ -143,6 +153,7 @@ void ADDON_Destroy()
   delete XVDRData;
   delete PVR;
   delete XBMC;
+  delete Callbacks;
 
   XVDRData = NULL;
   PVR = NULL;
@@ -177,6 +188,9 @@ ADDON_STATUS ADDON_SetSetting(const char *settingName, const void *settingValue)
   XVDRData->SetTimeout(s.ConnectTimeout() * 1000);
   XVDRData->SetCompressionLevel(s.Compression() * 3);
   XVDRData->SetAudioType(s.AudioType());
+
+  if(!bChanged)
+    return ADDON_STATUS_OK;
 
   XVDRData->EnableStatusInterface(s.HandleMessages());
   XVDRData->SetUpdateChannels(s.UpdateChannels());
@@ -292,7 +306,8 @@ PVR_ERROR GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL &channel, time_t
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return (XVDRData->GetEPGForChannel(handle, channel, iStart, iEnd) ? PVR_ERROR_NO_ERROR: PVR_ERROR_SERVER_ERROR);
+  Callbacks->SetHandle(handle);
+  return (XVDRData->GetEPGForChannel(channel, iStart, iEnd) ? PVR_ERROR_NO_ERROR: PVR_ERROR_SERVER_ERROR);
 }
 
 
@@ -316,7 +331,8 @@ PVR_ERROR GetChannels(PVR_HANDLE handle, bool bRadio)
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return (XVDRData->GetChannelsList(handle, bRadio) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
+  Callbacks->SetHandle(handle);
+  return (XVDRData->GetChannelsList(bRadio) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
 }
 
 
@@ -340,8 +356,9 @@ PVR_ERROR GetChannelGroups(PVR_HANDLE handle, bool bRadio)
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
+  Callbacks->SetHandle(handle);
   if(XVDRData->GetChannelGroupCount(cXVDRSettings::GetInstance().AutoChannelGroups()) > 0)
-    return XVDRData->GetChannelGroupList(handle, bRadio) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
+    return XVDRData->GetChannelGroupList(bRadio) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
 
   return PVR_ERROR_NO_ERROR;
 }
@@ -353,7 +370,8 @@ PVR_ERROR GetChannelGroupMembers(PVR_HANDLE handle, const PVR_CHANNEL_GROUP &gro
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  XVDRData->GetChannelGroupMembers(handle, group);
+  Callbacks->SetHandle(handle);
+  XVDRData->GetChannelGroupMembers(group);
   return PVR_ERROR_NO_ERROR;
 }
 
@@ -378,7 +396,8 @@ PVR_ERROR GetTimers(PVR_HANDLE handle)
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return (XVDRData->GetTimersList(handle) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
+  Callbacks->SetHandle(handle);
+  return (XVDRData->GetTimersList() ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
 }
 
 PVR_ERROR AddTimer(const PVR_TIMER &timer)
@@ -432,7 +451,8 @@ PVR_ERROR GetRecordings(PVR_HANDLE handle)
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return XVDRData->GetRecordingsList(handle);
+  Callbacks->SetHandle(handle);
+  return XVDRData->GetRecordingsList();
 }
 
 PVR_ERROR RenameRecording(const PVR_RECORDING &recording)
@@ -457,6 +477,8 @@ PVR_ERROR DeleteRecording(const PVR_RECORDING &recording)
 
 /*******************************************/
 /** PVR Live Stream Functions             **/
+
+void CloseLiveStream(void);
 
 bool OpenLiveStream(const PVR_CHANNEL &channel)
 {
@@ -563,6 +585,8 @@ PVR_ERROR SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
 
 /*******************************************/
 /** PVR Recording Stream Functions        **/
+
+void CloseRecordedStream();
 
 bool OpenRecordedStream(const PVR_RECORDING &recording)
 {
