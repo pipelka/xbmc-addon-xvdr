@@ -23,7 +23,6 @@
 
 #include <stdint.h>
 #include <string>
-#include "XVDRSettings.h"
 
 extern "C" {
 #include "libTcpSocket/os-dependent_socket.h"
@@ -54,6 +53,10 @@ public:
   const std::string& GetServerName() { return m_server; }
   const std::string& GetVersion()    { return m_version; }
 
+  void SetTimeout(int ms);
+  void SetCompressionLevel(int level);
+  void SetAudioType(int type);
+
   static void SleepMs(int ms);
 
 protected:
@@ -70,7 +73,7 @@ protected:
   std::string     m_hostname;
   int             m_port;
   std::string     m_name;
-  cXVDRSettings&  m_settings;
+  int             m_timeout;
 
 private:
 
@@ -81,6 +84,8 @@ private:
   std::string m_server;
   std::string m_version;
   bool        m_connectionLost;
+  int         m_compressionlevel;
+  int         m_audiotype;
 
   struct {
         uint32_t opCodeID;

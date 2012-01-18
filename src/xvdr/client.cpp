@@ -49,6 +49,8 @@ cMutex          XVDRMutex;
 
 #define CMD_LOCK cMutexLock CmdLock((cMutex*)&XVDRMutex)
 
+static int priotable[] = { 0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,99,100 };
+
 static void ReadCaIDs(const char* buffer, std::vector<int>& array)
 {
   array.clear();
@@ -125,6 +127,10 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
     s.Priority.set(10);
 
   XVDRData = new cXVDRData;
+  XVDRData->SetTimeout(s.ConnectTimeout() * 1000);
+  XVDRData->SetCompressionLevel(s.Compression() * 3);
+  XVDRData->SetAudioType(s.AudioType());
+
   cTimeMs RetryTimeout;
   bool bConnected = false;
 
@@ -141,6 +147,7 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
     m_CurStatus = ADDON_STATUS_LOST_CONNECTION;
     return m_CurStatus;
   }
+
 
   if (!XVDRData->Login())
   {
@@ -202,6 +209,10 @@ ADDON_STATUS ADDON_SetSetting(const char *settingName, const void *settingValue)
     s.vcaids.clear();
     s.vcaids.push_back(0xFFFF); // disable encrypted channels by invalid caid
   }
+
+  XVDRData->SetTimeout(s.ConnectTimeout() * 1000);
+  XVDRData->SetCompressionLevel(s.Compression() * 3);
+  XVDRData->SetAudioType(s.AudioType());
 
   XVDRData->EnableStatusInterface(s.HandleMessages());
   XVDRData->SetUpdateChannels(s.UpdateChannels());
@@ -482,7 +493,11 @@ bool OpenLiveStream(const PVR_CHANNEL &channel)
   CloseLiveStream();
 
   XVDRDemuxer = new cXVDRDemux;
-  return XVDRDemuxer->OpenChannel(channel);
+  XVDRDemuxer->SetTimeout(cXVDRSettings::GetInstance().ConnectTimeout() * 1000);
+  XVDRDemuxer->SetAudioType(cXVDRSettings::GetInstance().AudioType());
+  XVDRDemuxer->SetPriority(priotable[cXVDRSettings::GetInstance().Priority()]);
+
+  return XVDRDemuxer->OpenChannel(cXVDRSettings::GetInstance().Hostname(), channel);
 }
 
 void CloseLiveStream(void)
@@ -538,10 +553,11 @@ int GetCurrentClientChannel(void)
 
 bool SwitchChannel(const PVR_CHANNEL &channel)
 {
-  if (XVDRDemuxer)
-    return XVDRDemuxer->SwitchChannel(channel);
+  if (XVDRDemuxer == NULL)
+    return false;
 
-  return false;
+  XVDRDemuxer->SetPriority(priotable[cXVDRSettings::GetInstance().Priority()]);
+  return XVDRDemuxer->SwitchChannel(channel);
 }
 
 PVR_ERROR SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
@@ -566,7 +582,9 @@ bool OpenRecordedStream(const PVR_RECORDING &recording)
   CloseRecordedStream();
 
   XVDRRecording = new cXVDRRecording;
-  return XVDRRecording->OpenRecording(recording);
+  XVDRRecording->SetTimeout(cXVDRSettings::GetInstance().ConnectTimeout() * 1000);
+
+  return XVDRRecording->OpenRecording(cXVDRSettings::GetInstance().Hostname(), recording);
 }
 
 void CloseRecordedStream(void)

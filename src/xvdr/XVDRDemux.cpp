@@ -25,14 +25,11 @@
 #include <string.h>
 #include "codecids.h" // For codec id's
 #include "XVDRDemux.h"
-#include "XVDRSettings.h"
 #include "responsepacket.h"
 #include "requestpacket.h"
 #include "xvdrcommand.h"
 
-static int priotable[] = { 0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,99,100 };
-
-cXVDRDemux::cXVDRDemux()
+cXVDRDemux::cXVDRDemux() : m_priority(50)
 {
   m_Streams.iStreamCount = 0;
 }
@@ -41,10 +38,10 @@ cXVDRDemux::~cXVDRDemux()
 {
 }
 
-bool cXVDRDemux::OpenChannel(const PVR_CHANNEL &channelinfo)
+bool cXVDRDemux::OpenChannel(const std::string& hostname, const PVR_CHANNEL &channelinfo)
 {
   m_channelinfo = channelinfo;
-  if(!cXVDRSession::Open(m_settings.Hostname()))
+  if(!cXVDRSession::Open(hostname))
     return false;
 
   if(!cXVDRSession::Login())
@@ -166,13 +163,12 @@ DemuxPacket* cXVDRDemux::Read()
 
 bool cXVDRDemux::SwitchChannel(const PVR_CHANNEL &channelinfo)
 {
-  int32_t priority = priotable[cXVDRSettings::GetInstance().Priority()];
-  XBMC->Log(LOG_DEBUG, "changing to channel %d (priority %i)", channelinfo.iChannelNumber, priority);
+  XBMC->Log(LOG_DEBUG, "changing to channel %d (priority %i)", channelinfo.iChannelNumber, m_priority);
 
   cRequestPacket vrp;
   uint32_t rc = 0;
 
-  if (vrp.init(XVDR_CHANNELSTREAM_OPEN) && vrp.add_U32(channelinfo.iUniqueId) && vrp.add_S32(priority) && ReadSuccess(&vrp, rc))
+  if (vrp.init(XVDR_CHANNELSTREAM_OPEN) && vrp.add_U32(channelinfo.iUniqueId) && vrp.add_S32(m_priority) && ReadSuccess(&vrp, rc))
   {
     m_channelinfo = channelinfo;
     m_Streams.iStreamCount  = 0;
@@ -493,4 +489,12 @@ bool cXVDRDemux::StreamContentInfo(cResponsePacket *resp)
 
 void cXVDRDemux::OnReconnect()
 {
+}
+
+void cXVDRDemux::SetPriority(int priority)
+{
+  if(priority < -1 || priority > 99)
+    priority = 50;
+
+  m_priority = priority;
 }
