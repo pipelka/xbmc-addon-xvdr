@@ -298,6 +298,18 @@ void cXVDRDemux::StreamChange(cResponsePacket *resp)
 
       delete[] language;
     }
+    else if(!strcmp(type, "LATM"))
+    {
+      const char *language = resp->extract_String();
+
+      stream->iCodecType     = AVMEDIA_TYPE_AUDIO;
+      stream->iCodecId       = CODEC_ID_AAC_LATM;
+
+      memcpy(stream->strLanguage, language, 3);
+      m_Streams.iStreamCount++;
+
+      delete[] language;
+    }
     else if(!strcmp(type, "DTS"))
     {
       const char *language = resp->extract_String();
