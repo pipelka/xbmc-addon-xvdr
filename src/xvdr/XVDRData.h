@@ -45,12 +45,12 @@ public:
   bool        Login();
   void        Abort();
 
-  bool        SupportChannelScan();
-  bool        EnableStatusInterface(bool onOff);
-  bool        SetUpdateChannels(uint8_t method);
-  bool        GetDriveSpace(long long *total, long long *used);
+  bool        EnableStatusInterface(bool onOff, bool direct = false);
+  bool        SetUpdateChannels(uint8_t method, bool direct = false);
+  bool        ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& caids, bool direct = false);
 
-  bool        ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& caids);
+  bool        SupportChannelScan();
+  bool        GetDriveSpace(long long *total, long long *used);
 
   int         GetChannelsCount();
   bool        GetChannelsList(PVR_HANDLE handle, bool radio = false);

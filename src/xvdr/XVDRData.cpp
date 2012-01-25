@@ -92,9 +92,9 @@ void cXVDRData::OnReconnect()
 {
   XBMC->QueueNotification(QUEUE_INFO, XBMC->GetLocalizedString(30045));
 
-  EnableStatusInterface(m_settings.HandleMessages());
-  ChannelFilter(m_settings.FTAChannels(), m_settings.NativeLangOnly(), m_settings.vcaids);
-  SetUpdateChannels(m_settings.UpdateChannels());
+  EnableStatusInterface(m_settings.HandleMessages(), true);
+  ChannelFilter(m_settings.FTAChannels(), m_settings.NativeLangOnly(), m_settings.vcaids, true);
+  SetUpdateChannels(m_settings.UpdateChannels(), true);
 
   PVR->TriggerTimerUpdate();
   PVR->TriggerRecordingUpdate();
@@ -182,13 +182,13 @@ bool cXVDRData::SupportChannelScan()
   return ret == XVDR_RET_OK ? true : false;
 }
 
-bool cXVDRData::EnableStatusInterface(bool onOff)
+bool cXVDRData::EnableStatusInterface(bool onOff, bool direct)
 {
   cRequestPacket vrp;
   if (!vrp.init(XVDR_ENABLESTATUSINTERFACE)) return false;
   if (!vrp.add_U8(onOff)) return false;
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cResponsePacket* vresp = direct ? cXVDRSession::ReadResult(&vrp) : ReadResult(&vrp);
   if (!vresp)
   {
     XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
@@ -200,13 +200,13 @@ bool cXVDRData::EnableStatusInterface(bool onOff)
   return ret == XVDR_RET_OK ? true : false;
 }
 
-bool cXVDRData::SetUpdateChannels(uint8_t method)
+bool cXVDRData::SetUpdateChannels(uint8_t method, bool direct)
 {
   cRequestPacket vrp;
   if (!vrp.init(XVDR_UPDATECHANNELS)) return false;
   if (!vrp.add_U8(method)) return false;
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cResponsePacket* vresp = direct ? cXVDRSession::ReadResult(&vrp) : ReadResult(&vrp);
   if (!vresp)
   {
     XBMC->Log(LOG_INFO, "Setting channel update method not supported by server. Consider updating the XVDR server.");
@@ -220,7 +220,7 @@ bool cXVDRData::SetUpdateChannels(uint8_t method)
   return ret == XVDR_RET_OK ? true : false;
 }
 
-bool cXVDRData::ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& caids)
+bool cXVDRData::ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& caids, bool direct)
 {
   std::size_t count = caids.size();
   cRequestPacket vrp;
@@ -233,7 +233,7 @@ bool cXVDRData::ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& c
   for(int i = 0; i < count; i++)
     if (!vrp.add_U32(caids[i])) return false;
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cResponsePacket* vresp = direct ? cXVDRSession::ReadResult(&vrp) : ReadResult(&vrp);
   if (!vresp)
   {
     XBMC->Log(LOG_INFO, "Channel filter method not supported by server. Consider updating the XVDR server.");
