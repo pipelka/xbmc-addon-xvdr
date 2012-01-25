@@ -113,8 +113,6 @@ bool cXVDRSession::Login()
   const char* code = XBMC->GetDVDMenuLanguage();
   const char* lang = ISO639_FindLanguage(code);
 
-  XBMC->Log(LOG_INFO, "Preferred Audio Language: %s", lang);
-
   if (!vrp.add_String((lang != NULL) ? lang : ""))
     return false;
   if (!vrp.add_U8(m_settings.AudioType()))
@@ -136,6 +134,8 @@ bool cXVDRSession::Login()
 
   if (m_name.empty())
     XBMC->Log(LOG_NOTICE, "Logged in at '%u+%i' to '%s' Version: '%s' with protocol version '%u'", vdrTime, vdrTimeOffset, m_server.c_str(), m_version.c_str(), m_protocol);
+
+  XBMC->Log(LOG_INFO, "Preferred Audio Language: %s", lang);
 
   delete vresp;
 
