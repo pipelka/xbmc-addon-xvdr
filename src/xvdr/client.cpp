@@ -460,7 +460,7 @@ PVR_ERROR GetStreamProperties(PVR_STREAM_PROPERTIES* pProperties)
 
 void DemuxAbort(void)
 {
-  if (XVDRDemuxer) XVDRDemuxer->Abort();
+  XBMC->Log(LOG_DEBUG, "DemuxAbort");
 }
 
 void DemuxReset(void)
