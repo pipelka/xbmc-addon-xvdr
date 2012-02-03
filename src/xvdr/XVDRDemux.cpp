@@ -79,7 +79,7 @@ void cXVDRDemux::Abort()
 
 DemuxPacket* cXVDRDemux::Read()
 {
-  if(ConnectionLost() && !TryReconnect())
+  if(ConnectionLost())
   {
     SleepMs(100);
     return PVR->AllocateDemuxPacket(0);
@@ -177,7 +177,7 @@ bool cXVDRDemux::SwitchChannel(const PVR_CHANNEL &channelinfo)
     m_channelinfo = channelinfo;
     m_Streams.iStreamCount  = 0;
 
-    return !ConnectionLost();
+    return true;
   }
 
   switch (rc)
@@ -493,5 +493,4 @@ bool cXVDRDemux::StreamContentInfo(cResponsePacket *resp)
 
 void cXVDRDemux::OnReconnect()
 {
-  SwitchChannel(m_channelinfo);
 }
