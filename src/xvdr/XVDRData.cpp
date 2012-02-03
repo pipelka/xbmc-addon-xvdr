@@ -112,6 +112,7 @@ cResponsePacket* cXVDRData::ReadResult(cRequestPacket* vrp)
 
   if(!cXVDRSession::SendMessage(vrp))
   {
+    CMD_LOCK;
     m_queue.erase(vrp->getSerial());
     return NULL;
   }
@@ -857,23 +858,26 @@ void cXVDRData::Action()
     vresp = cXVDRSession::ReadMessage();
 
     // check if the connection is still up
-    if (vresp == NULL)
+    if ((vresp == NULL) && (time(NULL) - lastPing) > 5)
     {
-      if(time(NULL) - lastPing > 5)
+      CMD_LOCK;
+      if(m_queue.empty())
       {
         lastPing = time(NULL);
 
         if(!SendPing())
           SignalConnectionLost();
       }
-      continue;
     }
+
+    // there wasn't any response
+    if (vresp == NULL)
+      continue;
 
     // CHANNEL_REQUEST_RESPONSE
 
     if (vresp->getChannelID() == XVDR_CHANNEL_REQUEST_RESPONSE)
     {
-
       CMD_LOCK;
       SMessages::iterator it = m_queue.find(vresp->getRequestID());
       if (it != m_queue.end())
