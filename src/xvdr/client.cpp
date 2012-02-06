@@ -526,8 +526,6 @@ void DemuxFlush(void)
 
 DemuxPacket* DemuxRead(void)
 {
-  CMD_LOCK;
-
   if (!XVDRDemuxer)
     return NULL;
 
