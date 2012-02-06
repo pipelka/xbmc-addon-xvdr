@@ -594,8 +594,6 @@ void CloseRecordedStream(void)
 
 int ReadRecordedStream(unsigned char *pBuffer, unsigned int iBufferSize)
 {
-  CMD_LOCK;
-
   if (!XVDRRecording)
     return -1;
 
@@ -604,8 +602,6 @@ int ReadRecordedStream(unsigned char *pBuffer, unsigned int iBufferSize)
 
 long long SeekRecordedStream(long long iPosition, int iWhence /* = SEEK_SET */)
 {
-  CMD_LOCK;
-
   if (XVDRRecording)
     return XVDRRecording->Seek(iPosition, iWhence);
 
@@ -614,8 +610,6 @@ long long SeekRecordedStream(long long iPosition, int iWhence /* = SEEK_SET */)
 
 long long PositionRecordedStream(void)
 {
-  CMD_LOCK;
-
   if (XVDRRecording)
     return XVDRRecording->Position();
 
@@ -624,8 +618,6 @@ long long PositionRecordedStream(void)
 
 long long LengthRecordedStream(void)
 {
-  CMD_LOCK;
-
   if (XVDRRecording)
     return XVDRRecording->Length();
 
