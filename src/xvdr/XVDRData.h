@@ -22,19 +22,22 @@
  */
 
 #include "XVDRSession.h"
-#include "thread.h"
 #include "client.h"
 
 #include <string>
 #include <map>
 #include <vector>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <atomic>
 
 using namespace ADDON;
 
 class cXVDRResponsePacket;
 class cRequestPacket;
 
-class cXVDRData : public cXVDRSession, public cThread
+class cXVDRData : public cXVDRSession
 {
 public:
 
@@ -91,17 +94,46 @@ private:
 
   bool SendPing();
 
-  struct SMessage
+  class SMessage
   {
-    cCondWait* event;
-    cXVDRResponsePacket* pkt;
-  };
-  typedef std::map<int, SMessage> SMessages;
+    public:
 
-  cMutex          m_Mutex;
+      SMessage() : event(new std::condition_variable), mutex(new std::mutex), pkt(NULL) {
+      }
+
+      ~SMessage()
+      {
+        delete event;
+        delete mutex;
+      }
+
+      void wait(int timeout_ms)
+      {
+        std::unique_lock<std::mutex> lk(*mutex);
+        event->wait_for(lk, std::chrono::milliseconds(timeout_ms));
+      }
+
+      void signal()
+      {
+        event->notify_all();
+      }
+
+      cXVDRResponsePacket *pkt;
+
+    private:
+
+      std::condition_variable* event;
+      std::mutex* mutex;
+  };
+
+  typedef std::map<int, SMessage*> SMessages;
+
+  std::thread*    m_thread;
+  std::mutex      m_mutex;
+  std::atomic<bool> m_running;
   SMessages       m_queue;
   std::string     m_videodir;
-  bool            m_aborting;
+  std::atomic<bool> m_aborting;
   uint32_t        m_timercount;
   uint8_t         m_updatechannels;
   bool            m_ftachannels;

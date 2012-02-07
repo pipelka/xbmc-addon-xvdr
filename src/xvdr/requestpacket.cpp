@@ -27,7 +27,7 @@
 
 #include "requestpacket.h"
 #include "xvdrcommand.h"
-#include "tools.h"
+#include "XVDRResponsePacket.h"
 
 extern "C" {
 #include "libTcpSocket/os-dependent_socket.h"
@@ -124,7 +124,7 @@ bool cRequestPacket::add_U32(uint32_t ul)
 bool cRequestPacket::add_U64(uint64_t ull)
 {
   if (!checkExtend(sizeof(uint64_t))) return false;
-  *(uint64_t*)&buffer[bufUsed] = htonll(ull);
+  *(uint64_t*)&buffer[bufUsed] = cXVDRResponsePacket::htonll(ull);
   bufUsed += sizeof(uint64_t);
   if (!lengthSet) *(uint32_t*)&buffer[userDataLenPos] = htonl(bufUsed - headerLength);
   return true;

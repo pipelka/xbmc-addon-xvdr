@@ -32,6 +32,8 @@
 #include <sstream>
 #include <string>
 #include <iostream>
+#include <thread>
+#include <chrono>
 
 using namespace std;
 using namespace ADDON;
@@ -45,9 +47,9 @@ CHelper_libXBMC_pvr   *PVR    = NULL;
 cXVDRDemux      *XVDRDemuxer       = NULL;
 cXVDRData       *XVDRData          = NULL;
 cXVDRRecording  *XVDRRecording     = NULL;
-cMutex          XVDRMutex;
-cMutex          XVDRMutexDemux;
-cMutex          XVDRMutexRec;
+std::mutex      XVDRMutex;
+std::mutex      XVDRMutexDemux;
+std::mutex      XVDRMutexRec;
 
 static int priotable[] = { 0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,99,100 };
 
@@ -96,11 +98,13 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
   XVDRData->SetCompressionLevel(s.Compression() * 3);
   XVDRData->SetAudioType(s.AudioType());
 
-  cTimeMs RetryTimeout;
+  std::chrono::duration<int, std::milli> RetryTimeout(s.ConnectTimeout() * 1000);
+  std::chrono::time_point<std::chrono::system_clock> start = std::chrono::system_clock::now();
   bool bConnected = false;
 
-  while (!(bConnected = XVDRData->Open(s.Hostname())) && RetryTimeout.Elapsed() < (uint)s.ConnectTimeout() * 1000)
-    cXVDRSession::SleepMs(100);
+  while (!(bConnected = XVDRData->Open(s.Hostname())) && (std::chrono::system_clock::now() - start) < RetryTimeout)
+    std::this_thread::sleep_for(std::chrono::duration<int, std::milli>(100));
+    //cXVDRSession::SleepMs(100);
 
   if (!bConnected){
     delete XVDRData;
@@ -117,6 +121,8 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
   if (!XVDRData->Login())
   {
     m_CurStatus = ADDON_STATUS_LOST_CONNECTION;
+    delete XVDRData;
+    XVDRData = NULL;
     return m_CurStatus;
   }
 
@@ -199,7 +205,7 @@ void ADDON_FreeSettings()
 
 PVR_ERROR GetAddonCapabilities(PVR_ADDON_CAPABILITIES* pCapabilities)
 {
-  cMutexLock lock(&XVDRMutex);
+  std::lock_guard<std::mutex> lock(XVDRMutex);
 
   pCapabilities->bSupportsTimeshift          = false;
   pCapabilities->bSupportsEPG                = true;
@@ -227,7 +233,7 @@ PVR_ERROR GetAddonCapabilities(PVR_ADDON_CAPABILITIES* pCapabilities)
 
 const char * GetBackendName(void)
 {
-  cMutexLock lock(&XVDRMutex);
+  std::lock_guard<std::mutex> lock(XVDRMutex);
 
   static std::string BackendName = XVDRData ? XVDRData->GetServerName() : "unknown";
   return BackendName.c_str();
@@ -235,7 +241,7 @@ const char * GetBackendName(void)
 
 const char * GetBackendVersion(void)
 {
-  cMutexLock lock(&XVDRMutex);
+  std::lock_guard<std::mutex> lock(XVDRMutex);
 
   static std::string BackendVersion;
   if (XVDRData) {
@@ -248,7 +254,7 @@ const char * GetBackendVersion(void)
 
 const char * GetConnectionString(void)
 {
-  cMutexLock lock(&XVDRMutex);
+  std::lock_guard<std::mutex> lock(XVDRMutex);
 
   static std::string ConnectionString;
   std::stringstream format;
@@ -265,7 +271,7 @@ const char * GetConnectionString(void)
 
 PVR_ERROR GetDriveSpace(long long *iTotal, long long *iUsed)
 {
-  cMutexLock lock(&XVDRMutex);
+  std::lock_guard<std::mutex> lock(XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -275,7 +281,7 @@ PVR_ERROR GetDriveSpace(long long *iTotal, long long *iUsed)
 
 PVR_ERROR DialogChannelScan(void)
 {
-  cMutexLock lock(&XVDRMutex);
+  std::lock_guard<std::mutex> lock(XVDRMutex);
 
   cXVDRChannelScan scanner;
   scanner.Open(cXVDRSettings::GetInstance().Hostname());
@@ -287,7 +293,7 @@ PVR_ERROR DialogChannelScan(void)
 
 PVR_ERROR GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL &channel, time_t iStart, time_t iEnd)
 {
-  cMutexLock lock(&XVDRMutex);
+  std::lock_guard<std::mutex> lock(XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -301,7 +307,7 @@ PVR_ERROR GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL &channel, time_t
 
 int GetChannelsAmount(void)
 {
-  cMutexLock lock(&XVDRMutex);
+  std::lock_guard<std::mutex> lock(XVDRMutex);
 
   if (!XVDRData)
     return 0;
@@ -311,7 +317,7 @@ int GetChannelsAmount(void)
 
 PVR_ERROR GetChannels(PVR_HANDLE handle, bool bRadio)
 {
-  cMutexLock lock(&XVDRMutex);
+  std::lock_guard<std::mutex> lock(XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -325,7 +331,7 @@ PVR_ERROR GetChannels(PVR_HANDLE handle, bool bRadio)
 
 int GetChannelGroupsAmount()
 {
-  cMutexLock lock(&XVDRMutex);
+  std::lock_guard<std::mutex> lock(XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -335,7 +341,7 @@ int GetChannelGroupsAmount()
 
 PVR_ERROR GetChannelGroups(PVR_HANDLE handle, bool bRadio)
 {
-  cMutexLock lock(&XVDRMutex);
+  std::lock_guard<std::mutex> lock(XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -348,7 +354,7 @@ PVR_ERROR GetChannelGroups(PVR_HANDLE handle, bool bRadio)
 
 PVR_ERROR GetChannelGroupMembers(PVR_HANDLE handle, const PVR_CHANNEL_GROUP &group)
 {
-  cMutexLock lock(&XVDRMutex);
+  std::lock_guard<std::mutex> lock(XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -363,7 +369,7 @@ PVR_ERROR GetChannelGroupMembers(PVR_HANDLE handle, const PVR_CHANNEL_GROUP &gro
 
 int GetTimersAmount(void)
 {
-  cMutexLock lock(&XVDRMutex);
+  std::lock_guard<std::mutex> lock(XVDRMutex);
 
   if (!XVDRData)
     return 0;
@@ -373,7 +379,7 @@ int GetTimersAmount(void)
 
 PVR_ERROR GetTimers(PVR_HANDLE handle)
 {
-  cMutexLock lock(&XVDRMutex);
+  std::lock_guard<std::mutex> lock(XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -383,7 +389,7 @@ PVR_ERROR GetTimers(PVR_HANDLE handle)
 
 PVR_ERROR AddTimer(const PVR_TIMER &timer)
 {
-  cMutexLock lock(&XVDRMutex);
+  std::lock_guard<std::mutex> lock(XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -393,7 +399,7 @@ PVR_ERROR AddTimer(const PVR_TIMER &timer)
 
 PVR_ERROR DeleteTimer(const PVR_TIMER &timer, bool bForce)
 {
-  cMutexLock lock(&XVDRMutex);
+  std::lock_guard<std::mutex> lock(XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -403,7 +409,7 @@ PVR_ERROR DeleteTimer(const PVR_TIMER &timer, bool bForce)
 
 PVR_ERROR UpdateTimer(const PVR_TIMER &timer)
 {
-  cMutexLock lock(&XVDRMutex);
+  std::lock_guard<std::mutex> lock(XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -417,7 +423,7 @@ PVR_ERROR UpdateTimer(const PVR_TIMER &timer)
 
 int GetRecordingsAmount(void)
 {
-  cMutexLock lock(&XVDRMutex);
+  std::lock_guard<std::mutex> lock(XVDRMutex);
 
   if (!XVDRData)
     return 0;
@@ -427,7 +433,7 @@ int GetRecordingsAmount(void)
 
 PVR_ERROR GetRecordings(PVR_HANDLE handle)
 {
-  cMutexLock lock(&XVDRMutex);
+  std::lock_guard<std::mutex> lock(XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -437,7 +443,7 @@ PVR_ERROR GetRecordings(PVR_HANDLE handle)
 
 PVR_ERROR RenameRecording(const PVR_RECORDING &recording)
 {
-  cMutexLock lock(&XVDRMutex);
+  std::lock_guard<std::mutex> lock(XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -447,7 +453,7 @@ PVR_ERROR RenameRecording(const PVR_RECORDING &recording)
 
 PVR_ERROR DeleteRecording(const PVR_RECORDING &recording)
 {
-  cMutexLock lock(&XVDRMutex);
+  std::lock_guard<std::mutex> lock(XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -460,7 +466,7 @@ PVR_ERROR DeleteRecording(const PVR_RECORDING &recording)
 
 bool OpenLiveStream(const PVR_CHANNEL &channel)
 {
-  cMutexLock lock(&XVDRMutexDemux);
+  std::lock_guard<std::mutex> lock(XVDRMutexDemux);
 
   if (XVDRDemuxer)
   {
@@ -478,7 +484,7 @@ bool OpenLiveStream(const PVR_CHANNEL &channel)
 
 void CloseLiveStream(void)
 {
-  cMutexLock lock(&XVDRMutexDemux);
+  std::lock_guard<std::mutex> lock(XVDRMutexDemux);
 
   if (XVDRDemuxer)
   {
@@ -490,7 +496,7 @@ void CloseLiveStream(void)
 
 PVR_ERROR GetStreamProperties(PVR_STREAM_PROPERTIES* pProperties)
 {
-  cMutexLock lock(&XVDRMutexDemux);
+  std::lock_guard<std::mutex> lock(XVDRMutexDemux);
 
   if (!XVDRDemuxer)
     return PVR_ERROR_SERVER_ERROR;
@@ -500,25 +506,25 @@ PVR_ERROR GetStreamProperties(PVR_STREAM_PROPERTIES* pProperties)
 
 void DemuxAbort(void)
 {
-  cMutexLock lock(&XVDRMutexDemux);
+  std::lock_guard<std::mutex> lock(XVDRMutexDemux);
   XBMC->Log(LOG_DEBUG, "DemuxAbort");
 }
 
 void DemuxReset(void)
 {
-  cMutexLock lock(&XVDRMutexDemux);
+  std::lock_guard<std::mutex> lock(XVDRMutexDemux);
   XBMC->Log(LOG_DEBUG, "DemuxReset");
 }
 
 void DemuxFlush(void)
 {
-  cMutexLock lock(&XVDRMutexDemux);
+  std::lock_guard<std::mutex> lock(XVDRMutexDemux);
   XBMC->Log(LOG_DEBUG, "DemuxFlush");
 }
 
 DemuxPacket* DemuxRead(void)
 {
-  cMutexLock lock(&XVDRMutexDemux);
+  std::lock_guard<std::mutex> lock(XVDRMutexDemux);
 
   if (!XVDRDemuxer)
     return NULL;
@@ -528,7 +534,7 @@ DemuxPacket* DemuxRead(void)
 
 int GetCurrentClientChannel(void)
 {
-  cMutexLock lock(&XVDRMutexDemux);
+  std::lock_guard<std::mutex> lock(XVDRMutexDemux);
 
   if (XVDRDemuxer)
     return XVDRDemuxer->CurrentChannel();
@@ -538,7 +544,7 @@ int GetCurrentClientChannel(void)
 
 bool SwitchChannel(const PVR_CHANNEL &channel)
 {
-  cMutexLock lock(&XVDRMutexDemux);
+  std::lock_guard<std::mutex> lock(XVDRMutexDemux);
 
   if (XVDRDemuxer == NULL)
     return false;
@@ -552,7 +558,7 @@ bool SwitchChannel(const PVR_CHANNEL &channel)
 
 PVR_ERROR SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
 {
-  cMutexLock lock(&XVDRMutexDemux);
+  std::lock_guard<std::mutex> lock(XVDRMutexDemux);
 
   if (!XVDRDemuxer)
     return PVR_ERROR_SERVER_ERROR;
@@ -566,7 +572,7 @@ PVR_ERROR SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
 
 bool OpenRecordedStream(const PVR_RECORDING &recording)
 {
-  cMutexLock lock(&XVDRMutexRec);
+  std::lock_guard<std::mutex> lock(XVDRMutexRec);
 
   if(!XVDRData)
     return false;
@@ -581,7 +587,7 @@ bool OpenRecordedStream(const PVR_RECORDING &recording)
 
 void CloseRecordedStream(void)
 {
-  cMutexLock lock(&XVDRMutexRec);
+  std::lock_guard<std::mutex> lock(XVDRMutexRec);
 
   if (XVDRRecording)
   {
@@ -593,7 +599,7 @@ void CloseRecordedStream(void)
 
 int ReadRecordedStream(unsigned char *pBuffer, unsigned int iBufferSize)
 {
-  cMutexLock lock(&XVDRMutexRec);
+  std::lock_guard<std::mutex> lock(XVDRMutexRec);
 
   if (!XVDRRecording)
     return -1;
@@ -603,7 +609,7 @@ int ReadRecordedStream(unsigned char *pBuffer, unsigned int iBufferSize)
 
 long long SeekRecordedStream(long long iPosition, int iWhence /* = SEEK_SET */)
 {
-  cMutexLock lock(&XVDRMutexRec);
+  std::lock_guard<std::mutex> lock(XVDRMutexRec);
 
   if (XVDRRecording)
     return XVDRRecording->Seek(iPosition, iWhence);
@@ -613,7 +619,7 @@ long long SeekRecordedStream(long long iPosition, int iWhence /* = SEEK_SET */)
 
 long long PositionRecordedStream(void)
 {
-  cMutexLock lock(&XVDRMutexRec);
+  std::lock_guard<std::mutex> lock(XVDRMutexRec);
 
   if (XVDRRecording)
     return XVDRRecording->Position();
@@ -623,7 +629,7 @@ long long PositionRecordedStream(void)
 
 long long LengthRecordedStream(void)
 {
-  cMutexLock lock(&XVDRMutexRec);
+  std::lock_guard<std::mutex> lock(XVDRMutexRec);
 
   if (XVDRRecording)
     return XVDRRecording->Length();

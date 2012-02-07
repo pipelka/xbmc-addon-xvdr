@@ -29,10 +29,12 @@ extern "C" {
 #include "libTcpSocket/os-dependent_socket.h"
 }
 
-#define CMD_LOCK cMutexLock CmdLock((cMutex*)&m_Mutex)
+#define CMD_LOCK std::lock_guard<std::mutex> lock(m_mutex)
 
 cXVDRData::cXVDRData()
- : m_statusinterface(false)
+ : m_thread(NULL)
+ , m_running(false)
+ , m_statusinterface(false)
  , m_aborting(false)
  , m_timercount(0)
  , m_updatechannels(2)
@@ -42,8 +44,14 @@ cXVDRData::cXVDRData()
 cXVDRData::~cXVDRData()
 {
   Abort();
-  Cancel(1);
+  m_running = false;
+
+  if(m_thread != NULL)
+    m_thread->join();
+
   Close();
+
+  delete m_thread;
 }
 
 bool cXVDRData::Open(const std::string& hostname, const char* name)
@@ -53,9 +61,6 @@ bool cXVDRData::Open(const std::string& hostname, const char* name)
   if(!cXVDRSession::Open(hostname, name))
     return false;
 
-  if(name != NULL) {
-    SetDescription(name);
-  }
   return true;
 }
 
@@ -64,21 +69,19 @@ bool cXVDRData::Login()
   if(!cXVDRSession::Login())
     return false;
 
-  Start();
+  m_running = true;
+  m_thread = new std::thread(&cXVDRData::Action, this);
   return true;
 }
 
 void cXVDRData::Abort()
 {
-  CMD_LOCK;
   m_aborting = true;
   cXVDRSession::Abort();
 }
 
 void cXVDRData::SignalConnectionLost()
 {
-  CMD_LOCK;
-
   if(m_aborting)
     return;
 
@@ -104,31 +107,32 @@ void cXVDRData::OnReconnect()
 
 cXVDRResponsePacket* cXVDRData::ReadResult(cRequestPacket* vrp)
 {
-  m_Mutex.Lock();
+  m_mutex.lock();
 
-  SMessage &message(m_queue[vrp->getSerial()]);
-  message.event = new cCondWait();
-  message.pkt   = NULL;
+  // construct new message
+  SMessage* message = new SMessage;
+  m_queue[vrp->getSerial()] = message;
 
-  m_Mutex.Unlock();
+  m_mutex.unlock();
 
   if(!cXVDRSession::SendMessage(vrp))
   {
     CMD_LOCK;
     m_queue.erase(vrp->getSerial());
+    delete message;
     return NULL;
   }
 
-  message.event->Wait(m_timeout);
+  message->wait(m_timeout);
 
-  m_Mutex.Lock();
+  m_mutex.lock();
 
-  cXVDRResponsePacket* vresp = message.pkt;
-  delete message.event;
+  cXVDRResponsePacket* vresp = message->pkt;
+  delete message;
 
   m_queue.erase(vrp->getSerial());
 
-  m_Mutex.Unlock();
+  m_mutex.unlock();
 
   return vresp;
 }
@@ -856,9 +860,7 @@ void cXVDRData::Action()
   uint32_t lastPing = 0;
   cXVDRResponsePacket* vresp;
 
-  SetPriority(19);
-
-  while (Running())
+  while (m_running)
   {
     // try to reconnect
     if(ConnectionLost() && !TryReconnect())
@@ -895,8 +897,8 @@ void cXVDRData::Action()
       SMessages::iterator it = m_queue.find(vresp->getRequestID());
       if (it != m_queue.end())
       {
-        it->second.pkt = vresp;
-        it->second.event->Signal();
+        it->second->pkt = vresp;
+        it->second->signal();
       }
       else
       {

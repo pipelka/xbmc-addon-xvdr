@@ -69,6 +69,9 @@ class cXVDRResponsePacket
 
     virtual void ConvertToUTF8(std::string& value);
 
+    static uint64_t ntohll(uint64_t a);
+    static uint64_t htonll(uint64_t a);
+
   private:
     uint8_t* userData;
     uint32_t userDataLength;

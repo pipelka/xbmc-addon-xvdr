@@ -26,7 +26,6 @@
 
 #include "XVDRResponsePacket.h"
 #include "xvdrcommand.h"
-#include "tools.h"
 #include "client.h"
 
 extern "C" {
@@ -192,4 +191,38 @@ bool cXVDRResponsePacket::uncompress()
   free(buffer);
 #endif
   return false;
+}
+
+/* Byte order (just for windows)*/
+#ifdef __WINDOWS__
+#undef BIG_ENDIAN
+#ifndef LITTLE_ENDIAN
+#define LITTLE_ENDIAN 1234
+#endif
+#define BYTE_ORDER LITTLE_ENDIAN
+#endif
+
+uint64_t cXVDRResponsePacket::ntohll(uint64_t a)
+{
+  return htonll(a);
+}
+
+uint64_t cXVDRResponsePacket::htonll(uint64_t a)
+{
+#if (BYTE_ORDER == BIG_ENDIAN)
+  return a;
+#else
+  uint64_t b = 0;
+
+  b = ((a << 56) & 0xFF00000000000000ULL)
+    | ((a << 40) & 0x00FF000000000000ULL)
+    | ((a << 24) & 0x0000FF0000000000ULL)
+    | ((a <<  8) & 0x000000FF00000000ULL)
+    | ((a >>  8) & 0x00000000FF000000ULL)
+    | ((a >> 24) & 0x0000000000FF0000ULL)
+    | ((a >> 40) & 0x000000000000FF00ULL)
+    | ((a >> 56) & 0x00000000000000FFULL) ;
+
+  return b;
+#endif
 }

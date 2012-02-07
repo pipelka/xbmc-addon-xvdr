@@ -33,11 +33,7 @@ libxvdr_la_SOURCES = \
 	XVDRSession.cpp \
 	XVDRSession.h \
 	requestpacket.cpp \
-	requestpacket.h \
-	thread.cpp \
-	thread.h \
-	tools.cpp \
-	tools.h
+	requestpacket.h
 
 libxvdr_la_LDFLAGS = \
 	-avoid-version
@@ -48,7 +44,8 @@ libxvdr_la_LIBADD = \
 	$(ZLIB_LIBS)
 
 CPPFLAGS = \
-	$(ARCH_DEFINES)
+	$(ARCH_DEFINES) -std=c++0x
+#  -D_GLIBCXX_USE_NANOSLEEP
 
 INCLUDES = -I$(srcdir)/.. -I$(srcdir)/../.. -I$(srcdir)/../../include -DUSE_DEMUX -D__STDC_CONSTANT_MACROS -D_LINUX
 

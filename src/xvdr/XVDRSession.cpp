@@ -32,7 +32,6 @@
 
 #include "requestpacket.h"
 #include "xvdrcommand.h"
-#include "tools.h"
 #include "iso639.h"
 
 /* Needed on Mac OS/X */
@@ -182,8 +181,8 @@ cXVDRResponsePacket* cXVDRSession::ReadMessage()
     opCodeID = ntohl(m_streamPacketHeader.opCodeID);
     streamID = ntohl(m_streamPacketHeader.streamID);
     duration = ntohl(m_streamPacketHeader.duration);
-    pts = ntohll(*(int64_t*)m_streamPacketHeader.pts);
-    dts = ntohll(*(int64_t*)m_streamPacketHeader.dts);
+    pts = cXVDRResponsePacket::ntohll(*(int64_t*)m_streamPacketHeader.pts);
+    dts = cXVDRResponsePacket::ntohll(*(int64_t*)m_streamPacketHeader.dts);
     userDataLength = ntohl(m_streamPacketHeader.userDataLength);
 
     if(opCodeID == XVDR_STREAM_MUXPKT) {
@@ -211,6 +210,7 @@ cXVDRResponsePacket* cXVDRSession::ReadMessage()
 
     vresp = new cXVDRResponsePacket();
     vresp->setStream(opCodeID, streamID, duration, dts, pts, userData, userDataLength);
+    XBMC->Log(LOG_DEBUG, "(%05i) <<", vresp->getRequestID());
   }
   else
   {
@@ -239,6 +239,7 @@ cXVDRResponsePacket* cXVDRSession::ReadMessage()
 
     if(compressed)
       vresp->uncompress();
+    XBMC->Log(LOG_DEBUG, "(%05i) <<", vresp->getRequestID());
   }
 
   return vresp;
@@ -246,7 +247,12 @@ cXVDRResponsePacket* cXVDRSession::ReadMessage()
 
 bool cXVDRSession::SendMessage(cRequestPacket* vrp)
 {
-  return (tcp_send_timeout(m_fd, vrp->getPtr(), vrp->getLen(), m_timeout) == 0);
+  XBMC->Log(LOG_DEBUG, "(%05i) >>", vrp->getSerial());
+  int rc = tcp_send_timeout(m_fd, vrp->getPtr(), vrp->getLen(), m_timeout);
+  if(rc != 0) 
+    XBMC->Log(LOG_DEBUG, "%s - error: %i", __FUNCTION__, rc);
+
+  return (rc == 0);
 }
 
 cXVDRResponsePacket* cXVDRSession::ReadResult(cRequestPacket* vrp)
@@ -334,7 +340,11 @@ void cXVDRSession::SignalConnectionLost()
 
 bool cXVDRSession::readData(uint8_t* buffer, int totalBytes)
 {
-  return (tcp_read_timeout(m_fd, buffer, totalBytes, m_timeout) == 0);
+  int rc = tcp_read_timeout(m_fd, buffer, totalBytes, m_timeout);
+  if(rc != 0)
+    XBMC->Log(LOG_DEBUG, "%s - error: %i", __FUNCTION__, rc);
+
+  return (rc == 0);
 }
 
 void cXVDRSession::SetTimeout(int ms)

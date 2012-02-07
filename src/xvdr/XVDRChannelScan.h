@@ -22,7 +22,6 @@
  */
 
 #include "XVDRData.h"
-#include "thread.h"
 #include "client.h"
 #include <string>
 #include <map>
