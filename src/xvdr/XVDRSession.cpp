@@ -241,7 +241,7 @@ cResponsePacket* cXVDRSession::ReadMessage()
 
 bool cXVDRSession::SendMessage(cRequestPacket* vrp)
 {
-  return (tcp_send_timeout(m_fd, vrp->getPtr(), vrp->getLen(), m_timeout * 1000) == 0);
+  return (tcp_send_timeout(m_fd, vrp->getPtr(), vrp->getLen(), m_timeout) == 0);
 }
 
 cResponsePacket* cXVDRSession::ReadResult(cRequestPacket* vrp)
