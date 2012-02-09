@@ -479,8 +479,6 @@ PVR_ERROR DeleteRecording(const PVR_RECORDING &recording)
 
 bool OpenLiveStream(const PVR_CHANNEL &channel)
 {
-  CMD_LOCK;
-
   CloseLiveStream();
 
   XVDRDemuxer = new cXVDRDemux;
@@ -489,8 +487,6 @@ bool OpenLiveStream(const PVR_CHANNEL &channel)
 
 void CloseLiveStream(void)
 {
-  CMD_LOCK;
-
   if (XVDRDemuxer)
   {
     XVDRDemuxer->Close();
@@ -534,8 +530,6 @@ DemuxPacket* DemuxRead(void)
 
 int GetCurrentClientChannel(void)
 {
-  CMD_LOCK;
-
   if (XVDRDemuxer)
     return XVDRDemuxer->CurrentChannel();
 
@@ -544,8 +538,6 @@ int GetCurrentClientChannel(void)
 
 bool SwitchChannel(const PVR_CHANNEL &channel)
 {
-  CMD_LOCK;
-
   if (XVDRDemuxer)
     return XVDRDemuxer->SwitchChannel(channel);
 
@@ -554,13 +546,10 @@ bool SwitchChannel(const PVR_CHANNEL &channel)
 
 PVR_ERROR SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
 {
-  CMD_LOCK;
-
   if (!XVDRDemuxer)
     return PVR_ERROR_SERVER_ERROR;
 
   return (XVDRDemuxer->GetSignalStatus(signalStatus) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
-
 }
 
 
