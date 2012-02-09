@@ -104,7 +104,6 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
 
   while (!(bConnected = XVDRData->Open(s.Hostname())) && (std::chrono::system_clock::now() - start) < RetryTimeout)
     std::this_thread::sleep_for(std::chrono::duration<int, std::milli>(100));
-    //cXVDRSession::SleepMs(100);
 
   if (!bConnected){
     delete XVDRData;

@@ -28,6 +28,7 @@
 #include "XVDRResponsePacket.h"
 #include "requestpacket.h"
 #include "xvdrcommand.h"
+#include <thread>
 
 cXVDRDemux::cXVDRDemux() : m_priority(50)
 {
@@ -78,7 +79,7 @@ DemuxPacket* cXVDRDemux::Read()
 {
   if(ConnectionLost())
   {
-    SleepMs(100);
+    std::this_thread::sleep_for(std::chrono::duration<int, std::milli>(100));
     return PVR->AllocateDemuxPacket(0);
   }
 

@@ -25,6 +25,7 @@
 #include "XVDRResponsePacket.h"
 #include "requestpacket.h"
 #include "xvdrcommand.h"
+#include <thread>
 
 #define SEEK_POSSIBLE 0x10 // flag used to check if protocol allows seeks
 
@@ -90,7 +91,7 @@ int cXVDRRecording::Read(unsigned char* buf, uint32_t buf_size)
   if (ConnectionLost() && !TryReconnect())
   {
     *buf = 0;
-    SleepMs(100);
+    std::this_thread::sleep_for(std::chrono::duration<int, std::milli>(100));
     return 1;
   }
 

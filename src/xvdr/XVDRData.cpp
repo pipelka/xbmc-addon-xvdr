@@ -24,6 +24,7 @@
 #include "XVDRResponsePacket.h"
 #include "requestpacket.h"
 #include "xvdrcommand.h"
+#include <thread>
 
 extern "C" {
 #include "libTcpSocket/os-dependent_socket.h"
@@ -865,7 +866,7 @@ void cXVDRData::Action()
     // try to reconnect
     if(ConnectionLost() && !TryReconnect())
     {
-      SleepMs(1000);
+      std::this_thread::sleep_for(std::chrono::duration<int, std::milli>(100));
       continue;
    }
 

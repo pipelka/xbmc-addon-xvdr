@@ -57,8 +57,6 @@ public:
   void SetCompressionLevel(int level);
   void SetAudioType(int type);
 
-  static void SleepMs(int ms);
-
 protected:
 
   bool TryReconnect();

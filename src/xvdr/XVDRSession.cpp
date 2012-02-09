@@ -364,12 +364,3 @@ void cXVDRSession::SetAudioType(int type)
 {
   m_audiotype = type;
 }
-
-void cXVDRSession::SleepMs(int ms)
-{
-#ifdef __WINDOWS__
-  Sleep(ms);
-#else
-  usleep(ms * 1000);
-#endif
-}
