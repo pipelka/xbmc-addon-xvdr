@@ -121,8 +121,8 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
   }
 
   // check priority setting (and set a sane value)
-  if(s.Priority() > 22)
-    s.Priority.set(11);
+  if(s.Priority() > 21)
+    s.Priority.set(10);
 
   XVDRData = new cXVDRData;
   cTimeMs RetryTimeout;
