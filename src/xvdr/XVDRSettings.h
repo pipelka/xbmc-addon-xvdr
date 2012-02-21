@@ -155,4 +155,8 @@ protected:
   caids("caids")
   {}
 
+private:
+
+  void ReadCaIDs(const char* buffer, std::vector<int>& array);
+
 };

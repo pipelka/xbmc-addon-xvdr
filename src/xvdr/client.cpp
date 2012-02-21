@@ -46,34 +46,10 @@ cXVDRDemux      *XVDRDemuxer       = NULL;
 cXVDRData       *XVDRData          = NULL;
 cXVDRRecording  *XVDRRecording     = NULL;
 cMutex          XVDRMutex;
-
-#define CMD_LOCK cMutexLock CmdLock((cMutex*)&XVDRMutex)
+cMutex          XVDRMutexDemux;
+cMutex          XVDRMutexRec;
 
 static int priotable[] = { 0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,99,100 };
-
-static void ReadCaIDs(const char* buffer, std::vector<int>& array)
-{
-  array.clear();
-  char* p = strdup(buffer);
-  char* s = p;
-
-  for(;;)
-  {
-    char* n = strpbrk(p, ",;/");
-    if(n != NULL) *n = 0;
-    uint32_t caid = 0;
-    sscanf(p, "%04x", &caid);
-
-    if(caid != 0)
-      array.push_back(caid);
-
-    if(n == NULL)
-      break;
-
-    p = ++n;
-  }
-  free(s);
-}
 
 extern "C" {
 
@@ -114,17 +90,6 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
 
   cXVDRSettings& s = cXVDRSettings::GetInstance();
   s.load();
-  ReadCaIDs(s.caids().c_str(), s.vcaids);
-
-  if (!s.EncryptedChannels())
-  {
-    s.vcaids.clear();
-    s.vcaids.push_back(0xFFFF); // disable encrypted channels by invalid caid
-  }
-
-  // check priority setting (and set a sane value)
-  if(s.Priority() > 21)
-    s.Priority.set(10);
 
   XVDRData = new cXVDRData;
   XVDRData->SetTimeout(s.ConnectTimeout() * 1000);
@@ -204,11 +169,7 @@ ADDON_STATUS ADDON_SetSetting(const char *settingName, const void *settingValue)
   if(bChanged && (strcmp(settingName, "host") == 0))
     return ADDON_STATUS_NEED_RESTART;
 
-  if (!s.EncryptedChannels())
-  {
-    s.vcaids.clear();
-    s.vcaids.push_back(0xFFFF); // disable encrypted channels by invalid caid
-  }
+  s.load();
 
   XVDRData->SetTimeout(s.ConnectTimeout() * 1000);
   XVDRData->SetCompressionLevel(s.Compression() * 3);
@@ -235,7 +196,7 @@ void ADDON_FreeSettings()
 
 PVR_ERROR GetAddonCapabilities(PVR_ADDON_CAPABILITIES* pCapabilities)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutex);
 
   pCapabilities->bSupportsTimeshift          = false;
   pCapabilities->bSupportsEPG                = true;
@@ -257,7 +218,7 @@ PVR_ERROR GetAddonCapabilities(PVR_ADDON_CAPABILITIES* pCapabilities)
 
 const char * GetBackendName(void)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutex);
 
   static std::string BackendName = XVDRData ? XVDRData->GetServerName() : "unknown";
   return BackendName.c_str();
@@ -265,7 +226,7 @@ const char * GetBackendName(void)
 
 const char * GetBackendVersion(void)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutex);
 
   static std::string BackendVersion;
   if (XVDRData) {
@@ -278,7 +239,7 @@ const char * GetBackendVersion(void)
 
 const char * GetConnectionString(void)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutex);
 
   static std::string ConnectionString;
   std::stringstream format;
@@ -295,7 +256,7 @@ const char * GetConnectionString(void)
 
 PVR_ERROR GetDriveSpace(long long *iTotal, long long *iUsed)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -305,7 +266,7 @@ PVR_ERROR GetDriveSpace(long long *iTotal, long long *iUsed)
 
 PVR_ERROR DialogChannelScan(void)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutex);
 
   cXVDRChannelScan scanner;
   scanner.Open(cXVDRSettings::GetInstance().Hostname());
@@ -317,7 +278,7 @@ PVR_ERROR DialogChannelScan(void)
 
 PVR_ERROR GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL &channel, time_t iStart, time_t iEnd)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -331,7 +292,7 @@ PVR_ERROR GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL &channel, time_t
 
 int GetChannelsAmount(void)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutex);
 
   if (!XVDRData)
     return 0;
@@ -341,7 +302,7 @@ int GetChannelsAmount(void)
 
 PVR_ERROR GetChannels(PVR_HANDLE handle, bool bRadio)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -355,7 +316,7 @@ PVR_ERROR GetChannels(PVR_HANDLE handle, bool bRadio)
 
 int GetChannelGroupsAmount()
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -365,7 +326,7 @@ int GetChannelGroupsAmount()
 
 PVR_ERROR GetChannelGroups(PVR_HANDLE handle, bool bRadio)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -378,7 +339,7 @@ PVR_ERROR GetChannelGroups(PVR_HANDLE handle, bool bRadio)
 
 PVR_ERROR GetChannelGroupMembers(PVR_HANDLE handle, const PVR_CHANNEL_GROUP &group)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -393,7 +354,7 @@ PVR_ERROR GetChannelGroupMembers(PVR_HANDLE handle, const PVR_CHANNEL_GROUP &gro
 
 int GetTimersAmount(void)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutex);
 
   if (!XVDRData)
     return 0;
@@ -403,7 +364,7 @@ int GetTimersAmount(void)
 
 PVR_ERROR GetTimers(PVR_HANDLE handle)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -413,7 +374,7 @@ PVR_ERROR GetTimers(PVR_HANDLE handle)
 
 PVR_ERROR AddTimer(const PVR_TIMER &timer)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -423,7 +384,7 @@ PVR_ERROR AddTimer(const PVR_TIMER &timer)
 
 PVR_ERROR DeleteTimer(const PVR_TIMER &timer, bool bForce)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -433,7 +394,7 @@ PVR_ERROR DeleteTimer(const PVR_TIMER &timer, bool bForce)
 
 PVR_ERROR UpdateTimer(const PVR_TIMER &timer)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -447,7 +408,7 @@ PVR_ERROR UpdateTimer(const PVR_TIMER &timer)
 
 int GetRecordingsAmount(void)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutex);
 
   if (!XVDRData)
     return 0;
@@ -457,7 +418,7 @@ int GetRecordingsAmount(void)
 
 PVR_ERROR GetRecordings(PVR_HANDLE handle)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -467,7 +428,7 @@ PVR_ERROR GetRecordings(PVR_HANDLE handle)
 
 PVR_ERROR RenameRecording(const PVR_RECORDING &recording)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -477,7 +438,7 @@ PVR_ERROR RenameRecording(const PVR_RECORDING &recording)
 
 PVR_ERROR DeleteRecording(const PVR_RECORDING &recording)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutex);
 
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
@@ -490,7 +451,13 @@ PVR_ERROR DeleteRecording(const PVR_RECORDING &recording)
 
 bool OpenLiveStream(const PVR_CHANNEL &channel)
 {
-  CloseLiveStream();
+  cMutexLock lock(&XVDRMutexDemux);
+
+  if (XVDRDemuxer)
+  {
+    XVDRDemuxer->Close();
+    delete XVDRDemuxer;
+  }
 
   XVDRDemuxer = new cXVDRDemux;
   XVDRDemuxer->SetTimeout(cXVDRSettings::GetInstance().ConnectTimeout() * 1000);
@@ -502,6 +469,8 @@ bool OpenLiveStream(const PVR_CHANNEL &channel)
 
 void CloseLiveStream(void)
 {
+  cMutexLock lock(&XVDRMutexDemux);
+
   if (XVDRDemuxer)
   {
     XVDRDemuxer->Close();
@@ -512,7 +481,7 @@ void CloseLiveStream(void)
 
 PVR_ERROR GetStreamProperties(PVR_STREAM_PROPERTIES* pProperties)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutexDemux);
 
   if (!XVDRDemuxer)
     return PVR_ERROR_SERVER_ERROR;
@@ -522,21 +491,26 @@ PVR_ERROR GetStreamProperties(PVR_STREAM_PROPERTIES* pProperties)
 
 void DemuxAbort(void)
 {
+  cMutexLock lock(&XVDRMutexDemux);
   XBMC->Log(LOG_DEBUG, "DemuxAbort");
 }
 
 void DemuxReset(void)
 {
+  cMutexLock lock(&XVDRMutexDemux);
   XBMC->Log(LOG_DEBUG, "DemuxReset");
 }
 
 void DemuxFlush(void)
 {
+  cMutexLock lock(&XVDRMutexDemux);
   XBMC->Log(LOG_DEBUG, "DemuxFlush");
 }
 
 DemuxPacket* DemuxRead(void)
 {
+  cMutexLock lock(&XVDRMutexDemux);
+
   if (!XVDRDemuxer)
     return NULL;
 
@@ -545,6 +519,8 @@ DemuxPacket* DemuxRead(void)
 
 int GetCurrentClientChannel(void)
 {
+  cMutexLock lock(&XVDRMutexDemux);
+
   if (XVDRDemuxer)
     return XVDRDemuxer->CurrentChannel();
 
@@ -553,15 +529,22 @@ int GetCurrentClientChannel(void)
 
 bool SwitchChannel(const PVR_CHANNEL &channel)
 {
+  cMutexLock lock(&XVDRMutexDemux);
+
   if (XVDRDemuxer == NULL)
     return false;
 
+  XVDRDemuxer->SetTimeout(cXVDRSettings::GetInstance().ConnectTimeout() * 1000);
+  XVDRDemuxer->SetAudioType(cXVDRSettings::GetInstance().AudioType());
   XVDRDemuxer->SetPriority(priotable[cXVDRSettings::GetInstance().Priority()]);
+
   return XVDRDemuxer->SwitchChannel(channel);
 }
 
 PVR_ERROR SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
 {
+  cMutexLock lock(&XVDRMutexDemux);
+
   if (!XVDRDemuxer)
     return PVR_ERROR_SERVER_ERROR;
 
@@ -574,7 +557,7 @@ PVR_ERROR SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
 
 bool OpenRecordedStream(const PVR_RECORDING &recording)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutexRec);
 
   if(!XVDRData)
     return false;
@@ -589,7 +572,7 @@ bool OpenRecordedStream(const PVR_RECORDING &recording)
 
 void CloseRecordedStream(void)
 {
-  CMD_LOCK;
+  cMutexLock lock(&XVDRMutexRec);
 
   if (XVDRRecording)
   {
@@ -601,6 +584,8 @@ void CloseRecordedStream(void)
 
 int ReadRecordedStream(unsigned char *pBuffer, unsigned int iBufferSize)
 {
+  cMutexLock lock(&XVDRMutexRec);
+
   if (!XVDRRecording)
     return -1;
 
@@ -609,6 +594,8 @@ int ReadRecordedStream(unsigned char *pBuffer, unsigned int iBufferSize)
 
 long long SeekRecordedStream(long long iPosition, int iWhence /* = SEEK_SET */)
 {
+  cMutexLock lock(&XVDRMutexRec);
+
   if (XVDRRecording)
     return XVDRRecording->Seek(iPosition, iWhence);
 
@@ -617,6 +604,8 @@ long long SeekRecordedStream(long long iPosition, int iWhence /* = SEEK_SET */)
 
 long long PositionRecordedStream(void)
 {
+  cMutexLock lock(&XVDRMutexRec);
+
   if (XVDRRecording)
     return XVDRRecording->Position();
 
@@ -625,6 +614,8 @@ long long PositionRecordedStream(void)
 
 long long LengthRecordedStream(void)
 {
+  cMutexLock lock(&XVDRMutexRec);
+
   if (XVDRRecording)
     return XVDRRecording->Length();
 

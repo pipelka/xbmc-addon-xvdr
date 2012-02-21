@@ -21,6 +21,7 @@
 
 #include "XVDRSettings.h"
 #include <algorithm>
+#include <stdint.h>
 
 std::list<cXVDRConfigParameterBase*> cXVDRConfigParameterBase::m_parameters;
 
@@ -80,7 +81,44 @@ void cXVDRSettings::load()
 
   for(i = list.begin(); i != list.end(); i++)
     (*i)->load();
+
+  ReadCaIDs(caids().c_str(), vcaids);
+
+  if (!EncryptedChannels())
+  {
+    vcaids.clear();
+    vcaids.push_back(0xFFFF); // disable encrypted channels by invalid caid
+  }
+
+  // check priority setting (and set a sane value)
+  if(Priority() > 21)
+    Priority.set(10);
 }
+
+void cXVDRSettings::ReadCaIDs(const char* buffer, std::vector<int>& array)
+{
+  array.clear();
+  char* p = strdup(buffer);
+  char* s = p;
+
+  for(;;)
+  {
+    char* n = strpbrk(p, ",;/");
+    if(n != NULL) *n = 0;
+    uint32_t caid = 0;
+    sscanf(p, "%04x", &caid);
+
+    if(caid != 0)
+      array.push_back(caid);
+
+    if(n == NULL)
+      break;
+
+    p = ++n;
+  }
+  free(s);
+}
+
 
 template<>
 bool cXVDRConfigParameter<std::string>::load()
