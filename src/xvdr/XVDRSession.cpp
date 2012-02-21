@@ -77,6 +77,8 @@ bool cXVDRSession::Open(const std::string& hostname, const char *name)
   Close();
 
   char errbuf[128];
+  errbuf[0] = 0;
+
   m_fd = tcp_connect(hostname.c_str(), m_port, errbuf, sizeof(errbuf), m_timeout);
 
   if (m_fd == INVALID_SOCKET)
