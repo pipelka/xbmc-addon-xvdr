@@ -166,10 +166,13 @@ ADDON_STATUS ADDON_SetSetting(const char *settingName, const void *settingValue)
   cXVDRSettings& s = cXVDRSettings::GetInstance();
   bChanged = s.set(settingName, settingValue);
 
-  if(bChanged && (strcmp(settingName, "host") == 0))
+  if(!bChanged)
+    return ADDON_STATUS_OK;
+
+  if(strcmp(settingName, "host") == 0)
     return ADDON_STATUS_NEED_RESTART;
 
-  s.load();
+  s.checkValues();
 
   XVDRData->SetTimeout(s.ConnectTimeout() * 1000);
   XVDRData->SetCompressionLevel(s.Compression() * 3);

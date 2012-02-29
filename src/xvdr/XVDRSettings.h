@@ -122,6 +122,8 @@ public:
 
   bool set(const std::string& setting, const void* value);
 
+  void checkValues();
+
   cXVDRConfigParameter<std::string> Hostname;
   cXVDRConfigParameter<int> ConnectTimeout;
   cXVDRConfigParameter<bool> CharsetConv;
