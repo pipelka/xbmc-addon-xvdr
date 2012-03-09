@@ -65,7 +65,6 @@ public:
   PVR_ERROR   AddTimer(const PVR_TIMER &timerinfo);
   PVR_ERROR   GetTimerInfo(unsigned int timernumber, PVR_TIMER &tag);
   PVR_ERROR   DeleteTimer(const PVR_TIMER &timerinfo, bool force = false);
-  PVR_ERROR   RenameTimer(const PVR_TIMER &timerinfo, const char *newname);
   PVR_ERROR   UpdateTimer(const PVR_TIMER &timerinfo);
 
   int         GetRecordingsCount();
@@ -83,6 +82,8 @@ protected:
   void SignalConnectionLost();
   void OnDisconnect();
   void OnReconnect();
+
+  void ReadTimerPacket(cResponsePacket* resp, PVR_TIMER& tag);
 
   bool m_statusinterface;
 

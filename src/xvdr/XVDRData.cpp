@@ -416,6 +416,50 @@ int cXVDRData::GetTimersCount()
   return m_timercount;
 }
 
+void cXVDRData::ReadTimerPacket(cResponsePacket* resp, PVR_TIMER &tag) {
+  tag.iClientIndex      = resp->extract_U32();
+  int iActive           = resp->extract_U32();
+  int iRecording        = resp->extract_U32();
+  int iPending          = resp->extract_U32();
+  if (iRecording)
+    tag.state = PVR_TIMER_STATE_RECORDING;
+  else if (iPending || iActive)
+    tag.state = PVR_TIMER_STATE_SCHEDULED;
+  else
+    tag.state = PVR_TIMER_STATE_CANCELLED;
+  tag.iPriority         = resp->extract_U32();
+  tag.iLifetime         = resp->extract_U32();
+                          resp->extract_U32(); // channel number - unused
+  tag.iClientChannelUid = resp->extract_U32();
+  tag.startTime         = resp->extract_U32();
+  tag.endTime           = resp->extract_U32();
+  tag.firstDay          = resp->extract_U32();
+  tag.iWeekdays         = resp->extract_U32();
+  tag.bIsRepeating      = tag.iWeekdays == 0 ? false : true;
+  const char* title     = resp->extract_String();
+  tag.iMarginStart      = 0;
+  tag.iMarginEnd        = 0;
+
+  char* p = (char*)rindex(title, '~');
+  if(p == NULL) {
+	  tag.strTitle = title;
+	  tag.strDirectory = "";
+  }
+  else {
+	  const char* name = p + 1;
+
+	  p[0] = 0;
+	  const char* dir = title;
+
+	  // replace dir separators
+	  for(p = (char*)dir; *p != 0; p++)
+		  if(*p == '~') *p = '/';
+
+	  tag.strTitle = name;
+	  tag.strDirectory = dir;
+  }
+}
+
 PVR_ERROR cXVDRData::GetTimerInfo(unsigned int timernumber, PVR_TIMER &tag)
 {
   cRequestPacket vrp;
@@ -446,27 +490,7 @@ PVR_ERROR cXVDRData::GetTimerInfo(unsigned int timernumber, PVR_TIMER &tag)
       return PVR_ERROR_SERVER_ERROR;
   }
 
-  tag.iClientIndex      = vresp->extract_U32();
-  int iActive           = vresp->extract_U32();
-  int iRecording        = vresp->extract_U32();
-  int iPending          = vresp->extract_U32();
-  if (iRecording)
-    tag.state = PVR_TIMER_STATE_RECORDING;
-  else if (iPending || iActive)
-    tag.state = PVR_TIMER_STATE_SCHEDULED;
-  else
-    tag.state = PVR_TIMER_STATE_CANCELLED;
-  tag.iPriority         = vresp->extract_U32();
-  tag.iLifetime         = vresp->extract_U32();
-                          vresp->extract_U32(); // channel number - unused
-  tag.iClientChannelUid = vresp->extract_U32();
-  tag.startTime         = vresp->extract_U32();
-  tag.endTime           = vresp->extract_U32();
-  tag.firstDay          = vresp->extract_U32();
-  tag.iWeekdays         = vresp->extract_U32();
-  tag.bIsRepeating      = tag.iWeekdays == 0 ? false : true;
-  tag.strTitle          = vresp->extract_String();
-  tag.strDirectory            = "";
+  ReadTimerPacket(vresp, tag);
 
   delete vresp;
   return PVR_ERROR_NO_ERROR;
@@ -495,30 +519,7 @@ bool cXVDRData::GetTimersList(PVR_HANDLE handle)
     while (!vresp->end())
     {
       PVR_TIMER tag;
-      tag.iClientIndex      = vresp->extract_U32();
-      int iActive           = vresp->extract_U32();
-      int iRecording        = vresp->extract_U32();
-      int iPending          = vresp->extract_U32();
-      if (iRecording)
-        tag.state = PVR_TIMER_STATE_RECORDING;
-      else if (iPending || iActive)
-        tag.state = PVR_TIMER_STATE_SCHEDULED;
-      else
-        tag.state = PVR_TIMER_STATE_CANCELLED;
-      tag.iPriority         = vresp->extract_U32();
-      tag.iLifetime         = vresp->extract_U32();
-                              vresp->extract_U32(); // channel number - unused
-      tag.iClientChannelUid = vresp->extract_U32();
-      tag.startTime         = vresp->extract_U32();
-      tag.endTime           = vresp->extract_U32();
-      tag.firstDay          = vresp->extract_U32();
-      tag.iWeekdays         = vresp->extract_U32();
-      tag.bIsRepeating      = tag.iWeekdays == 0 ? false : true;
-      tag.strTitle          = vresp->extract_String();
-      tag.strDirectory      = "";
-      tag.iMarginStart      = 0;
-      tag.iMarginEnd        = 0;
-
+      ReadTimerPacket(vresp, tag);
       PVR->TransferTimerEntry(handle, &tag);
     }
   }
@@ -637,22 +638,27 @@ PVR_ERROR cXVDRData::DeleteTimer(const PVR_TIMER &timerinfo, bool force)
   return PVR_ERROR_NO_ERROR;
 }
 
-PVR_ERROR cXVDRData::RenameTimer(const PVR_TIMER &timerinfo, const char *newname)
-{
-  PVR_TIMER timerinfo1;
-  PVR_ERROR ret = GetTimerInfo(timerinfo.iClientIndex, timerinfo1);
-  if (ret != PVR_ERROR_NO_ERROR)
-    return ret;
-
-  timerinfo1.strTitle = newname;
-  return UpdateTimer(timerinfo1);
-}
-
 PVR_ERROR cXVDRData::UpdateTimer(const PVR_TIMER &timerinfo)
 {
   // use timer margin to calculate start/end times
   uint32_t starttime = timerinfo.startTime - timerinfo.iMarginStart*60;
   uint32_t endtime = timerinfo.endTime + timerinfo.iMarginEnd*60;
+
+  std::string dir = timerinfo.strDirectory;
+  while(dir[dir.size()-1] == '/' && dir.size() > 1)
+    dir = dir.substr(0, dir.size()-1);
+
+  std::string name = timerinfo.strTitle;
+  std::string title;
+
+  if(!dir.empty() && dir != "/")
+	  title = dir + "/";
+
+  title += name;
+
+  // replace dir separators
+  for(std::string::iterator i = title.begin(); i != title.end(); i++)
+	  if(*i == '/') *i = '~';
 
   cRequestPacket vrp;
   if (!vrp.init(XVDR_TIMER_UPDATE))        return PVR_ERROR_UNKNOWN;
@@ -665,7 +671,7 @@ PVR_ERROR cXVDRData::UpdateTimer(const PVR_TIMER &timerinfo)
   if (!vrp.add_U32(endtime))    return PVR_ERROR_UNKNOWN;
   if (!vrp.add_U32(timerinfo.bIsRepeating ? timerinfo.firstDay : 0))   return PVR_ERROR_UNKNOWN;
   if (!vrp.add_U32(timerinfo.iWeekdays))return PVR_ERROR_UNKNOWN;
-  if (!vrp.add_String(timerinfo.strTitle))   return PVR_ERROR_UNKNOWN;
+  if (!vrp.add_String(title.c_str()))   return PVR_ERROR_UNKNOWN;
   if (!vrp.add_String(""))                return PVR_ERROR_UNKNOWN;
 
   cResponsePacket* vresp = ReadResult(&vrp);

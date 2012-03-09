@@ -158,11 +158,7 @@ long long cXVDRRecording::Seek(long long pos, uint32_t whence)
       break;
 
     case SEEK_END:
-      if (m_currentPlayingRecordBytes)
-        nextPos = m_currentPlayingRecordBytes - pos;
-      else
-        return -1;
-
+      nextPos = m_currentPlayingRecordBytes + pos;
       break;
 
     case SEEK_POSSIBLE:
@@ -172,10 +168,8 @@ long long cXVDRRecording::Seek(long long pos, uint32_t whence)
       return -1;
   }
 
-  if (nextPos >= m_currentPlayingRecordBytes)
-  {
-    return 0;
-  }
+  if (nextPos > m_currentPlayingRecordBytes)
+    return -1;
 
   m_currentPlayingRecordPosition = nextPos;
 
