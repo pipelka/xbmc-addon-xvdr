@@ -68,6 +68,8 @@ void cXVDRSession::Close()
   if(!IsOpen())
     return;
 
+  Abort();
+
   tcp_close(m_fd);
   m_fd = INVALID_SOCKET;
 }
