@@ -438,9 +438,6 @@ bool cXVDRChannelScan::ReadCountries()
       m_spinCountries->AddLabel(longName, index);
       if (dvdlang == isoName)
         startIndex = index;
-
-      delete[] longName;
-      delete[] isoName;
     }
     if (startIndex >= 0)
       m_spinCountries->SetValue(startIndex);
@@ -475,8 +472,6 @@ bool cXVDRChannelScan::ReadSatellites()
       const char *shortName = vresp->extract_String();
       const char *longName  = vresp->extract_String();
       m_spinSatellites->AddLabel(longName, index);
-      delete[] longName;
-      delete[] shortName;
     }
     m_spinSatellites->SetValue(6);      /* default to Astra 19.2         */
   }
@@ -522,22 +517,20 @@ bool cXVDRChannelScan::OnResponsePacket(cResponsePacket* resp)
   }
   else if (requestID == XVDR_SCANNER_DEVICE)
   {
-    char* str = resp->extract_String();
+    const char* str = resp->extract_String();
     m_window->SetControlLabel(LABEL_DEVICE, str);
-    delete[] str;
   }
   else if (requestID == XVDR_SCANNER_TRANSPONDER)
   {
-    char* str = resp->extract_String();
+    const char* str = resp->extract_String();
     m_window->SetControlLabel(LABEL_TRANSPONDER, str);
-    delete[] str;
   }
   else if (requestID == XVDR_SCANNER_NEWCHANNEL)
   {
     uint32_t isRadio      = resp->extract_U32();
     uint32_t isEncrypted  = resp->extract_U32();
     uint32_t isHD         = resp->extract_U32();
-    char* str             = resp->extract_String();
+    const char* str       = resp->extract_String();
 
     CAddonListItem* item = GUI->ListItem_create(str, NULL, NULL, NULL, NULL);
     if (isEncrypted)
@@ -549,8 +542,6 @@ bool cXVDRChannelScan::OnResponsePacket(cResponsePacket* resp)
 
     m_window->AddItem(item, 0);
     GUI->ListItem_destroy(item);
-
-    delete[] str;
   }
   else if (requestID == XVDR_SCANNER_FINISHED)
   {

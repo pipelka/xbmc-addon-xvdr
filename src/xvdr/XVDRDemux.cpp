@@ -267,8 +267,6 @@ void cXVDRDemux::StreamChange(cResponsePacket *resp)
 
       memcpy(stream->strLanguage, language, 3);
       m_Streams.iStreamCount++;
-
-      delete[] language;
     }
     else if(!strcmp(type, "MPEG2AUDIO"))
     {
@@ -279,8 +277,6 @@ void cXVDRDemux::StreamChange(cResponsePacket *resp)
 
       memcpy(stream->strLanguage, language, 3);
       m_Streams.iStreamCount++;
-
-      delete[] language;
     }
     else if(!strcmp(type, "AAC"))
     {
@@ -291,8 +287,6 @@ void cXVDRDemux::StreamChange(cResponsePacket *resp)
 
       memcpy(stream->strLanguage, language, 3);
       m_Streams.iStreamCount++;
-
-      delete[] language;
     }
     else if(!strcmp(type, "LATM"))
     {
@@ -303,8 +297,6 @@ void cXVDRDemux::StreamChange(cResponsePacket *resp)
 
       memcpy(stream->strLanguage, language, 3);
       m_Streams.iStreamCount++;
-
-      delete[] language;
     }
     else if(!strcmp(type, "DTS"))
     {
@@ -315,8 +307,6 @@ void cXVDRDemux::StreamChange(cResponsePacket *resp)
 
       memcpy(stream->strLanguage, language, 3);
       m_Streams.iStreamCount++;
-
-      delete[] language;
     }
     else if(!strcmp(type, "EAC3"))
     {
@@ -327,8 +317,6 @@ void cXVDRDemux::StreamChange(cResponsePacket *resp)
 
       memcpy(stream->strLanguage, language, 3);
       m_Streams.iStreamCount++;
-
-      delete[] language;
     }
     else if(!strcmp(type, "MPEG2VIDEO"))
     {
@@ -366,8 +354,6 @@ void cXVDRDemux::StreamChange(cResponsePacket *resp)
 
       memcpy(stream->strLanguage, language, 3);
       m_Streams.iStreamCount++;
-
-      delete[] language;
     }
     else if(!strcmp(type, "TELETEXT"))
     {
@@ -376,8 +362,6 @@ void cXVDRDemux::StreamChange(cResponsePacket *resp)
 
       m_Streams.iStreamCount++;
     }
-
-    delete[] type;
 
     if (m_Streams.iStreamCount >= PVR_STREAM_MAX_STREAMS)
     {
@@ -415,9 +399,6 @@ void cXVDRDemux::StreamSignalInfo(cResponsePacket *resp)
   m_Quality.fe_signal = resp->extract_U32();
   m_Quality.fe_ber    = resp->extract_U32();
   m_Quality.fe_unc    = resp->extract_U32();
-
-  delete[] name;
-  delete[] status;
 }
 
 bool cXVDRDemux::StreamContentInfo(cResponsePacket *resp)
@@ -480,8 +461,6 @@ bool cXVDRDemux::StreamContentInfo(cResponsePacket *resp)
       default:
         break;
     }
-
-    delete[] language;
   }
 
   return (memcmp(&old, &m_Streams, sizeof(m_Streams)) != 0);

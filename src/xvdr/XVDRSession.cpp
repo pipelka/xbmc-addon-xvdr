@@ -135,8 +135,8 @@ bool cXVDRSession::Login()
   m_protocol                = vresp->extract_U32();
   uint32_t    vdrTime       = vresp->extract_U32();
   int32_t     vdrTimeOffset = vresp->extract_S32();
-                              vresp->extract_String(m_server);
-                              vresp->extract_String(m_version);
+  m_server                  = vresp->extract_String();
+  m_version                 = vresp->extract_String();
 
   if (m_name.empty())
     XBMC->Log(LOG_NOTICE, "Logged in at '%u+%i' to '%s' Version: '%s' with protocol version '%u'", vdrTime, vdrTimeOffset, m_server.c_str(), m_version.c_str(), m_protocol);

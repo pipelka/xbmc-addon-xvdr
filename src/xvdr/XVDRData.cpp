@@ -332,7 +332,6 @@ bool cXVDRData::GetChannelsList(PVR_HANDLE handle, bool radio)
     tag.bIsHidden         = false;
 
     PVR->TransferChannelEntry(handle, &tag);
-    delete[] tag.strChannelName;
   }
 
   delete vresp;
@@ -381,12 +380,6 @@ bool cXVDRData::GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL &channel, 
       tag.strPlot             = vresp->extract_String();
 
       PVR->TransferEpgEntry(handle, &tag);
-      if (tag.strTitle)
-        delete[] tag.strTitle;
-      if (tag.strPlotOutline)
-        delete[] tag.strPlotOutline;
-      if (tag.strPlot)
-        delete[] tag.strPlot;
     }
   }
 
@@ -475,7 +468,6 @@ PVR_ERROR cXVDRData::GetTimerInfo(unsigned int timernumber, PVR_TIMER &tag)
   tag.strTitle          = vresp->extract_String();
   tag.strDirectory            = "";
 
-  delete[] tag.strTitle;
   delete vresp;
   return PVR_ERROR_NO_ERROR;
 }
@@ -528,7 +520,6 @@ bool cXVDRData::GetTimersList(PVR_HANDLE handle)
       tag.iMarginEnd        = 0;
 
       PVR->TransferTimerEntry(handle, &tag);
-      delete[] tag.strTitle;
     }
   }
   delete vresp;
@@ -751,13 +742,6 @@ PVR_ERROR cXVDRData::GetRecordingsList(PVR_HANDLE handle)
     tag.iGenreSubType   = 0;
 
     PVR->TransferRecordingEntry(handle, &tag);
-
-    delete[] tag.strChannelName;
-    delete[] tag.strTitle;
-    delete[] tag.strPlotOutline;
-    delete[] tag.strPlot;
-    delete[] tag.strDirectory;
-    delete[] tag.strRecordingId;
   }
 
   delete vresp;
@@ -921,30 +905,24 @@ void cXVDRData::Action()
       if (vresp->getRequestID() == XVDR_STATUS_MESSAGE)
       {
         uint32_t type = vresp->extract_U32();
-        char* msgstr  = vresp->extract_String();
-        std::string text = msgstr;
+        const char* msgstr = vresp->extract_String();
 
         if (type == 2)
-          XBMC->QueueNotification(QUEUE_ERROR, text.c_str());
+          XBMC->QueueNotification(QUEUE_ERROR, msgstr);
         if (type == 1)
-          XBMC->QueueNotification(QUEUE_WARNING, text.c_str());
+          XBMC->QueueNotification(QUEUE_WARNING, msgstr);
         else
-          XBMC->QueueNotification(QUEUE_INFO, text.c_str());
-
-        delete[] msgstr;
+          XBMC->QueueNotification(QUEUE_INFO, msgstr);
       }
       else if (vresp->getRequestID() == XVDR_STATUS_RECORDING)
       {
-                          vresp->extract_U32(); // device currently unused
-        uint32_t on     = vresp->extract_U32();
-        char* str1      = vresp->extract_String();
-        char* str2      = vresp->extract_String();
+                           vresp->extract_U32(); // device currently unused
+        uint32_t on      = vresp->extract_U32();
+        const char* str1 = vresp->extract_String();
+        const char* str2 = vresp->extract_String();
 
         PVR->Recording(str1, str2, on);
         PVR->TriggerTimerUpdate();
-
-        delete[] str1;
-        delete[] str2;
       }
       else if (vresp->getRequestID() == XVDR_STATUS_TIMERCHANGE)
       {
@@ -1027,8 +1005,6 @@ bool cXVDRData::GetChannelGroupList(PVR_HANDLE handle, bool bRadio)
     tag.strGroupName = vresp->extract_String();
     tag.bIsRadio = vresp->extract_U8();
     PVR->TransferChannelGroup(handle, &tag);
-
-    delete[] tag.strGroupName;
   }
 
   delete vresp;
