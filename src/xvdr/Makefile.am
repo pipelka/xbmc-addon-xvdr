@@ -34,7 +34,6 @@ libxvdr_la_SOURCES = \
 	XVDRSession.h \
 	requestpacket.cpp \
 	requestpacket.h \
-	responsepacket.h \
 	thread.cpp \
 	thread.h \
 	tools.cpp \

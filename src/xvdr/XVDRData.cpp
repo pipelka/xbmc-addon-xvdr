@@ -21,7 +21,7 @@
  */
 
 #include "XVDRData.h"
-#include "responsepacket.h"
+#include "XVDRResponsePacket.h"
 #include "requestpacket.h"
 #include "xvdrcommand.h"
 
@@ -102,7 +102,7 @@ void cXVDRData::OnReconnect()
   PVR->TriggerRecordingUpdate();
 }
 
-cResponsePacket* cXVDRData::ReadResult(cRequestPacket* vrp)
+cXVDRResponsePacket* cXVDRData::ReadResult(cRequestPacket* vrp)
 {
   m_Mutex.Lock();
 
@@ -123,7 +123,7 @@ cResponsePacket* cXVDRData::ReadResult(cRequestPacket* vrp)
 
   m_Mutex.Lock();
 
-  cResponsePacket* vresp = message.pkt;
+  cXVDRResponsePacket* vresp = message.pkt;
   delete message.event;
 
   m_queue.erase(vrp->getSerial());
@@ -142,7 +142,7 @@ bool cXVDRData::GetDriveSpace(long long *total, long long *used)
     return false;
   }
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
@@ -173,7 +173,7 @@ bool cXVDRData::SupportChannelScan()
     return false;
   }
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
@@ -191,7 +191,7 @@ bool cXVDRData::EnableStatusInterface(bool onOff, bool direct)
   if (!vrp.init(XVDR_ENABLESTATUSINTERFACE)) return false;
   if (!vrp.add_U8(onOff)) return false;
 
-  cResponsePacket* vresp = direct ? cXVDRSession::ReadResult(&vrp) : ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = direct ? cXVDRSession::ReadResult(&vrp) : ReadResult(&vrp);
   if (!vresp)
   {
     XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
@@ -215,7 +215,7 @@ bool cXVDRData::SetUpdateChannels(uint8_t method, bool direct)
   if (!vrp.init(XVDR_UPDATECHANNELS)) return false;
   if (!vrp.add_U8(method)) return false;
 
-  cResponsePacket* vresp = direct ? cXVDRSession::ReadResult(&vrp) : ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = direct ? cXVDRSession::ReadResult(&vrp) : ReadResult(&vrp);
   if (!vresp)
   {
     XBMC->Log(LOG_INFO, "Setting channel update method not supported by server. Consider updating the XVDR server.");
@@ -248,7 +248,7 @@ bool cXVDRData::ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& c
   for(int i = 0; i < count; i++)
     if (!vrp.add_U32(caids[i])) return false;
 
-  cResponsePacket* vresp = direct ? cXVDRSession::ReadResult(&vrp) : ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = direct ? cXVDRSession::ReadResult(&vrp) : ReadResult(&vrp);
   if (!vresp)
   {
     XBMC->Log(LOG_INFO, "Channel filter method not supported by server. Consider updating the XVDR server.");
@@ -280,7 +280,7 @@ int cXVDRData::GetChannelsCount()
     return -1;
   }
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
@@ -307,7 +307,7 @@ bool cXVDRData::GetChannelsList(PVR_HANDLE handle, bool radio)
     return false;
   }
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
@@ -352,7 +352,7 @@ bool cXVDRData::GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL &channel, 
     return false;
   }
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
@@ -403,7 +403,7 @@ int cXVDRData::GetTimersCount()
     return -1;
   }
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
@@ -416,7 +416,7 @@ int cXVDRData::GetTimersCount()
   return m_timercount;
 }
 
-void cXVDRData::ReadTimerPacket(cResponsePacket* resp, PVR_TIMER &tag) {
+void cXVDRData::ReadTimerPacket(cXVDRResponsePacket* resp, PVR_TIMER &tag) {
   tag.iClientIndex      = resp->extract_U32();
   int iActive           = resp->extract_U32();
   int iRecording        = resp->extract_U32();
@@ -472,7 +472,7 @@ PVR_ERROR cXVDRData::GetTimerInfo(unsigned int timernumber, PVR_TIMER &tag)
   if (!vrp.add_U32(timernumber))
     return PVR_ERROR_UNKNOWN;
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
@@ -505,7 +505,7 @@ bool cXVDRData::GetTimersList(PVR_HANDLE handle)
     return false;
   }
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     delete vresp;
@@ -585,7 +585,7 @@ PVR_ERROR cXVDRData::AddTimer(const PVR_TIMER &timerinfo)
   if (!vrp.add_String(path.c_str()))      return PVR_ERROR_UNKNOWN;
   if (!vrp.add_String(""))                return PVR_ERROR_UNKNOWN;
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->noResponse())
   {
     delete vresp;
@@ -616,7 +616,7 @@ PVR_ERROR cXVDRData::DeleteTimer(const PVR_TIMER &timerinfo, bool force)
   if (!vrp.add_U32(force))
     return PVR_ERROR_UNKNOWN;
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->noResponse())
   {
     delete vresp;
@@ -674,7 +674,7 @@ PVR_ERROR cXVDRData::UpdateTimer(const PVR_TIMER &timerinfo)
   if (!vrp.add_String(title.c_str()))   return PVR_ERROR_UNKNOWN;
   if (!vrp.add_String(""))                return PVR_ERROR_UNKNOWN;
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->noResponse())
   {
     delete vresp;
@@ -701,7 +701,7 @@ int cXVDRData::GetRecordingsCount()
     return -1;
   }
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
@@ -723,7 +723,7 @@ PVR_ERROR cXVDRData::GetRecordingsList(PVR_HANDLE handle)
     return PVR_ERROR_UNKNOWN;
   }
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     XBMC->Log(LOG_ERROR, "%s - Can't get response packet", __FUNCTION__);
@@ -773,7 +773,7 @@ PVR_ERROR cXVDRData::RenameRecording(const PVR_RECORDING& recinfo, const char* n
   if (!vrp.add_String(newname))
     return PVR_ERROR_UNKNOWN;
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->noResponse())
   {
     delete vresp;
@@ -801,7 +801,7 @@ PVR_ERROR cXVDRData::DeleteRecording(const PVR_RECORDING& recinfo)
   if (!vrp.add_String(recinfo.strRecordingId))
     return PVR_ERROR_UNKNOWN;
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->noResponse())
   {
     delete vresp;
@@ -829,7 +829,7 @@ PVR_ERROR cXVDRData::DeleteRecording(const PVR_RECORDING& recinfo)
   return PVR_ERROR_NO_ERROR;
 }
 
-bool cXVDRData::OnResponsePacket(cResponsePacket* pkt)
+bool cXVDRData::OnResponsePacket(cXVDRResponsePacket* pkt)
 {
   return false;
 }
@@ -845,7 +845,7 @@ bool cXVDRData::SendPing()
     return false;
   }
 
-  cResponsePacket* vresp = cXVDRSession::ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = cXVDRSession::ReadResult(&vrp);
   delete vresp;
 
   return (vresp != NULL);
@@ -854,7 +854,7 @@ bool cXVDRData::SendPing()
 void cXVDRData::Action()
 {
   uint32_t lastPing = 0;
-  cResponsePacket* vresp;
+  cXVDRResponsePacket* vresp;
 
   SetPriority(19);
 
@@ -973,7 +973,7 @@ int cXVDRData::GetChannelGroupCount(bool automatic)
     return 0;
   }
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->noResponse())
   {
     delete vresp;
@@ -997,7 +997,7 @@ bool cXVDRData::GetChannelGroupList(PVR_HANDLE handle, bool bRadio)
 
   vrp.add_U8(bRadio);
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->noResponse())
   {
     delete vresp;
@@ -1029,7 +1029,7 @@ bool cXVDRData::GetChannelGroupMembers(PVR_HANDLE handle, const PVR_CHANNEL_GROU
   vrp.add_String(group.strGroupName);
   vrp.add_U8(group.bIsRadio);
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->noResponse())
   {
     delete vresp;

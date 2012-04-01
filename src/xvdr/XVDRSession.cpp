@@ -21,6 +21,7 @@
  */
 
 #include "XVDRSession.h"
+#include "XVDRResponsePacket.h"
 #include "client.h"
 
 #include <unistd.h>
@@ -29,7 +30,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "responsepacket.h"
 #include "requestpacket.h"
 #include "xvdrcommand.h"
 #include "tools.h"
@@ -126,7 +126,7 @@ bool cXVDRSession::Login()
     return false;
 
   // read welcome
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     XBMC->Log(LOG_ERROR, "failed to read greeting from server");
@@ -149,7 +149,7 @@ bool cXVDRSession::Login()
   return true;
 }
 
-cResponsePacket* cXVDRSession::ReadMessage()
+cXVDRResponsePacket* cXVDRSession::ReadMessage()
 {
   uint32_t channelID = 0;
   uint32_t requestID;
@@ -161,7 +161,7 @@ cResponsePacket* cXVDRSession::ReadMessage()
   int64_t  dts = 0;
   int64_t  pts = 0;
 
-  cResponsePacket* vresp = NULL;
+  cXVDRResponsePacket* vresp = NULL;
 
   if(!readData((uint8_t*)&channelID, sizeof(uint32_t)))
     return NULL;
@@ -209,7 +209,7 @@ cResponsePacket* cXVDRSession::ReadMessage()
       }
     }
 
-    vresp = new cResponsePacket();
+    vresp = new cXVDRResponsePacket();
     vresp->setStream(opCodeID, streamID, duration, dts, pts, userData, userDataLength);
   }
   else
@@ -231,7 +231,7 @@ cResponsePacket* cXVDRSession::ReadMessage()
       }
     }
 
-    vresp = new cResponsePacket();
+    vresp = new cXVDRResponsePacket();
     if (channelID == XVDR_CHANNEL_STATUS)
       vresp->setStatus(requestID, userData, userDataLength);
     else
@@ -249,7 +249,7 @@ bool cXVDRSession::SendMessage(cRequestPacket* vrp)
   return (tcp_send_timeout(m_fd, vrp->getPtr(), vrp->getLen(), m_timeout) == 0);
 }
 
-cResponsePacket* cXVDRSession::ReadResult(cRequestPacket* vrp)
+cXVDRResponsePacket* cXVDRSession::ReadResult(cRequestPacket* vrp)
 {
   if(!SendMessage(vrp))
   {
@@ -257,7 +257,7 @@ cResponsePacket* cXVDRSession::ReadResult(cRequestPacket* vrp)
     return NULL;
   }
 
-  cResponsePacket *pkt = NULL;
+  cXVDRResponsePacket *pkt = NULL;
 
   while((pkt = ReadMessage()))
   {
@@ -281,7 +281,7 @@ bool cXVDRSession::ReadSuccess(cRequestPacket* vrp) {
 
 bool cXVDRSession::ReadSuccess(cRequestPacket* vrp, uint32_t& rc)
 {
-  cResponsePacket *pkt = NULL;
+  cXVDRResponsePacket *pkt = NULL;
   if((pkt = ReadResult(vrp)) == NULL)
     return false;
 

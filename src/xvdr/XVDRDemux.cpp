@@ -25,7 +25,7 @@
 #include <string.h>
 #include "codecids.h" // For codec id's
 #include "XVDRDemux.h"
-#include "responsepacket.h"
+#include "XVDRResponsePacket.h"
 #include "requestpacket.h"
 #include "xvdrcommand.h"
 
@@ -82,7 +82,7 @@ DemuxPacket* cXVDRDemux::Read()
     return PVR->AllocateDemuxPacket(0);
   }
 
-  cResponsePacket *resp = ReadMessage();
+  cXVDRResponsePacket *resp = ReadMessage();
 
   if(resp == NULL)
     return PVR->AllocateDemuxPacket(0);
@@ -229,7 +229,7 @@ bool cXVDRDemux::GetSignalStatus(PVR_SIGNAL_STATUS &qualityinfo)
   return true;
 }
 
-void cXVDRDemux::StreamChange(cResponsePacket *resp)
+void cXVDRDemux::StreamChange(cXVDRResponsePacket *resp)
 {
   m_Streams.iStreamCount = 0;
 
@@ -371,7 +371,7 @@ void cXVDRDemux::StreamChange(cResponsePacket *resp)
   }
 }
 
-void cXVDRDemux::StreamStatus(cResponsePacket *resp)
+void cXVDRDemux::StreamStatus(cXVDRResponsePacket *resp)
 {
   uint32_t status = resp->extract_U32();
 
@@ -388,7 +388,7 @@ void cXVDRDemux::StreamStatus(cResponsePacket *resp)
   }
 }
 
-void cXVDRDemux::StreamSignalInfo(cResponsePacket *resp)
+void cXVDRDemux::StreamSignalInfo(cXVDRResponsePacket *resp)
 {
   const char* name = resp->extract_String();
   const char* status = resp->extract_String();
@@ -401,7 +401,7 @@ void cXVDRDemux::StreamSignalInfo(cResponsePacket *resp)
   m_Quality.fe_unc    = resp->extract_U32();
 }
 
-bool cXVDRDemux::StreamContentInfo(cResponsePacket *resp)
+bool cXVDRDemux::StreamContentInfo(cXVDRResponsePacket *resp)
 {
   PVR_STREAM_PROPERTIES old = m_Streams;
 

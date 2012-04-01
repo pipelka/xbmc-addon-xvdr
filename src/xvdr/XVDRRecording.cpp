@@ -22,7 +22,7 @@
 
 #include <limits.h>
 #include "XVDRRecording.h"
-#include "responsepacket.h"
+#include "XVDRResponsePacket.h"
 #include "requestpacket.h"
 #include "xvdrcommand.h"
 
@@ -56,7 +56,7 @@ bool cXVDRRecording::OpenRecording(const std::string& hostname, const PVR_RECORD
     return false;
   }
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
     return false;
 
@@ -97,7 +97,7 @@ int cXVDRRecording::Read(unsigned char* buf, uint32_t buf_size)
   if (m_currentPlayingRecordPosition >= m_currentPlayingRecordBytes)
     return 0;
 
-  cResponsePacket* vresp = NULL;
+  cXVDRResponsePacket* vresp = NULL;
 
   cRequestPacket vrp1;
   if (vrp1.init(XVDR_RECSTREAM_UPDATE) && ((vresp = ReadResult(&vrp1)) != NULL))

@@ -22,7 +22,7 @@
 
 #include <limits.h>
 #include "XVDRChannelScan.h"
-#include "responsepacket.h"
+#include "XVDRResponsePacket.h"
 #include "requestpacket.h"
 #include "xvdrcommand.h"
 
@@ -126,7 +126,7 @@ void cXVDRChannelScan::StartScan()
   }
 
   cRequestPacket vrp;
-  cResponsePacket* vresp = NULL;
+  cXVDRResponsePacket* vresp = NULL;
   uint32_t retCode = XVDR_RET_ERROR;
   if (!vrp.init(XVDR_SCAN_START))                          goto SCANError;
   if (!vrp.add_U32(source))                               goto SCANError;
@@ -167,7 +167,7 @@ void cXVDRChannelScan::StopScan()
   if (!vrp.init(XVDR_SCAN_STOP))
     return;
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
     return;
 
@@ -422,7 +422,7 @@ bool cXVDRChannelScan::ReadCountries()
   if (!vrp.init(XVDR_SCAN_GETCOUNTRIES))
     return false;
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
     return false;
 
@@ -459,7 +459,7 @@ bool cXVDRChannelScan::ReadSatellites()
   if (!vrp.init(XVDR_SCAN_GETSATELLITES))
     return false;
 
-  cResponsePacket* vresp = ReadResult(&vrp);
+  cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
     return false;
 
@@ -499,7 +499,7 @@ void cXVDRChannelScan::SetControlsVisible(scantype_t type)
   m_radioButtonHD->SetVisible(type == DVB_TERR || type == DVB_CABLE || type == DVB_SAT || type == DVB_ATSC);
 }
 
-bool cXVDRChannelScan::OnResponsePacket(cResponsePacket* resp)
+bool cXVDRChannelScan::OnResponsePacket(cXVDRResponsePacket* resp)
 {
   uint32_t requestID = resp->getRequestID();
 
