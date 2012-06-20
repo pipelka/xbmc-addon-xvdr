@@ -20,6 +20,8 @@
  *
  */
 
+#include <string.h>
+
 #include "XVDRData.h"
 #include "XVDRCallbacks.h"
 #include "XVDRResponsePacket.h"
@@ -441,8 +443,8 @@ void cXVDRData::ReadTimerPacket(cXVDRResponsePacket* resp, PVR_TIMER &tag) {
   tag.iMarginStart      = 0;
   tag.iMarginEnd        = 0;
 
-  char* p = (char*)rindex(title, '~');
-  if(p == NULL) {
+  char* p = (char*)strrchr(title, '~');
+  if(*p == 0) {
 	  tag.strTitle = title;
 	  tag.strDirectory = "";
   }
