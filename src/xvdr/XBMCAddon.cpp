@@ -291,7 +291,7 @@ PVR_ERROR DialogChannelScan(void)
 {
   cMutexLock lock(&XVDRMutex);
 
-  cXVDRChannelScan scanner;
+  cXBMCChannelScan scanner;
   scanner.Open(cXBMCSettings::GetInstance().Hostname());
   return PVR_ERROR_NO_ERROR;
 }

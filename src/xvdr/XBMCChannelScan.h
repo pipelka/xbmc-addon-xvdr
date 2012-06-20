@@ -39,12 +39,12 @@ typedef enum scantype
 } scantype_t;
 
 
-class cXVDRChannelScan : public cXVDRData
+class cXBMCChannelScan : public cXVDRData
 {
 public:
 
-  cXVDRChannelScan();
-  ~cXVDRChannelScan();
+  cXBMCChannelScan();
+  ~cXBMCChannelScan();
 
   bool Open(const std::string& hostname, const char* name = "XBMC channel scanner");
 

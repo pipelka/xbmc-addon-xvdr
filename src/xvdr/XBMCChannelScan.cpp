@@ -57,15 +57,15 @@ using namespace ADDON;
 #define PROGRESS_SIGNAL                 35
 #define LABEL_STATUS                    36
 
-cXVDRChannelScan::cXVDRChannelScan()
+cXBMCChannelScan::cXBMCChannelScan()
 {
 }
 
-cXVDRChannelScan::~cXVDRChannelScan()
+cXBMCChannelScan::~cXBMCChannelScan()
 {
 }
 
-bool cXVDRChannelScan::Open(const std::string& hostname, const char* name)
+bool cXBMCChannelScan::Open(const std::string& hostname, const char* name)
 {
   m_running         = false;
   m_Canceled        = false;
@@ -91,7 +91,7 @@ bool cXVDRChannelScan::Open(const std::string& hostname, const char* name)
   return true;
 }
 
-void cXVDRChannelScan::StartScan()
+void cXBMCChannelScan::StartScan()
 {
   m_header = XBMC->GetLocalizedString(30025);
   m_Signal = XBMC->GetLocalizedString(30029);
@@ -157,7 +157,7 @@ SCANError:
   m_stopped = true;
 }
 
-void cXVDRChannelScan::StopScan()
+void cXBMCChannelScan::StopScan()
 {
   cRequestPacket vrp;
   if (!vrp.init(XVDR_SCAN_STOP))
@@ -179,7 +179,7 @@ void cXVDRChannelScan::StopScan()
   return;
 }
 
-void cXVDRChannelScan::ReturnFromProcessView()
+void cXBMCChannelScan::ReturnFromProcessView()
 {
   if (m_running)
   {
@@ -201,7 +201,7 @@ void cXVDRChannelScan::ReturnFromProcessView()
   }
 }
 
-void cXVDRChannelScan::SetProgress(int percent)
+void cXBMCChannelScan::SetProgress(int percent)
 {
   if (!m_progressDone)
     m_progressDone = GUI->Control_getProgress(m_window, PROGRESS_DONE);
@@ -213,7 +213,7 @@ void cXVDRChannelScan::SetProgress(int percent)
   m_progressDone->SetPercentage((float)percent);
 }
 
-void cXVDRChannelScan::SetSignal(int percent, bool locked)
+void cXBMCChannelScan::SetSignal(int percent, bool locked)
 {
   if (!m_progressSignal)
     m_progressSignal = GUI->Control_getProgress(m_window, PROGRESS_SIGNAL);
@@ -230,7 +230,7 @@ void cXVDRChannelScan::SetSignal(int percent, bool locked)
     m_window->SetProperty("Locked", "");
 }
 
-bool cXVDRChannelScan::OnClick(int controlId)
+bool cXBMCChannelScan::OnClick(int controlId)
 {
   if (controlId == SPIN_CONTROL_SOURCE_TYPE)
   {
@@ -287,12 +287,12 @@ bool cXVDRChannelScan::OnClick(int controlId)
   return true;
 }
 
-bool cXVDRChannelScan::OnFocus(int controlId)
+bool cXBMCChannelScan::OnFocus(int controlId)
 {
   return true;
 }
 
-bool cXVDRChannelScan::OnInit()
+bool cXBMCChannelScan::OnInit()
 {
   m_spinSourceType = GUI->Control_getSpin(m_window, SPIN_CONTROL_SOURCE_TYPE);
   m_spinSourceType->Clear();
@@ -374,7 +374,7 @@ bool cXVDRChannelScan::OnInit()
   return true;
 }
 
-bool cXVDRChannelScan::OnAction(int actionId)
+bool cXBMCChannelScan::OnAction(int actionId)
 {
   if (actionId == ADDON_ACTION_CLOSE_DIALOG || actionId == ADDON_ACTION_PREVIOUS_MENU)
     OnClick(BUTTON_BACK);
@@ -382,31 +382,31 @@ bool cXVDRChannelScan::OnAction(int actionId)
   return true;
 }
 
-bool cXVDRChannelScan::OnInitCB(GUIHANDLE cbhdl)
+bool cXBMCChannelScan::OnInitCB(GUIHANDLE cbhdl)
 {
-  cXVDRChannelScan* scanner = static_cast<cXVDRChannelScan*>(cbhdl);
+  cXBMCChannelScan* scanner = static_cast<cXBMCChannelScan*>(cbhdl);
   return scanner->OnInit();
 }
 
-bool cXVDRChannelScan::OnClickCB(GUIHANDLE cbhdl, int controlId)
+bool cXBMCChannelScan::OnClickCB(GUIHANDLE cbhdl, int controlId)
 {
-  cXVDRChannelScan* scanner = static_cast<cXVDRChannelScan*>(cbhdl);
+  cXBMCChannelScan* scanner = static_cast<cXBMCChannelScan*>(cbhdl);
   return scanner->OnClick(controlId);
 }
 
-bool cXVDRChannelScan::OnFocusCB(GUIHANDLE cbhdl, int controlId)
+bool cXBMCChannelScan::OnFocusCB(GUIHANDLE cbhdl, int controlId)
 {
-  cXVDRChannelScan* scanner = static_cast<cXVDRChannelScan*>(cbhdl);
+  cXBMCChannelScan* scanner = static_cast<cXBMCChannelScan*>(cbhdl);
   return scanner->OnFocus(controlId);
 }
 
-bool cXVDRChannelScan::OnActionCB(GUIHANDLE cbhdl, int actionId)
+bool cXBMCChannelScan::OnActionCB(GUIHANDLE cbhdl, int actionId)
 {
-  cXVDRChannelScan* scanner = static_cast<cXVDRChannelScan*>(cbhdl);
+  cXBMCChannelScan* scanner = static_cast<cXBMCChannelScan*>(cbhdl);
   return scanner->OnAction(actionId);
 }
 
-bool cXVDRChannelScan::ReadCountries()
+bool cXBMCChannelScan::ReadCountries()
 {
   m_spinCountries = GUI->Control_getSpin(m_window, CONTROL_SPIN_COUNTRIES);
   m_spinCountries->Clear();
@@ -446,7 +446,7 @@ bool cXVDRChannelScan::ReadCountries()
   return retCode == XVDR_RET_OK;
 }
 
-bool cXVDRChannelScan::ReadSatellites()
+bool cXBMCChannelScan::ReadSatellites()
 {
   m_spinSatellites = GUI->Control_getSpin(m_window, CONTROL_SPIN_SATELLITES);
   m_spinSatellites->Clear();
@@ -479,7 +479,7 @@ bool cXVDRChannelScan::ReadSatellites()
   return retCode == XVDR_RET_OK;
 }
 
-void cXVDRChannelScan::SetControlsVisible(scantype_t type)
+void cXBMCChannelScan::SetControlsVisible(scantype_t type)
 {
   m_spinCountries->SetVisible(type == DVB_TERR || type == DVB_CABLE || type == PVRINPUT);
   m_spinSatellites->SetVisible(type == DVB_SAT || type == DVB_ATSC);
@@ -495,7 +495,7 @@ void cXVDRChannelScan::SetControlsVisible(scantype_t type)
   m_radioButtonHD->SetVisible(type == DVB_TERR || type == DVB_CABLE || type == DVB_SAT || type == DVB_ATSC);
 }
 
-bool cXVDRChannelScan::OnResponsePacket(cXVDRResponsePacket* resp)
+bool cXBMCChannelScan::OnResponsePacket(cXVDRResponsePacket* resp)
 {
   uint32_t requestID = resp->getRequestID();
 
