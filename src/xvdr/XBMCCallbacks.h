@@ -22,8 +22,6 @@ public:
 
   const char* GetLocalizedString(int id);
 
-  bool GetSetting(const std::string& setting, void* value);
-
   void TriggerChannelUpdate();
 
   void TriggerRecordingUpdate();

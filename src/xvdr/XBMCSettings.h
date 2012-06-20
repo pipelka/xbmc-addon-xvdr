@@ -20,18 +20,19 @@
  *
  */
 
+#include "XBMCAddon.h"
+#include "XVDRCallbacks.h"
 #include <list>
 #include <vector>
 #include <string>
-#include "XVDRCallbacks.h"
 
-class cXVDRConfigParameterBase
+class cXBMCConfigParameterBase
 {
 public:
 
-  cXVDRConfigParameterBase();
+  cXBMCConfigParameterBase();
 
-  virtual ~cXVDRConfigParameterBase();
+  virtual ~cXBMCConfigParameterBase();
 
   virtual bool load() = 0;
 
@@ -43,35 +44,35 @@ protected:
 
   std::string m_setting;
 
-  static std::list<cXVDRConfigParameterBase*>& parameters();
+  static std::list<cXBMCConfigParameterBase*>& parameters();
 
-  friend class cXVDRSettings;
+  friend class cXBMCSettings;
 
 private:
 
-  static std::list<cXVDRConfigParameterBase*> m_parameters;
+  static std::list<cXBMCConfigParameterBase*> m_parameters;
 
 };
 
 
 template< class T >
-class cXVDRConfigParameter : public cXVDRConfigParameterBase
+class cXBMCConfigParameter : public cXBMCConfigParameterBase
 {
 public:
 
-  cXVDRConfigParameter(const std::string& setting, T defaultvalue) : m_value(defaultvalue), m_default(defaultvalue)
+  cXBMCConfigParameter(const std::string& setting, T defaultvalue) : m_value(defaultvalue), m_default(defaultvalue)
   {
     m_setting = setting;
   }
 
-  cXVDRConfigParameter(const std::string& setting)
+  cXBMCConfigParameter(const std::string& setting)
   {
     m_setting = setting;
   }
 
   bool load()
   {
-    if (XVDRGetSetting(m_setting.c_str(), &m_value))
+    if (XBMC->GetSetting(m_setting.c_str(), &m_value))
       return true;
 
     XVDRLog(XVDR_ERROR, "Couldn't get '%s' setting, falling back to default", m_setting.c_str());
@@ -108,13 +109,13 @@ private:
 
 };
 
-class cXVDRSettings
+class cXBMCSettings
 {
 public:
 
-  virtual ~cXVDRSettings();
+  virtual ~cXBMCSettings();
 
-  static cXVDRSettings& GetInstance();
+  static cXBMCSettings& GetInstance();
 
   void load();
 
@@ -122,23 +123,23 @@ public:
 
   void checkValues();
 
-  cXVDRConfigParameter<std::string> Hostname;
-  cXVDRConfigParameter<int> ConnectTimeout;
-  cXVDRConfigParameter<bool> HandleMessages;
-  cXVDRConfigParameter<int> Priority;
-  cXVDRConfigParameter<int> Compression;
-  cXVDRConfigParameter<bool> AutoChannelGroups;
-  cXVDRConfigParameter<int> AudioType;
-  cXVDRConfigParameter<int> UpdateChannels;
-  cXVDRConfigParameter<bool> FTAChannels;
-  cXVDRConfigParameter<bool> NativeLangOnly;
-  cXVDRConfigParameter<bool> EncryptedChannels;
-  cXVDRConfigParameter<std::string> caids;
+  cXBMCConfigParameter<std::string> Hostname;
+  cXBMCConfigParameter<int> ConnectTimeout;
+  cXBMCConfigParameter<bool> HandleMessages;
+  cXBMCConfigParameter<int> Priority;
+  cXBMCConfigParameter<int> Compression;
+  cXBMCConfigParameter<bool> AutoChannelGroups;
+  cXBMCConfigParameter<int> AudioType;
+  cXBMCConfigParameter<int> UpdateChannels;
+  cXBMCConfigParameter<bool> FTAChannels;
+  cXBMCConfigParameter<bool> NativeLangOnly;
+  cXBMCConfigParameter<bool> EncryptedChannels;
+  cXBMCConfigParameter<std::string> caids;
   std::vector<int> vcaids;
 
 protected:
 
-  cXVDRSettings() :
+  cXBMCSettings() :
   Hostname("host", "127.0.0,1"),
   ConnectTimeout("timeout", 3),
   HandleMessages("handlemessages", true),

@@ -26,7 +26,6 @@
 
 #include "XVDRResponsePacket.h"
 #include "XVDRCallbacks.h"
-#include "XVDRSettings.h"
 #include "XVDRThread.h"
 #include "xvdrcommand.h"
 

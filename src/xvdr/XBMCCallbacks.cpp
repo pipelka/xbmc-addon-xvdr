@@ -93,11 +93,6 @@ const char* cXBMCCallbacks::GetLocalizedString(int id)
   return XBMC->GetLocalizedString(id);
 }
 
-bool cXBMCCallbacks::GetSetting(const std::string& setting, void* value)
-{
-  return XBMC->GetSetting(setting.c_str(), value);
-}
-
 void cXBMCCallbacks::TriggerChannelUpdate()
 {
   PVR->TriggerChannelUpdate();

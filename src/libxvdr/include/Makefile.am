@@ -11,7 +11,6 @@ libxvdrinclude_HEADERS = \
 	XVDRRecording.h \
 	XVDRResponsePacket.h \
 	XVDRSession.h \
-	XVDRSettings.h \
 	XVDRThread.h
 
 EXTRA_DIST = \

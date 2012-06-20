@@ -64,10 +64,6 @@ public:
 
   virtual const char* GetLocalizedString(int id) = 0;
 
-  // settings
-
-  virtual bool GetSetting(const std::string& setting, void* value) = 0;
-
   // triggers
 
   virtual void TriggerChannelUpdate() = 0;

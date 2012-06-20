@@ -19,53 +19,53 @@
  *
  */
 
-#include "XVDRSettings.h"
+#include "XBMCSettings.h"
 #include <algorithm>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 
-std::list<cXVDRConfigParameterBase*> cXVDRConfigParameterBase::m_parameters;
+std::list<cXBMCConfigParameterBase*> cXBMCConfigParameterBase::m_parameters;
 
 
-cXVDRConfigParameterBase::cXVDRConfigParameterBase()
+cXBMCConfigParameterBase::cXBMCConfigParameterBase()
 {
   m_parameters.push_back(this);
 }
 
-cXVDRConfigParameterBase::~cXVDRConfigParameterBase()
+cXBMCConfigParameterBase::~cXBMCConfigParameterBase()
 {
-  std::list<cXVDRConfigParameterBase*>::iterator i = std::find(m_parameters.begin(), m_parameters.end(), this);
+  std::list<cXBMCConfigParameterBase*>::iterator i = std::find(m_parameters.begin(), m_parameters.end(), this);
 
   if(i != m_parameters.end())
     m_parameters.erase(i);
 }
 
-std::list<cXVDRConfigParameterBase*>& cXVDRConfigParameterBase::parameters()
+std::list<cXBMCConfigParameterBase*>& cXBMCConfigParameterBase::parameters()
 {
   return m_parameters;
 }
 
-std::string& cXVDRConfigParameterBase::name()
+std::string& cXBMCConfigParameterBase::name()
 {
   return m_setting;
 }
 
 
-cXVDRSettings::~cXVDRSettings()
+cXBMCSettings::~cXBMCSettings()
 {
 }
 
-cXVDRSettings& cXVDRSettings::GetInstance()
+cXBMCSettings& cXBMCSettings::GetInstance()
 {
-  static cXVDRSettings singleton;
+  static cXBMCSettings singleton;
   return singleton;
 }
 
-bool cXVDRSettings::set(const std::string& setting, const void* value)
+bool cXBMCSettings::set(const std::string& setting, const void* value)
 {
-  std::list<cXVDRConfigParameterBase*>& list = cXVDRConfigParameterBase::parameters();
-  std::list<cXVDRConfigParameterBase*>::iterator i;
+  std::list<cXBMCConfigParameterBase*>& list = cXBMCConfigParameterBase::parameters();
+  std::list<cXBMCConfigParameterBase*>::iterator i;
 
   for(i = list.begin(); i != list.end(); i++)
   {
@@ -76,7 +76,7 @@ bool cXVDRSettings::set(const std::string& setting, const void* value)
   return false;
 }
 
-void cXVDRSettings::checkValues()
+void cXBMCSettings::checkValues()
 {
   ReadCaIDs(caids().c_str(), vcaids);
 
@@ -91,10 +91,10 @@ void cXVDRSettings::checkValues()
     Priority.set(10);
 }
 
-void cXVDRSettings::load()
+void cXBMCSettings::load()
 {
-  std::list<cXVDRConfigParameterBase*>& list = cXVDRConfigParameterBase::parameters();
-  std::list<cXVDRConfigParameterBase*>::iterator i;
+  std::list<cXBMCConfigParameterBase*>& list = cXBMCConfigParameterBase::parameters();
+  std::list<cXBMCConfigParameterBase*>::iterator i;
 
   for(i = list.begin(); i != list.end(); i++)
     (*i)->load();
@@ -102,7 +102,7 @@ void cXVDRSettings::load()
   checkValues();
 }
 
-void cXVDRSettings::ReadCaIDs(const char* buffer, std::vector<int>& array)
+void cXBMCSettings::ReadCaIDs(const char* buffer, std::vector<int>& array)
 {
   array.clear();
   char* p = strdup(buffer);
@@ -128,10 +128,10 @@ void cXVDRSettings::ReadCaIDs(const char* buffer, std::vector<int>& array)
 
 
 template<>
-bool cXVDRConfigParameter<std::string>::load()
+bool cXBMCConfigParameter<std::string>::load()
 {
   char buffer[512];
-  if (XVDRGetSetting(m_setting.c_str(), buffer))
+  if (XBMC->GetSetting(m_setting.c_str(), buffer))
   {
     m_value = buffer;
     return true;
@@ -144,7 +144,7 @@ bool cXVDRConfigParameter<std::string>::load()
 }
 
 template<>
-bool cXVDRConfigParameter<std::string>::set(const void* value)
+bool cXBMCConfigParameter<std::string>::set(const void* value)
 {
   const char* str = (const char*)value;
   if(strcmp(str, m_value.c_str()) == 0)

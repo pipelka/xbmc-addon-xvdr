@@ -17,7 +17,9 @@ libxvdraddon_la_SOURCES = \
 	XBMCCallbacks.cpp \
 	XBMCCallbacks.h \
 	XBMCChannelScan.cpp \
-	XBMCChannelScan.h
+	XBMCChannelScan.h \
+	XBMCSettings.cpp \
+	XBMCSettings.h
 
 libxvdraddon_la_LDFLAGS = \
 	-avoid-version

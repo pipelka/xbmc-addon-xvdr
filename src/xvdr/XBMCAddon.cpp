@@ -23,11 +23,11 @@
 #include "XBMCAddon.h"
 #include "XBMCCallbacks.h"
 #include "XBMCChannelScan.h"
+#include "XBMCSettings.h"
 
 #include "XVDRDemux.h"
 #include "XVDRRecording.h"
 #include "XVDRData.h"
-#include "XVDRSettings.h"
 #include "XVDRThread.h"
 
 #include "xbmc_pvr_dll.h"
@@ -97,7 +97,7 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
 
   m_CurStatus = ADDON_STATUS_UNKNOWN;
 
-  cXVDRSettings& s = cXVDRSettings::GetInstance();
+  cXBMCSettings& s = cXBMCSettings::GetInstance();
   s.load();
 
   XVDRData = new cXVDRData;
@@ -174,7 +174,7 @@ unsigned int ADDON_GetSettings(ADDON_StructSetting ***sSet)
 ADDON_STATUS ADDON_SetSetting(const char *settingName, const void *settingValue)
 {
   bool bChanged = false;
-  cXVDRSettings& s = cXVDRSettings::GetInstance();
+  cXBMCSettings& s = cXBMCSettings::GetInstance();
   bChanged = s.set(settingName, settingValue);
 
   if(!bChanged)
@@ -268,10 +268,10 @@ const char * GetConnectionString(void)
   std::stringstream format;
 
   if (XVDRData) {
-    format << cXVDRSettings::GetInstance().Hostname();
+    format << cXBMCSettings::GetInstance().Hostname();
   }
   else {
-    format << cXVDRSettings::GetInstance().Hostname() << " (addon error!)";
+    format << cXBMCSettings::GetInstance().Hostname() << " (addon error!)";
   }
   ConnectionString = format.str();
   return ConnectionString.c_str();
@@ -292,7 +292,7 @@ PVR_ERROR DialogChannelScan(void)
   cMutexLock lock(&XVDRMutex);
 
   cXVDRChannelScan scanner;
-  scanner.Open(cXVDRSettings::GetInstance().Hostname());
+  scanner.Open(cXBMCSettings::GetInstance().Hostname());
   return PVR_ERROR_NO_ERROR;
 }
 
@@ -346,7 +346,7 @@ int GetChannelGroupsAmount()
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return XVDRData->GetChannelGroupCount(cXVDRSettings::GetInstance().AutoChannelGroups());
+  return XVDRData->GetChannelGroupCount(cXBMCSettings::GetInstance().AutoChannelGroups());
 }
 
 PVR_ERROR GetChannelGroups(PVR_HANDLE handle, bool bRadio)
@@ -357,7 +357,7 @@ PVR_ERROR GetChannelGroups(PVR_HANDLE handle, bool bRadio)
     return PVR_ERROR_SERVER_ERROR;
 
   Callbacks->SetHandle(handle);
-  if(XVDRData->GetChannelGroupCount(cXVDRSettings::GetInstance().AutoChannelGroups()) > 0)
+  if(XVDRData->GetChannelGroupCount(cXBMCSettings::GetInstance().AutoChannelGroups()) > 0)
     return XVDRData->GetChannelGroupList(bRadio) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
 
   return PVR_ERROR_NO_ERROR;
@@ -491,11 +491,11 @@ bool OpenLiveStream(const PVR_CHANNEL &channel)
   }
 
   XVDRDemuxer = new cXVDRDemux;
-  XVDRDemuxer->SetTimeout(cXVDRSettings::GetInstance().ConnectTimeout() * 1000);
-  XVDRDemuxer->SetAudioType(cXVDRSettings::GetInstance().AudioType());
-  XVDRDemuxer->SetPriority(priotable[cXVDRSettings::GetInstance().Priority()]);
+  XVDRDemuxer->SetTimeout(cXBMCSettings::GetInstance().ConnectTimeout() * 1000);
+  XVDRDemuxer->SetAudioType(cXBMCSettings::GetInstance().AudioType());
+  XVDRDemuxer->SetPriority(priotable[cXBMCSettings::GetInstance().Priority()]);
 
-  return XVDRDemuxer->OpenChannel(cXVDRSettings::GetInstance().Hostname(), channel);
+  return XVDRDemuxer->OpenChannel(cXBMCSettings::GetInstance().Hostname(), channel);
 }
 
 void CloseLiveStream(void)
@@ -565,9 +565,9 @@ bool SwitchChannel(const PVR_CHANNEL &channel)
   if (XVDRDemuxer == NULL)
     return false;
 
-  XVDRDemuxer->SetTimeout(cXVDRSettings::GetInstance().ConnectTimeout() * 1000);
-  XVDRDemuxer->SetAudioType(cXVDRSettings::GetInstance().AudioType());
-  XVDRDemuxer->SetPriority(priotable[cXVDRSettings::GetInstance().Priority()]);
+  XVDRDemuxer->SetTimeout(cXBMCSettings::GetInstance().ConnectTimeout() * 1000);
+  XVDRDemuxer->SetAudioType(cXBMCSettings::GetInstance().AudioType());
+  XVDRDemuxer->SetPriority(priotable[cXBMCSettings::GetInstance().Priority()]);
 
   return XVDRDemuxer->SwitchChannel(channel);
 }
@@ -598,9 +598,9 @@ bool OpenRecordedStream(const PVR_RECORDING &recording)
   CloseRecordedStream();
 
   XVDRRecording = new cXVDRRecording;
-  XVDRRecording->SetTimeout(cXVDRSettings::GetInstance().ConnectTimeout() * 1000);
+  XVDRRecording->SetTimeout(cXBMCSettings::GetInstance().ConnectTimeout() * 1000);
 
-  return XVDRRecording->OpenRecording(cXVDRSettings::GetInstance().Hostname(), recording);
+  return XVDRRecording->OpenRecording(cXBMCSettings::GetInstance().Hostname(), recording);
 }
 
 void CloseRecordedStream(void)

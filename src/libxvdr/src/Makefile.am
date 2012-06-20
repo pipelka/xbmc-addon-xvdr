@@ -23,7 +23,6 @@ SOURCEFILES = \
 	XVDRRecording.cpp \
 	XVDRResponsePacket.cpp \
 	XVDRSession.cpp \
-	XVDRSettings.cpp \
 	XVDRThread.cpp
 
 
