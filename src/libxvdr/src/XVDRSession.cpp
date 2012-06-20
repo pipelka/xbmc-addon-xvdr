@@ -195,12 +195,13 @@ cXVDRResponsePacket* cXVDRSession::ReadMessage()
     userDataLength = ntohl(m_streamPacketHeader.userDataLength);
 
     if(opCodeID == XVDR_STREAM_MUXPKT) {
-      DemuxPacket* p = XVDRAllocatePacket(userDataLength);
+      XVDRPacket* p = XVDRAllocatePacket(userDataLength);
       userData = (uint8_t*)p;
+      uint8_t* payload = XVDRGetPacketPayload(p);
       if (userDataLength > 0)
       {
         if (!userData) return NULL;
-        if (!readData(p->pData, userDataLength))
+        if (payload == NULL || !readData(payload, userDataLength))
         {
           XVDRFreePacket(p);
           return NULL;

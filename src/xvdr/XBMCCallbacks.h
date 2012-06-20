@@ -42,9 +42,13 @@ public:
 
   void TransferChannelGroupMember(PVR_CHANNEL_GROUP_MEMBER* member);
 
-  DemuxPacket* AllocatePacket(int s);
+  XVDRPacket* AllocatePacket(int length);
 
-  void FreePacket(DemuxPacket* p);
+  uint8_t* GetPacketPayload(XVDRPacket* packet);
+
+  void SetPacketData(XVDRPacket* packet, uint8_t* data = NULL, int streamid = 0, uint64_t dts = 0, uint64_t pts = 0);
+
+  void FreePacket(XVDRPacket* packet);
 
 private:
 

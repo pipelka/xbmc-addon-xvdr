@@ -1,8 +1,8 @@
 #pragma once
 
+#include <stdint.h>
 #include <time.h>
 #include <string>
-#include "DVDDemuxPacket.h"
 #include "xbmc_pvr_types.h"
 
 #define XVDRLog(x...)                     cXVDRCallbacks::Get()->Log(x)
@@ -10,6 +10,8 @@
 #define XVDRConvertToUTF8(t)              cXVDRCallbacks::Get()->ConvertToUTF8(t)
 #define XVDRGetLocalizedString(id)        cXVDRCallbacks::Get()->GetLocalizedString(id)
 #define XVDRAllocatePacket(s)             cXVDRCallbacks::Get()->AllocatePacket(s)
+#define XVDRSetPacketData(p, d, id, dts, pts) cXVDRCallbacks::Get()->SetPacketData(p, d, id, dts, pts)
+#define XVDRGetPacketPayload(p)           cXVDRCallbacks::Get()->GetPacketPayload(p)
 #define XVDRFreePacket(p)                 cXVDRCallbacks::Get()->FreePacket(p)
 #define XVDRGetLanguageCode()             cXVDRCallbacks::Get()->GetLanguageCode()
 #define XVDRGetSetting(n, v)              cXVDRCallbacks::Get()->GetSetting(n, v)
@@ -30,6 +32,7 @@
 #define XVDR_ERROR   cXVDRCallbacks::ERROR
 #define XVDR_DEBUG   cXVDRCallbacks::DEBUG
 
+typedef void XVDRPacket;
 
 class cXVDRCallbacks
 {
@@ -88,9 +91,13 @@ public:
 
   // packet allocation
 
-  virtual DemuxPacket* AllocatePacket(int s) = 0;
+  virtual XVDRPacket* AllocatePacket(int length) = 0;
 
-  virtual void FreePacket(DemuxPacket* p) = 0;
+  virtual uint8_t* GetPacketPayload(XVDRPacket* packet) = 0;
+
+  virtual void SetPacketData(XVDRPacket* packet, uint8_t* data = NULL, int streamid = 0, uint64_t dts = 0, uint64_t pts = 0) = 0;
+
+  virtual void FreePacket(XVDRPacket* p) = 0;
 
   // static registration and access
 

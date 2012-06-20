@@ -32,6 +32,7 @@
 
 #include "xbmc_pvr_dll.h"
 #include "xbmc_addon_types.h"
+#include "DVDDemuxPacket.h"
 
 #include <string.h>
 #include <sstream>
@@ -545,7 +546,7 @@ DemuxPacket* DemuxRead(void)
   if (!XVDRDemuxer)
     return NULL;
 
-  return XVDRDemuxer->Read();
+  return (DemuxPacket*)XVDRDemuxer->Read();
 }
 
 int GetCurrentClientChannel(void)

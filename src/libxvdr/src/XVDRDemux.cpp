@@ -30,7 +30,8 @@
 #include "requestpacket.h"
 #include "xvdrcommand.h"
 
-#define DVD_TIME_BASE 1000000
+#define DMX_SPECIALID_STREAMINFO    -10
+#define DMX_SPECIALID_STREAMCHANGE  -11
 
 cXVDRDemux::cXVDRDemux() : m_priority(50)
 {
@@ -77,7 +78,7 @@ void cXVDRDemux::Abort()
   cXVDRSession::Abort();
 }
 
-DemuxPacket* cXVDRDemux::Read()
+XVDRPacket* cXVDRDemux::Read()
 {
   if(ConnectionLost())
   {
@@ -96,7 +97,7 @@ DemuxPacket* cXVDRDemux::Read()
     return XVDRAllocatePacket(0);
   }
 
-  DemuxPacket* pkt = NULL;
+  XVDRPacket* pkt = NULL;
   int iStreamId = -1;
 
   switch (resp->getOpCodeID())
@@ -104,7 +105,9 @@ DemuxPacket* cXVDRDemux::Read()
     case XVDR_STREAM_CHANGE:
       StreamChange(resp);
       pkt = XVDRAllocatePacket(0);
-      pkt->iStreamId  = DMX_SPECIALID_STREAMCHANGE;
+      if (pkt != NULL)
+        XVDRSetPacketData(pkt, NULL, DMX_SPECIALID_STREAMCHANGE, 0, 0);
+
       delete resp;
       return pkt;
 
@@ -122,9 +125,9 @@ DemuxPacket* cXVDRDemux::Read()
         break;
 
       pkt = XVDRAllocatePacket(sizeof(PVR_STREAM_PROPERTIES));
-      memcpy(pkt->pData, &m_Streams, sizeof(PVR_STREAM_PROPERTIES));
-      pkt->iStreamId  = DMX_SPECIALID_STREAMINFO;
-      pkt->iSize      = sizeof(PVR_STREAM_PROPERTIES);
+      if (pkt != NULL)
+        XVDRSetPacketData(pkt, (uint8_t*)&m_Streams, DMX_SPECIALID_STREAMINFO, 0, 0);
+
       delete resp;
       return pkt;
 
@@ -142,13 +145,9 @@ DemuxPacket* cXVDRDemux::Read()
       // stream found ?
       if(iStreamId != -1)
       {
-        pkt = (DemuxPacket*)resp->getUserData();
-
-        pkt->iSize     = resp->getUserDataLength();
-        pkt->duration  = (double)resp->getDuration() * DVD_TIME_BASE / 1000000;
-        pkt->dts       = (double)resp->getDTS() * DVD_TIME_BASE / 1000000;
-        pkt->pts       = (double)resp->getPTS() * DVD_TIME_BASE / 1000000;
-        pkt->iStreamId = iStreamId;
+        pkt = (XVDRPacket*)resp->getUserData();
+        if (pkt != NULL)
+          XVDRSetPacketData(pkt, NULL, iStreamId, resp->getDTS(), resp->getPTS());
 
         delete resp;
         return pkt;

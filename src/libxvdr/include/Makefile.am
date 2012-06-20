@@ -1,7 +1,6 @@
 libxvdrincludedir = $(includedir)/xvdr
 
 libxvdrinclude_HEADERS = \
-	DVDDemuxPacket.h \
 	xbmc_pvr_types.h \
 	requestpacket.h \
 	XVDRCallbacks.h \

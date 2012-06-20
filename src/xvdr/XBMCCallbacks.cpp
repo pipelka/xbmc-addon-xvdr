@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include "DVDDemuxPacket.h"
 
 using namespace ADDON;
 
@@ -138,12 +139,40 @@ void cXBMCCallbacks::TransferChannelGroupMember(PVR_CHANNEL_GROUP_MEMBER* member
   PVR->TransferChannelGroupMember(m_handle, member);
 }
 
-DemuxPacket* cXBMCCallbacks::AllocatePacket(int s)
+XVDRPacket* cXBMCCallbacks::AllocatePacket(int s)
 {
-  return PVR->AllocateDemuxPacket(s);
+  DemuxPacket* d = PVR->AllocateDemuxPacket(s);
+  if(d == NULL)
+    return NULL;
+
+  d->iSize = s;
+  return (XVDRPacket*)d;
 }
 
-void cXBMCCallbacks::FreePacket(DemuxPacket* p)
+uint8_t* cXBMCCallbacks::GetPacketPayload(XVDRPacket* packet) {
+  if (packet == NULL)
+    return NULL;
+
+  return static_cast<DemuxPacket*>(packet)->pData;
+}
+
+void cXBMCCallbacks::SetPacketData(XVDRPacket* packet, uint8_t* data, int streamid, uint64_t dts, uint64_t pts)
 {
-  PVR->FreeDemuxPacket(p);
+  if (packet == NULL)
+    return;
+
+  DemuxPacket* d = static_cast<DemuxPacket*>(packet);
+
+  d->iStreamId = streamid;
+  d->duration  = 0; //(double)resp->getDuration() * DVD_TIME_BASE / 1000000;
+  d->dts       = (double)dts * DVD_TIME_BASE / 1000000;
+  d->pts       = (double)pts * DVD_TIME_BASE / 1000000;
+
+  if (data != NULL)
+    memcpy(d->pData, data, d->iSize);
+}
+
+void cXBMCCallbacks::FreePacket(XVDRPacket* packet)
+{
+  PVR->FreeDemuxPacket((DemuxPacket*)packet);
 }

@@ -39,11 +39,7 @@
  *        addon is used. Also XBMC's "DVDDemuxPacket.h" file must be inside
  *        the include path of the pvr addon.
  */
-#ifdef USE_DEMUX
-#include "DVDDemuxPacket.h"
-#else
 struct DemuxPacket;
-#endif
 
 #undef ATTRIBUTE_PACKED
 #undef PRAGMA_PACK_BEGIN

@@ -21,6 +21,7 @@
  *
  */
 
+#include "XVDRCallbacks.h"
 #include "XVDRSession.h"
 #include <string>
 
@@ -48,7 +49,7 @@ public:
   bool OpenChannel(const std::string& hostname, const PVR_CHANNEL &channelinfo);
   void Abort();
   bool GetStreamProperties(PVR_STREAM_PROPERTIES* props);
-  DemuxPacket* Read();
+  XVDRPacket* Read();
   bool SwitchChannel(const PVR_CHANNEL &channelinfo);
   int CurrentChannel() { return m_channelinfo.iChannelNumber; }
   bool GetSignalStatus(PVR_SIGNAL_STATUS &qualityinfo);
