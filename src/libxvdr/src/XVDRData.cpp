@@ -444,7 +444,7 @@ void cXVDRData::ReadTimerPacket(cXVDRResponsePacket* resp, PVR_TIMER &tag) {
   tag.iMarginEnd        = 0;
 
   char* p = (char*)strrchr(title, '~');
-  if(*p == 0) {
+  if(p == NULL || *p == 0) {
 	  tag.strTitle = title;
 	  tag.strDirectory = "";
   }
