@@ -216,13 +216,11 @@ PVR_ERROR GetAddonCapabilities(PVR_ADDON_CAPABILITIES* pCapabilities)
 {
   cMutexLock lock(&XVDRMutex);
 
-  pCapabilities->bSupportsTimeshift          = false;
   pCapabilities->bSupportsEPG                = true;
   pCapabilities->bSupportsRecordings         = true;
   pCapabilities->bSupportsTimers             = true;
   pCapabilities->bSupportsTV                 = true;
   pCapabilities->bSupportsRadio              = true;
-  pCapabilities->bSupportsChannelSettings    = false;
   pCapabilities->bSupportsChannelGroups      = true;
   pCapabilities->bHandlesInputStream         = true;
   pCapabilities->bHandlesDemuxing            = true;
@@ -300,7 +298,7 @@ PVR_ERROR DialogChannelScan(void)
 /*******************************************/
 /** PVR EPG Functions                     **/
 
-PVR_ERROR GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL &channel, time_t iStart, time_t iEnd)
+PVR_ERROR GetEPGForChannel(ADDON_HANDLE handle, const PVR_CHANNEL &channel, time_t iStart, time_t iEnd)
 {
   cMutexLock lock(&XVDRMutex);
 
@@ -325,7 +323,7 @@ int GetChannelsAmount(void)
   return XVDRData->GetChannelsCount();
 }
 
-PVR_ERROR GetChannels(PVR_HANDLE handle, bool bRadio)
+PVR_ERROR GetChannels(ADDON_HANDLE handle, bool bRadio)
 {
   cMutexLock lock(&XVDRMutex);
 
@@ -350,7 +348,7 @@ int GetChannelGroupsAmount()
   return XVDRData->GetChannelGroupCount(cXBMCSettings::GetInstance().AutoChannelGroups());
 }
 
-PVR_ERROR GetChannelGroups(PVR_HANDLE handle, bool bRadio)
+PVR_ERROR GetChannelGroups(ADDON_HANDLE handle, bool bRadio)
 {
   cMutexLock lock(&XVDRMutex);
 
@@ -364,7 +362,7 @@ PVR_ERROR GetChannelGroups(PVR_HANDLE handle, bool bRadio)
   return PVR_ERROR_NO_ERROR;
 }
 
-PVR_ERROR GetChannelGroupMembers(PVR_HANDLE handle, const PVR_CHANNEL_GROUP &group)
+PVR_ERROR GetChannelGroupMembers(ADDON_HANDLE handle, const PVR_CHANNEL_GROUP &group)
 {
   cMutexLock lock(&XVDRMutex);
 
@@ -390,7 +388,7 @@ int GetTimersAmount(void)
   return XVDRData->GetTimersCount();
 }
 
-PVR_ERROR GetTimers(PVR_HANDLE handle)
+PVR_ERROR GetTimers(ADDON_HANDLE handle)
 {
   cMutexLock lock(&XVDRMutex);
 
@@ -445,7 +443,7 @@ int GetRecordingsAmount(void)
   return XVDRData->GetRecordingsCount();
 }
 
-PVR_ERROR GetRecordings(PVR_HANDLE handle)
+PVR_ERROR GetRecordings(ADDON_HANDLE handle)
 {
   cMutexLock lock(&XVDRMutex);
 
@@ -654,6 +652,12 @@ long long LengthRecordedStream(void)
     return XVDRRecording->Length();
 
   return 0;
+}
+
+const char* GetPVRAPIVersion(void)
+{
+  static const char *strApiVersion = XBMC_PVR_API_VERSION;
+  return strApiVersion;
 }
 
 /** UNUSED API FUNCTIONS */

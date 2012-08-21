@@ -29,6 +29,8 @@ extern "C"
 {
   // Functions that your PVR client must implement
 
+  const char *GetPVRAPIVersion(void);
+
   /** @name PVR server methods */
   //@{
 
@@ -94,7 +96,7 @@ extern "C"
    * @param iEnd The end time to use.
    * @return PVR_ERROR_NO_ERROR if the table has been fetched successfully.
    */
-  PVR_ERROR GetEPGForChannel(PVR_HANDLE handle, const PVR_CHANNEL &channel, time_t iStart, time_t iEnd);
+  PVR_ERROR GetEPGForChannel(ADDON_HANDLE handle, const PVR_CHANNEL &channel, time_t iStart, time_t iEnd);
 
   //@}
   /** @name PVR channel group methods */
@@ -110,7 +112,7 @@ extern "C"
    * @param bRadio True to get the radio channel groups, false to get the TV channel groups.
    * @return PVR_ERROR_NO_ERROR if the list has been fetched successfully.
    */
-  PVR_ERROR GetChannelGroups(PVR_HANDLE handle, bool bRadio);
+  PVR_ERROR GetChannelGroups(ADDON_HANDLE handle, bool bRadio);
 
   /*!
    * @brief Request the list of all group members of a group.
@@ -118,7 +120,7 @@ extern "C"
    * @param group The group to get the members for.
    * @return PVR_ERROR_NO_ERROR if the list has been fetched successfully.
    */
-  PVR_ERROR GetChannelGroupMembers(PVR_HANDLE handle, const PVR_CHANNEL_GROUP &group);
+  PVR_ERROR GetChannelGroupMembers(ADDON_HANDLE handle, const PVR_CHANNEL_GROUP &group);
 
   //@}
   /** @name PVR channel methods */
@@ -134,7 +136,7 @@ extern "C"
    * @param bRadio True to get the radio channels, false to get the TV channels.
    * @return PVR_ERROR_NO_ERROR if the list has been fetched successfully.
    */
-  PVR_ERROR GetChannels(PVR_HANDLE handle, bool bRadio);
+  PVR_ERROR GetChannels(ADDON_HANDLE handle, bool bRadio);
 
   /*!
    * @brief Delete a channel.
@@ -185,7 +187,7 @@ extern "C"
    * @param handle The callback handle.
    * @return PVR_ERROR_NO_ERROR if the recordings have been fetched successfully.
    */
-  PVR_ERROR GetRecordings(PVR_HANDLE handle);
+  PVR_ERROR GetRecordings(ADDON_HANDLE handle);
 
   /*!
    * @brief Delete a recording on the backend.
@@ -238,7 +240,7 @@ extern "C"
    * @param handle The callback handle.
    * @return PVR_ERROR_NO_ERROR if the list has been fetched successfully.
    */
-  PVR_ERROR GetTimers(PVR_HANDLE handle);
+  PVR_ERROR GetTimers(ADDON_HANDLE handle);
 
   /*!
    * @brief Add a timer on the backend.
@@ -402,6 +404,7 @@ extern "C"
   // function to export the above structure to XBMC
   void __declspec(dllexport) get_addon(struct PVRClient *pClient)
   {
+    pClient->GetPVRAPIVersion        = GetPVRAPIVersion;
     pClient->GetAddonCapabilities    = GetAddonCapabilities;
     pClient->GetStreamProperties     = GetStreamProperties;
     pClient->GetConnectionString     = GetConnectionString;

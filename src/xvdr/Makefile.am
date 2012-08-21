@@ -41,7 +41,7 @@ EXTRA_DIST = \
 
 XBMC_VDR_xvdr.pvr: libxvdraddon.la
 	cp -f .libs/libxvdraddon.so XBMC_VDR_xvdr.pvr
-	$(STRIP) -x XBMC_VDR_xvdr.pvr
+#	$(STRIP) -x XBMC_VDR_xvdr.pvr
 
 $(LIB): XBMC_VDR_xvdr.pvr
 	cp -f XBMC_VDR_xvdr.pvr $(LIB)

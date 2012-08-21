@@ -28,7 +28,7 @@ public:
 
   void TriggerTimerUpdate();
 
-  void SetHandle(PVR_HANDLE handle);
+  void SetHandle(ADDON_HANDLE handle);
 
   void TransferChannelEntry(PVR_CHANNEL* channel);
 
@@ -52,5 +52,5 @@ public:
 
 private:
 
-  PVR_HANDLE m_handle;
+  ADDON_HANDLE m_handle;
 };

@@ -323,15 +323,15 @@ bool cXVDRData::GetChannelsList(bool radio)
     memset(&tag, 0 , sizeof(tag));
 
     tag.iChannelNumber    = vresp->extract_U32();
-    tag.strChannelName    = vresp->extract_String();
+    strncpy(tag.strChannelName, vresp->extract_String(), sizeof(tag.strChannelName));
     tag.iUniqueId         = vresp->extract_U32();
                             vresp->extract_U32(); // still here for compatibility
     tag.iEncryptionSystem = vresp->extract_U32();
                             vresp->extract_U32(); // uint32_t vtype - currently unused
     tag.bIsRadio          = radio;
-    tag.strInputFormat    = "";
-    tag.strStreamURL      = "";
-    tag.strIconPath       = "";
+    tag.strInputFormat[0] = 0;
+    tag.strStreamURL[0]   = 0;
+    tag.strIconPath[0]    = 0;
     tag.bIsHidden         = false;
 
     XVDRTransferChannelEntry(&tag);
@@ -445,8 +445,8 @@ void cXVDRData::ReadTimerPacket(cXVDRResponsePacket* resp, PVR_TIMER &tag) {
 
   char* p = (char*)strrchr(title, '~');
   if(p == NULL || *p == 0) {
-	  tag.strTitle = title;
-	  tag.strDirectory = "";
+	  strncpy(tag.strTitle, title, sizeof(tag.strTitle));
+	  tag.strDirectory[0] = 0;
   }
   else {
 	  const char* name = p + 1;
@@ -458,8 +458,8 @@ void cXVDRData::ReadTimerPacket(cXVDRResponsePacket* resp, PVR_TIMER &tag) {
 	  for(p = (char*)dir; *p != 0; p++)
 		  if(*p == '~') *p = '/';
 
-	  tag.strTitle = name;
-	  tag.strDirectory = dir;
+	  strncpy(tag.strTitle, name, sizeof(tag.strTitle));
+	  strncpy(tag.strDirectory, dir, sizeof(tag.strDirectory));
   }
 }
 
@@ -740,13 +740,13 @@ PVR_ERROR cXVDRData::GetRecordingsList()
     tag.iDuration       = vresp->extract_U32();
     tag.iPriority       = vresp->extract_U32();
     tag.iLifetime       = vresp->extract_U32();
-    tag.strChannelName  = vresp->extract_String();
-    tag.strTitle        = vresp->extract_String();
-    tag.strPlotOutline  = vresp->extract_String();
-    tag.strPlot         = vresp->extract_String();
-    tag.strDirectory    = vresp->extract_String();
-    tag.strRecordingId  = vresp->extract_String();
-    tag.strStreamURL    = "";
+    strncpy(tag.strChannelName, vresp->extract_String(), sizeof(tag.strChannelName));
+    strncpy(tag.strTitle, vresp->extract_String(), sizeof(tag.strTitle));
+    strncpy(tag.strPlotOutline, vresp->extract_String(), sizeof(tag.strPlotOutline));
+    strncpy(tag.strPlot, vresp->extract_String(), sizeof(tag.strPlot));
+    strncpy(tag.strDirectory, vresp->extract_String(), sizeof(tag.strDirectory));
+    strncpy(tag.strRecordingId, vresp->extract_String(), sizeof(tag.strRecordingId));
+    tag.strStreamURL[0] = 0;
     tag.iGenreType      = 0;
     tag.iGenreSubType   = 0;
     tag.iPlayCount      = 0;
@@ -1013,7 +1013,7 @@ bool cXVDRData::GetChannelGroupList(bool bRadio)
   {
     PVR_CHANNEL_GROUP tag;
 
-    tag.strGroupName = vresp->extract_String();
+    strncpy(tag.strGroupName, vresp->extract_String(), sizeof(tag.strGroupName));
     tag.bIsRadio = vresp->extract_U8();
     XVDRTransferChannelGroup(&tag);
   }
@@ -1044,7 +1044,7 @@ bool cXVDRData::GetChannelGroupMembers(const PVR_CHANNEL_GROUP &group)
   while (!vresp->end())
   {
     PVR_CHANNEL_GROUP_MEMBER tag;
-    tag.strGroupName = group.strGroupName;
+    strncpy(tag.strGroupName, group.strGroupName, sizeof(tag.strGroupName));
     tag.iChannelUniqueId = vresp->extract_U32();
     tag.iChannelNumber = vresp->extract_U32();
 

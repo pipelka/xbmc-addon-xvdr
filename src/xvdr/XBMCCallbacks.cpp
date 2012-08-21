@@ -11,7 +11,7 @@ cXBMCCallbacks::cXBMCCallbacks() : m_handle(NULL)
 {
 }
 
-void cXBMCCallbacks::SetHandle(PVR_HANDLE handle)
+void cXBMCCallbacks::SetHandle(ADDON_HANDLE handle)
 {
   m_handle = handle;
 }
