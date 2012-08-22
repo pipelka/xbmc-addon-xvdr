@@ -372,3 +372,7 @@ void cXVDRSession::SleepMs(int ms)
   usleep(ms * 1000);
 #endif
 }
+
+bool cXVDRSession::ConnectionLost() {
+  return m_connectionLost;
+}

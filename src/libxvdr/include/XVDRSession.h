@@ -57,6 +57,8 @@ public:
   void SetCompressionLevel(int level);
   void SetAudioType(int type);
 
+  bool ConnectionLost();
+
   static void SleepMs(int ms);
 
 protected:
@@ -68,7 +70,6 @@ protected:
   virtual void OnReconnect();
 
   virtual void SignalConnectionLost();
-  bool ConnectionLost() { return m_connectionLost; }
 
   std::string     m_hostname;
   int             m_port;

@@ -42,8 +42,6 @@
 using namespace std;
 using namespace ADDON;
 
-ADDON_STATUS m_CurStatus      = ADDON_STATUS_UNKNOWN;
-
 CHelper_libXBMC_addon *XBMC   = NULL;
 CHelper_libXBMC_gui   *GUI    = NULL;
 CHelper_libXBMC_pvr   *PVR    = NULL;
@@ -96,8 +94,6 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
   Callbacks = new cXBMCCallbacks;
   cXVDRCallbacks::Register(Callbacks);
 
-  m_CurStatus = ADDON_STATUS_UNKNOWN;
-
   cXBMCSettings& s = cXBMCSettings::GetInstance();
   s.load();
 
@@ -120,33 +116,38 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
     XVDRData = NULL;
     PVR = NULL;
     XBMC = NULL;
-    m_CurStatus = ADDON_STATUS_LOST_CONNECTION;
-    return m_CurStatus;
+    return ADDON_STATUS_LOST_CONNECTION;
   }
 
 
   if (!XVDRData->Login())
   {
-    m_CurStatus = ADDON_STATUS_LOST_CONNECTION;
-    return m_CurStatus;
+    return ADDON_STATUS_LOST_CONNECTION;
   }
 
   if (!XVDRData->EnableStatusInterface(s.HandleMessages()))
   {
-    m_CurStatus = ADDON_STATUS_LOST_CONNECTION;
-    return m_CurStatus;
+    return ADDON_STATUS_LOST_CONNECTION;
   }
 
   XVDRData->ChannelFilter(s.FTAChannels(), s.NativeLangOnly(), s.vcaids);
   XVDRData->SetUpdateChannels(s.UpdateChannels());
 
-  m_CurStatus = ADDON_STATUS_OK;
-  return m_CurStatus;
+  return ADDON_STATUS_OK;
 }
 
 ADDON_STATUS ADDON_GetStatus()
 {
-  return m_CurStatus;
+  if(XVDRData != NULL) {
+	  if(XVDRData->ConnectionLost()) {
+		  return ADDON_STATUS_LOST_CONNECTION;
+	  }
+	  else {
+		  return ADDON_STATUS_OK;
+	  }
+  }
+
+  return ADDON_STATUS_UNKNOWN;
 }
 
 void ADDON_Destroy()
@@ -159,7 +160,6 @@ void ADDON_Destroy()
   XVDRData = NULL;
   PVR = NULL;
   XBMC = NULL;
-  m_CurStatus = ADDON_STATUS_UNKNOWN;
 }
 
 bool ADDON_HasSettings()
