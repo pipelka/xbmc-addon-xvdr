@@ -488,7 +488,7 @@ PVR_ERROR cXVDRData::GetTimerInfo(unsigned int timernumber, PVR_TIMER &tag)
   {
     delete vresp;
     if (returnCode == XVDR_RET_DATAUNKNOWN)
-      return PVR_ERROR_NOT_POSSIBLE;
+      return PVR_ERROR_INVALID_PARAMETERS;
     else if (returnCode == XVDR_RET_ERROR)
       return PVR_ERROR_SERVER_ERROR;
   }
@@ -600,7 +600,7 @@ PVR_ERROR cXVDRData::AddTimer(const PVR_TIMER &timerinfo)
   if (returnCode == XVDR_RET_DATALOCKED)
     return PVR_ERROR_ALREADY_PRESENT;
   else if (returnCode == XVDR_RET_DATAINVALID)
-    return PVR_ERROR_NOT_SAVED;
+    return PVR_ERROR_FAILED;
   else if (returnCode == XVDR_RET_ERROR)
     return PVR_ERROR_SERVER_ERROR;
 
@@ -630,11 +630,11 @@ PVR_ERROR cXVDRData::DeleteTimer(const PVR_TIMER &timerinfo, bool force)
   delete vresp;
 
   if (returnCode == XVDR_RET_DATALOCKED)
-    return PVR_ERROR_NOT_DELETED;
+    return PVR_ERROR_FAILED;
   if (returnCode == XVDR_RET_RECRUNNING)
     return PVR_ERROR_RECORDING_RUNNING;
   else if (returnCode == XVDR_RET_DATAINVALID)
-    return PVR_ERROR_NOT_POSSIBLE;
+    return PVR_ERROR_FAILED;
   else if (returnCode == XVDR_RET_ERROR)
     return PVR_ERROR_SERVER_ERROR;
 
@@ -686,9 +686,9 @@ PVR_ERROR cXVDRData::UpdateTimer(const PVR_TIMER &timerinfo)
   uint32_t returnCode = vresp->extract_U32();
   delete vresp;
   if (returnCode == XVDR_RET_DATAUNKNOWN)
-    return PVR_ERROR_NOT_POSSIBLE;
+    return PVR_ERROR_FAILED;
   else if (returnCode == XVDR_RET_DATAINVALID)
-    return PVR_ERROR_NOT_SAVED;
+    return PVR_ERROR_FAILED;
   else if (returnCode == XVDR_RET_ERROR)
     return PVR_ERROR_SERVER_ERROR;
 
@@ -788,7 +788,7 @@ PVR_ERROR cXVDRData::RenameRecording(const PVR_RECORDING& recinfo, const char* n
   delete vresp;
 
   if(returnCode != 0)
-   return PVR_ERROR_NOT_POSSIBLE;
+   return PVR_ERROR_FAILED;
 
   return PVR_ERROR_NO_ERROR;
 }
@@ -818,13 +818,13 @@ PVR_ERROR cXVDRData::DeleteRecording(const PVR_RECORDING& recinfo)
   switch(returnCode)
   {
     case XVDR_RET_DATALOCKED:
-      return PVR_ERROR_NOT_DELETED;
+      return PVR_ERROR_FAILED;
 
     case XVDR_RET_RECRUNNING:
       return PVR_ERROR_RECORDING_RUNNING;
 
     case XVDR_RET_DATAINVALID:
-      return PVR_ERROR_NOT_POSSIBLE;
+      return PVR_ERROR_FAILED;
 
     case XVDR_RET_ERROR:
       return PVR_ERROR_SERVER_ERROR;

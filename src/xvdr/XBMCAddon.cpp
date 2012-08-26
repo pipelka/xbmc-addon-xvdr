@@ -217,23 +217,18 @@ PVR_ERROR GetAddonCapabilities(PVR_ADDON_CAPABILITIES* pCapabilities)
   cMutexLock lock(&XVDRMutex);
 
   pCapabilities->bSupportsEPG                = true;
-  pCapabilities->bSupportsRecordings         = true;
-  pCapabilities->bSupportsTimers             = true;
   pCapabilities->bSupportsTV                 = true;
   pCapabilities->bSupportsRadio              = true;
+  pCapabilities->bSupportsRecordings         = true;
+  pCapabilities->bSupportsTimers             = true;
   pCapabilities->bSupportsChannelGroups      = true;
+  pCapabilities->bSupportsChannelScan        = (XVDRData && XVDRData->SupportChannelScan());
   pCapabilities->bHandlesInputStream         = true;
   pCapabilities->bHandlesDemuxing            = true;
-  pCapabilities->bSupportsChannelScan        = (XVDRData && XVDRData->SupportChannelScan());
 
-  // <tricky_mode>
-  // we don't know if XBMC has the new ABI, so
-  // check if bSupportsRecordingFolders is 0
-  // there is no guarantee that this doesn't cause any
-  // segfault or memory corruption
-  if (pCapabilities->bSupportsRecordingFolders == 0)
-    pCapabilities->bSupportsRecordingFolders = true;
-  // </tricky_mode>
+  pCapabilities->bSupportsRecordingFolders   = true;
+  pCapabilities->bSupportsRecordingPlayCount = false;
+  pCapabilities->bSupportsLastPlayedPosition = false;
 
   return PVR_ERROR_NO_ERROR;
 }
