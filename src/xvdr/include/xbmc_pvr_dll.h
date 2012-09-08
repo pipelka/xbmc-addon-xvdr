@@ -44,6 +44,14 @@ extern "C"
   const char* GetPVRAPIVersion(void);
 
   /*!
+   * Get the XBMC_PVR_MIN_API_VERSION that was used to compile this add-on.
+   * Used to check if this add-on is compatible with XBMC.
+   * @return The XBMC_PVR_MIN_API_VERSION that was used to compile this add-on.
+   * @remarks Valid implementation required.
+   */
+  const char* GetMininumPVRAPIVersion(void);
+
+  /*!
    * Get the list of features that this add-on provides.
    * Called by XBMC to query the add-on's capabilities.
    * Used to check which options should be presented in the UI, which methods to call, etc.
@@ -498,12 +506,21 @@ extern "C"
   //@}
 
   /*!
+   * Delay to use when using switching channels for add-ons not providing an input stream.
+   * If the add-on does provide an input stream, then this method will not be called.
+   * Those add-ons can do that in OpenLiveStream() if needed.
+   * @return The delay in milliseconds.
+   */
+  unsigned int GetChannelSwitchDelay(void);
+
+  /*!
    * Called by XBMC to assign the function pointers of this add-on to pClient.
    * @param pClient The struct to assign the function pointers to.
    */
   void __declspec(dllexport) get_addon(struct PVRClient* pClient)
   {
     pClient->GetPVRAPIVersion               = GetPVRAPIVersion;
+    pClient->GetMininumPVRAPIVersion        = GetMininumPVRAPIVersion;
     pClient->GetAddonCapabilities           = GetAddonCapabilities;
     pClient->GetStreamProperties            = GetStreamProperties;
     pClient->GetConnectionString            = GetConnectionString;
@@ -551,6 +568,7 @@ extern "C"
     pClient->SwitchChannel                  = SwitchChannel;
     pClient->SignalStatus                   = SignalStatus;
     pClient->GetLiveStreamURL               = GetLiveStreamURL;
+    pClient->GetChannelSwitchDelay          = GetChannelSwitchDelay;
 
     pClient->OpenRecordedStream             = OpenRecordedStream;
     pClient->CloseRecordedStream            = CloseRecordedStream;
