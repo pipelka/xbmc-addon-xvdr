@@ -23,7 +23,7 @@
 
 #include "XVDRSession.h"
 
-#include "xbmc_pvr_types.h"
+//#include "xbmc_pvr_types.h"
 
 class cXVDRRecording : public cXVDRSession
 {
@@ -32,7 +32,7 @@ public:
   cXVDRRecording();
   ~cXVDRRecording();
 
-  bool OpenRecording(const std::string& hostname, const PVR_RECORDING& recinfo);
+  bool OpenRecording(const std::string& hostname, const std::string& recid);
   void Close();
 
   int Read(unsigned char* buf, uint32_t buf_size);
@@ -46,7 +46,7 @@ protected:
 
 private:
 
-  PVR_RECORDING   m_recinfo;
+  std::string     m_recid;
   uint64_t        m_currentPlayingRecordBytes;
   uint32_t        m_currentPlayingRecordFrames;
   uint64_t        m_currentPlayingRecordPosition;

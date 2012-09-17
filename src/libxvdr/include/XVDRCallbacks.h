@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <string>
-#include "xbmc_pvr_types.h"
+#include "XVDRDataset.h"
 
 #define XVDRLog(x...)                     cXVDRCallbacks::Get()->Log(x)
 #define XVDRNotification(x...)            cXVDRCallbacks::Get()->Notification(x)
@@ -25,6 +25,8 @@
 #define XVDRTransferChannelGroup(g)       cXVDRCallbacks::Get()->TransferChannelGroup(g)
 #define XVDRTransferChannelGroupMember(m) cXVDRCallbacks::Get()->TransferChannelGroupMember(m)
 #define XVDRRecording(l1, l2, on)         cXVDRCallbacks::Get()->Recording(l1, l2, on)
+#define XVDRStreamChange(p)               cXVDRCallbacks::Get()->StreamChange(p)
+#define XVDRContentInfo(p)                cXVDRCallbacks::Get()->ContentInfo(p)
 
 #define XVDR_INFO    cXVDRCallbacks::INFO
 #define XVDR_NOTICE  cXVDRCallbacks::NOTICE
@@ -77,17 +79,17 @@ public:
 
   // data transfer functions
 
-  virtual void TransferChannelEntry(PVR_CHANNEL* channel) = 0;
+  virtual void TransferChannelEntry(const cXVDRChannel& channel) = 0;
 
-  virtual void TransferEpgEntry(EPG_TAG* tag) = 0;
+  virtual void TransferEpgEntry(const cXVDREpg& tag) = 0;
 
-  virtual void TransferTimerEntry(PVR_TIMER* timer) = 0;
+  virtual void TransferTimerEntry(const cXVDRTimer& timer) = 0;
 
-  virtual void TransferRecordingEntry(PVR_RECORDING* rec) = 0;
+  virtual void TransferRecordingEntry(const cXVDRRecordingEntry& rec) = 0;
 
-  virtual void TransferChannelGroup(PVR_CHANNEL_GROUP* group) = 0;
+  virtual void TransferChannelGroup(const cXVDRChannelGroup& group) = 0;
 
-  virtual void TransferChannelGroupMember(PVR_CHANNEL_GROUP_MEMBER* member) = 0;
+  virtual void TransferChannelGroupMember(const cXVDRChannelGroupMember& member) = 0;
 
   // packet allocation
 
@@ -98,6 +100,10 @@ public:
   virtual void SetPacketData(XVDRPacket* packet, uint8_t* data = NULL, int streamid = 0, uint64_t dts = 0, uint64_t pts = 0) = 0;
 
   virtual void FreePacket(XVDRPacket* p) = 0;
+
+  virtual XVDRPacket* StreamChange(const cXVDRStreamProperties& p) = 0;
+
+  virtual XVDRPacket* ContentInfo(const cXVDRStreamProperties& p) = 0;
 
   // static registration and access
 

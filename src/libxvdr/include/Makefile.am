@@ -1,11 +1,11 @@
 libxvdrincludedir = $(includedir)/xvdr
 
 libxvdrinclude_HEADERS = \
-	xbmc_pvr_types.h \
 	requestpacket.h \
 	XVDRCallbacks.h \
 	xvdrcommand.h \
 	XVDRData.h \
+	XVDRDataset.h \
 	XVDRDemux.h \
 	XVDRRecording.h \
 	XVDRResponsePacket.h \

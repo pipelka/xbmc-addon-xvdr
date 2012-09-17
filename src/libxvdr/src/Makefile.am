@@ -19,6 +19,7 @@ SOURCEFILES = \
 	tools.cpp \
 	XVDRCallbacks.cpp \
 	XVDRData.cpp \
+	XVDRDataset.cpp \
 	XVDRDemux.cpp \
 	XVDRRecording.cpp \
 	XVDRResponsePacket.cpp \
@@ -54,7 +55,7 @@ libxvdr_la_LDFLAGS = \
 CPPFLAGS = \
 	$(ARCH_DEFINES)
 
-INCLUDES = -I$(srcdir)/../include -DUSE_DEMUX -D__STDC_CONSTANT_MACROS -D_LINUX
+INCLUDES = -I$(srcdir)/../include -D__STDC_CONSTANT_MACROS
 
 install:
 

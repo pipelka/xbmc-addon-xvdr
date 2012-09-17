@@ -28,7 +28,7 @@
 #include <map>
 #include <vector>
 
-#include "xbmc_pvr_types.h"
+#include "XVDRDataset.h"
 
 class cXVDRResponsePacket;
 class cRequestPacket;
@@ -53,23 +53,23 @@ public:
 
   int         GetChannelsCount();
   bool        GetChannelsList(bool radio = false);
-  bool        GetEPGForChannel(const PVR_CHANNEL &channel, time_t start, time_t end);
+  bool        GetEPGForChannel(uint32_t channeluid, time_t start, time_t end);
 
   int         GetChannelGroupCount(bool automatic);
   bool        GetChannelGroupList(bool bRadio);
-  bool        GetChannelGroupMembers(const PVR_CHANNEL_GROUP &group);
+  bool        GetChannelGroupMembers(const std::string& groupname, bool radio);
 
   bool        GetTimersList();
   int         GetTimersCount();
-  PVR_ERROR   AddTimer(const PVR_TIMER &timerinfo);
-  PVR_ERROR   GetTimerInfo(unsigned int timernumber, PVR_TIMER &tag);
-  PVR_ERROR   DeleteTimer(const PVR_TIMER &timerinfo, bool force = false);
-  PVR_ERROR   UpdateTimer(const PVR_TIMER &timerinfo);
+  bool        AddTimer(const cXVDRTimer& timerinfo);
+  bool        GetTimerInfo(unsigned int timernumber, cXVDRTimer& tag);
+  bool        DeleteTimer(uint32_t timerindex, bool force = false);
+  bool        UpdateTimer(const cXVDRTimer& timerinfo);
 
   int         GetRecordingsCount();
-  PVR_ERROR   GetRecordingsList();
-  PVR_ERROR   RenameRecording(const PVR_RECORDING& recinfo, const char* newname);
-  PVR_ERROR   DeleteRecording(const PVR_RECORDING& recinfo);
+  bool        GetRecordingsList();
+  bool        RenameRecording(const std::string& recid, const std::string& newname);
+  bool        DeleteRecording(const std::string& recid);
 
   cXVDRResponsePacket*  ReadResult(cRequestPacket* vrp);
 
@@ -82,7 +82,7 @@ protected:
   void OnDisconnect();
   void OnReconnect();
 
-  void ReadTimerPacket(cXVDRResponsePacket* resp, PVR_TIMER& tag);
+  void ReadTimerPacket(cXVDRResponsePacket* resp, cXVDRTimer& tag);
 
   bool m_statusinterface;
 

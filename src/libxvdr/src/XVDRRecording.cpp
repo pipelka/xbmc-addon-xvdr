@@ -22,6 +22,8 @@
 
 #include <limits.h>
 #include <stdlib.h>
+#include <string.h>
+
 #include "XVDRRecording.h"
 #include "XVDRCallbacks.h"
 #include "XVDRResponsePacket.h"
@@ -39,9 +41,9 @@ cXVDRRecording::~cXVDRRecording()
   Close();
 }
 
-bool cXVDRRecording::OpenRecording(const std::string& hostname, const PVR_RECORDING& recinfo)
+bool cXVDRRecording::OpenRecording(const std::string& hostname, const std::string& recid)
 {
-  m_recinfo = recinfo;
+  m_recid = recid;
 
   if(!cXVDRSession::Open(hostname, "XVDR RecordingStream Receiver"))
     return false;
@@ -51,7 +53,7 @@ bool cXVDRRecording::OpenRecording(const std::string& hostname, const PVR_RECORD
 
   cRequestPacket vrp;
   if (!vrp.init(XVDR_RECSTREAM_OPEN) ||
-      !vrp.add_String(recinfo.strRecordingId))
+      !vrp.add_String(recid.c_str()))
   {
     return false;
   }
@@ -68,7 +70,7 @@ bool cXVDRRecording::OpenRecording(const std::string& hostname, const PVR_RECORD
     m_currentPlayingRecordPosition  = 0;
   }
   else
-    XVDRLog(XVDR_ERROR, "%s - Can't open recording '%s'", __FUNCTION__, recinfo.strTitle);
+    XVDRLog(XVDR_ERROR, "%s - Can't open recording", __FUNCTION__);
 
   delete vresp;
   return (returnCode == XVDR_RET_OK);
@@ -188,5 +190,5 @@ long long cXVDRRecording::Length(void)
 
 void cXVDRRecording::OnReconnect()
 {
-  OpenRecording(m_hostname, m_recinfo);
+  OpenRecording(m_hostname, m_recid);
 }

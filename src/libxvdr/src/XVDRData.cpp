@@ -319,29 +319,28 @@ bool cXVDRData::GetChannelsList(bool radio)
 
   while (!vresp->end())
   {
-    PVR_CHANNEL tag;
-    memset(&tag, 0 , sizeof(tag));
+	cXVDRChannel tag;
 
-    tag.iChannelNumber    = vresp->extract_U32();
-    strncpy(tag.strChannelName, vresp->extract_String(), sizeof(tag.strChannelName));
-    tag.iUniqueId         = vresp->extract_U32();
+    tag[channel_number] = vresp->extract_U32();
+    tag[channel_name] = vresp->extract_String();
+    tag[channel_uid] = vresp->extract_U32();
                             vresp->extract_U32(); // still here for compatibility
-    tag.iEncryptionSystem = vresp->extract_U32();
+    tag[channel_encryptionsystem] = vresp->extract_U32();
                             vresp->extract_U32(); // uint32_t vtype - currently unused
-    tag.bIsRadio          = radio;
-    tag.strInputFormat[0] = 0;
-    tag.strStreamURL[0]   = 0;
-    tag.strIconPath[0]    = 0;
-    tag.bIsHidden         = false;
+    tag[channel_isradio] = radio;
+    tag[channel_inputformat] = "";
+    tag[channel_streamurl] = "";
+    tag[channel_iconpath] = "";
+    tag[channel_ishidden] = false;
 
-    XVDRTransferChannelEntry(&tag);
+    XVDRTransferChannelEntry(tag);
   }
 
   delete vresp;
   return true;
 }
 
-bool cXVDRData::GetEPGForChannel(const PVR_CHANNEL &channel, time_t start, time_t end)
+bool cXVDRData::GetEPGForChannel(uint32_t channeluid, time_t start, time_t end)
 {
   cRequestPacket vrp;
   if (!vrp.init(XVDR_EPG_GETFORCHANNEL))
@@ -349,7 +348,8 @@ bool cXVDRData::GetEPGForChannel(const PVR_CHANNEL &channel, time_t start, time_
     XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
     return false;
   }
-  if (!vrp.add_U32(channel.iUniqueId) || !vrp.add_U32(start) || !vrp.add_U32(end - start))
+
+  if (!vrp.add_U32(channeluid) || !vrp.add_U32(start) || !vrp.add_U32(end - start))
   {
     XVDRLog(XVDR_ERROR, "%s - Can't add parameter to cRequestPacket", __FUNCTION__);
     return false;
@@ -366,23 +366,23 @@ bool cXVDRData::GetEPGForChannel(const PVR_CHANNEL &channel, time_t start, time_
   {
     while (!vresp->end())
     {
-      EPG_TAG tag;
-      memset(&tag, 0 , sizeof(tag));
+      cXVDREpg tag;
 
-      tag.iChannelNumber      = channel.iChannelNumber;
-      tag.iUniqueBroadcastId  = vresp->extract_U32();
-      tag.startTime           = vresp->extract_U32();
-      tag.endTime             = tag.startTime + vresp->extract_U32();
+      tag[epg_uid] = channeluid;
+      tag[epg_broadcastid] = vresp->extract_U32();
+      uint32_t starttime = vresp->extract_U32();
+      tag[epg_starttime] = starttime;
+      tag[epg_endtime] = starttime + vresp->extract_U32();
       uint32_t content        = vresp->extract_U32();
-      tag.iGenreType          = content & 0xF0;
-      tag.iGenreSubType       = content & 0x0F;
-      tag.strGenreDescription = "";
-      tag.iParentalRating     = vresp->extract_U32();
-      tag.strTitle            = vresp->extract_String();
-      tag.strPlotOutline      = vresp->extract_String();
-      tag.strPlot             = vresp->extract_String();
+      tag[epg_genretype] = content & 0xF0;
+      tag[epg_genresubtype] = content & 0x0F;
+      //tag[epg_genredescription] = "";
+      tag[epg_parentalrating] = vresp->extract_U32();
+      tag[epg_title] = vresp->extract_String();
+      tag[epg_plotoutline] = vresp->extract_String();
+      tag[epg_plot] = vresp->extract_String();
 
-      XVDRTransferEpgEntry(&tag);
+      XVDRTransferEpgEntry(tag);
     }
   }
 
@@ -419,34 +419,37 @@ int cXVDRData::GetTimersCount()
   return m_timercount;
 }
 
-void cXVDRData::ReadTimerPacket(cXVDRResponsePacket* resp, PVR_TIMER &tag) {
-  tag.iClientIndex      = resp->extract_U32();
+void cXVDRData::ReadTimerPacket(cXVDRResponsePacket* resp, cXVDRTimer& tag) {
+  tag[timer_index] = resp->extract_U32();
+
   int iActive           = resp->extract_U32();
   int iRecording        = resp->extract_U32();
   int iPending          = resp->extract_U32();
-  if (iRecording)
-    tag.state = PVR_TIMER_STATE_RECORDING;
-  else if (iPending || iActive)
+
+  tag[timer_state] = iRecording;
+  /*else if (iPending || iActive)
     tag.state = PVR_TIMER_STATE_SCHEDULED;
   else
-    tag.state = PVR_TIMER_STATE_CANCELLED;
-  tag.iPriority         = resp->extract_U32();
-  tag.iLifetime         = resp->extract_U32();
+    tag.state = PVR_TIMER_STATE_CANCELLED;*/
+  tag[timer_priority] = resp->extract_U32();
+  tag[timer_lifetime] = resp->extract_U32();
                           resp->extract_U32(); // channel number - unused
-  tag.iClientChannelUid = resp->extract_U32();
-  tag.startTime         = resp->extract_U32();
-  tag.endTime           = resp->extract_U32();
-  tag.firstDay          = resp->extract_U32();
-  tag.iWeekdays         = resp->extract_U32();
-  tag.bIsRepeating      = tag.iWeekdays == 0 ? false : true;
-  const char* title     = resp->extract_String();
-  tag.iMarginStart      = 0;
-  tag.iMarginEnd        = 0;
+  tag[timer_channeluid] =  resp->extract_U32();
+  tag[timer_starttime] = resp->extract_U32();
+  tag[timer_endtime] = resp->extract_U32();
+  tag[timer_firstday] = resp->extract_U32();
+  int weekdays = resp->extract_U32();
+  tag[timer_weekdays] = weekdays;
+  tag[timer_isrepeating] = ((weekdays == 0) ? false : true);
+
+  const char* title = resp->extract_String();
+  tag[timer_marginstart] = 0;
+  tag[timer_marginend] = 0;
 
   char* p = (char*)strrchr(title, '~');
   if(p == NULL || *p == 0) {
-	  strncpy(tag.strTitle, title, sizeof(tag.strTitle));
-	  tag.strDirectory[0] = 0;
+	  tag[timer_title] = title;
+	  tag[timer_directory] =  "";
   }
   else {
 	  const char* name = p + 1;
@@ -458,29 +461,29 @@ void cXVDRData::ReadTimerPacket(cXVDRResponsePacket* resp, PVR_TIMER &tag) {
 	  for(p = (char*)dir; *p != 0; p++)
 		  if(*p == '~') *p = '/';
 
-	  strncpy(tag.strTitle, name, sizeof(tag.strTitle));
-	  strncpy(tag.strDirectory, dir, sizeof(tag.strDirectory));
+	  tag[timer_title] = name;
+	  tag[timer_directory] =  dir;
   }
 }
 
-PVR_ERROR cXVDRData::GetTimerInfo(unsigned int timernumber, PVR_TIMER &tag)
+bool cXVDRData::GetTimerInfo(unsigned int timernumber, cXVDRTimer& tag)
 {
   cRequestPacket vrp;
   if (!vrp.init(XVDR_TIMER_GET))
   {
     XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
-    return PVR_ERROR_UNKNOWN;
+    return false;
   }
 
   if (!vrp.add_U32(timernumber))
-    return PVR_ERROR_UNKNOWN;
+    return false;
 
   cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     XVDRLog(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     delete vresp;
-    return PVR_ERROR_UNKNOWN;
+    return false;
   }
 
   uint32_t returnCode = vresp->extract_U32();
@@ -488,15 +491,15 @@ PVR_ERROR cXVDRData::GetTimerInfo(unsigned int timernumber, PVR_TIMER &tag)
   {
     delete vresp;
     if (returnCode == XVDR_RET_DATAUNKNOWN)
-      return PVR_ERROR_INVALID_PARAMETERS;
+      return false;
     else if (returnCode == XVDR_RET_ERROR)
-      return PVR_ERROR_SERVER_ERROR;
+      return false;
   }
 
   ReadTimerPacket(vresp, tag);
 
   delete vresp;
-  return PVR_ERROR_NO_ERROR;
+  return true;
 }
 
 bool cXVDRData::GetTimersList()
@@ -521,28 +524,31 @@ bool cXVDRData::GetTimersList()
   {
     while (!vresp->end())
     {
-      PVR_TIMER tag;
-      ReadTimerPacket(vresp, tag);
-      XVDRTransferTimerEntry(&tag);
+      cXVDRTimer timer;
+      ReadTimerPacket(vresp, timer);
+      XVDRTransferTimerEntry(timer);
     }
   }
   delete vresp;
   return true;
 }
 
-PVR_ERROR cXVDRData::AddTimer(const PVR_TIMER &timerinfo)
+bool cXVDRData::AddTimer(const cXVDRTimer& timer)
 {
   cRequestPacket vrp;
   if (!vrp.init(XVDR_TIMER_ADD))
   {
     XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
-    return PVR_ERROR_UNKNOWN;
+    return false;
   }
 
   // add directory in front of the title
   std::string path;
-  if(timerinfo.strDirectory != NULL && strlen(timerinfo.strDirectory) > 0) {
-    path += timerinfo.strDirectory;
+  std::string directory = timer[timer_directory];
+  std::string title = timer[timer_title];
+
+  if(!directory.empty()) {
+    path += directory;
     if(path == "/") {
       path.clear();
     }
@@ -557,8 +563,8 @@ PVR_ERROR cXVDRData::AddTimer(const PVR_TIMER &timerinfo)
     }
   }
 
-  if(timerinfo.strTitle != NULL) {
-    path += timerinfo.strTitle;
+  if(!title.empty()) {
+    path += title;
   }
 
   // replace directory separators
@@ -570,88 +576,73 @@ PVR_ERROR cXVDRData::AddTimer(const PVR_TIMER &timerinfo)
 
   if(path.empty()) {
     XVDRLog(XVDR_ERROR, "%s - Empty filename !", __FUNCTION__);
-    return PVR_ERROR_UNKNOWN;
+    return false;
   }
 
   // use timer margin to calculate start/end times
-  uint32_t starttime = timerinfo.startTime - timerinfo.iMarginStart*60;
-  uint32_t endtime = timerinfo.endTime + timerinfo.iMarginEnd*60;
+  uint32_t starttime = (uint32_t)timer[timer_starttime] - (uint32_t)timer[timer_marginstart] * 60;
+  uint32_t endtime = (uint32_t)timer[timer_endtime] + (uint32_t)timer[timer_marginend] * 60;
 
-  if (!vrp.add_U32(timerinfo.state == PVR_TIMER_STATE_SCHEDULED))     return PVR_ERROR_UNKNOWN;
-  if (!vrp.add_U32(timerinfo.iPriority))   return PVR_ERROR_UNKNOWN;
-  if (!vrp.add_U32(timerinfo.iLifetime))   return PVR_ERROR_UNKNOWN;
-  if (!vrp.add_U32(timerinfo.iClientChannelUid)) return PVR_ERROR_UNKNOWN;
-  if (!vrp.add_U32(starttime))  return PVR_ERROR_UNKNOWN;
-  if (!vrp.add_U32(endtime))    return PVR_ERROR_UNKNOWN;
-  if (!vrp.add_U32(timerinfo.bIsRepeating ? timerinfo.firstDay : 0))   return PVR_ERROR_UNKNOWN;
-  if (!vrp.add_U32(timerinfo.iWeekdays))return PVR_ERROR_UNKNOWN;
-  if (!vrp.add_String(path.c_str()))      return PVR_ERROR_UNKNOWN;
-  if (!vrp.add_String(""))                return PVR_ERROR_UNKNOWN;
+  vrp.add_U32(1);
+  vrp.add_U32(timer[timer_priority]);
+  vrp.add_U32(timer[timer_lifetime]);
+  vrp.add_U32(timer[timer_channeluid]);
+  vrp.add_U32(starttime);
+  vrp.add_U32(endtime);
+  vrp.add_U32(timer[timer_isrepeating] ? timer[timer_firstday] : 0);
+  vrp.add_U32(timer[timer_weekdays]);
+  vrp.add_String(path.c_str());
+  vrp.add_String("");
 
   cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->noResponse())
   {
     delete vresp;
     XVDRLog(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
-    return PVR_ERROR_UNKNOWN;
+    return false;
   }
   uint32_t returnCode = vresp->extract_U32();
   delete vresp;
-  if (returnCode == XVDR_RET_DATALOCKED)
-    return PVR_ERROR_ALREADY_PRESENT;
-  else if (returnCode == XVDR_RET_DATAINVALID)
-    return PVR_ERROR_FAILED;
-  else if (returnCode == XVDR_RET_ERROR)
-    return PVR_ERROR_SERVER_ERROR;
 
-  return PVR_ERROR_NO_ERROR;
+  return (returnCode == XVDR_RET_OK);
 }
 
-PVR_ERROR cXVDRData::DeleteTimer(const PVR_TIMER &timerinfo, bool force)
+bool cXVDRData::DeleteTimer(uint32_t timerindex, bool force)
 {
   cRequestPacket vrp;
   if (!vrp.init(XVDR_TIMER_DELETE))
-    return PVR_ERROR_UNKNOWN;
+    return false;
 
-  if (!vrp.add_U32(timerinfo.iClientIndex))
-    return PVR_ERROR_UNKNOWN;
+  if (!vrp.add_U32(timerindex))
+    return false;
 
   if (!vrp.add_U32(force))
-    return PVR_ERROR_UNKNOWN;
+    return false;
 
   cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->noResponse())
   {
     delete vresp;
-    return PVR_ERROR_UNKNOWN;
+    return false;
   }
 
   uint32_t returnCode = vresp->extract_U32();
   delete vresp;
 
-  if (returnCode == XVDR_RET_DATALOCKED)
-    return PVR_ERROR_FAILED;
-  if (returnCode == XVDR_RET_RECRUNNING)
-    return PVR_ERROR_RECORDING_RUNNING;
-  else if (returnCode == XVDR_RET_DATAINVALID)
-    return PVR_ERROR_FAILED;
-  else if (returnCode == XVDR_RET_ERROR)
-    return PVR_ERROR_SERVER_ERROR;
-
-  return PVR_ERROR_NO_ERROR;
+  return (returnCode == XVDR_RET_OK);
 }
 
-PVR_ERROR cXVDRData::UpdateTimer(const PVR_TIMER &timerinfo)
+bool cXVDRData::UpdateTimer(const cXVDRTimer& timer)
 {
   // use timer margin to calculate start/end times
-  uint32_t starttime = timerinfo.startTime - timerinfo.iMarginStart*60;
-  uint32_t endtime = timerinfo.endTime + timerinfo.iMarginEnd*60;
+  uint32_t starttime = timer[timer_starttime] - timer[timer_marginstart] * 60;
+  uint32_t endtime = timer[timer_endtime] + timer[timer_marginend] * 60;
 
-  std::string dir = (timerinfo.strDirectory == NULL ? "" : timerinfo.strDirectory);
+  std::string dir = timer[timer_directory];
   while(dir[dir.size()-1] == '/' && dir.size() > 1)
     dir = dir.substr(0, dir.size()-1);
 
-  std::string name = (timerinfo.strTitle == NULL ? "" : timerinfo.strTitle);
+  std::string name = timer[timer_title];
   std::string title;
 
   if(!dir.empty() && dir != "/")
@@ -664,35 +655,30 @@ PVR_ERROR cXVDRData::UpdateTimer(const PVR_TIMER &timerinfo)
 	  if(*i == '/') *i = '~';
 
   cRequestPacket vrp;
-  if (!vrp.init(XVDR_TIMER_UPDATE))        return PVR_ERROR_UNKNOWN;
-  if (!vrp.add_U32(timerinfo.iClientIndex))      return PVR_ERROR_UNKNOWN;
-  if (!vrp.add_U32(timerinfo.state == PVR_TIMER_STATE_SCHEDULED))     return PVR_ERROR_UNKNOWN;
-  if (!vrp.add_U32(timerinfo.iPriority))   return PVR_ERROR_UNKNOWN;
-  if (!vrp.add_U32(timerinfo.iLifetime))   return PVR_ERROR_UNKNOWN;
-  if (!vrp.add_U32(timerinfo.iClientChannelUid)) return PVR_ERROR_UNKNOWN;
-  if (!vrp.add_U32(starttime))  return PVR_ERROR_UNKNOWN;
-  if (!vrp.add_U32(endtime))    return PVR_ERROR_UNKNOWN;
-  if (!vrp.add_U32(timerinfo.bIsRepeating ? timerinfo.firstDay : 0))   return PVR_ERROR_UNKNOWN;
-  if (!vrp.add_U32(timerinfo.iWeekdays))return PVR_ERROR_UNKNOWN;
-  if (!vrp.add_String(title.c_str()))   return PVR_ERROR_UNKNOWN;
-  if (!vrp.add_String(""))                return PVR_ERROR_UNKNOWN;
+  vrp.init(XVDR_TIMER_UPDATE);
+  vrp.add_U32(timer[timer_index]);
+  vrp.add_U32(2);
+  vrp.add_U32(timer[timer_priority]);
+  vrp.add_U32(timer[timer_lifetime]);
+  vrp.add_U32(timer[timer_channeluid]);
+  vrp.add_U32(starttime);
+  vrp.add_U32(endtime);
+  vrp.add_U32(timer[timer_isrepeating] ? timer[timer_firstday] : 0);
+  vrp.add_U32(timer[timer_weekdays]);
+  vrp.add_String(title.c_str());
+  vrp.add_String("");
 
   cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->noResponse())
   {
     delete vresp;
-    return PVR_ERROR_UNKNOWN;
+    return false;
   }
+
   uint32_t returnCode = vresp->extract_U32();
   delete vresp;
-  if (returnCode == XVDR_RET_DATAUNKNOWN)
-    return PVR_ERROR_FAILED;
-  else if (returnCode == XVDR_RET_DATAINVALID)
-    return PVR_ERROR_FAILED;
-  else if (returnCode == XVDR_RET_ERROR)
-    return PVR_ERROR_SERVER_ERROR;
 
-  return PVR_ERROR_NO_ERROR;
+  return (returnCode == XVDR_RET_OK);
 }
 
 int cXVDRData::GetRecordingsCount()
@@ -717,120 +703,98 @@ int cXVDRData::GetRecordingsCount()
   return count;
 }
 
-PVR_ERROR cXVDRData::GetRecordingsList()
+bool cXVDRData::GetRecordingsList()
 {
   cRequestPacket vrp;
   if (!vrp.init(XVDR_RECORDINGS_GETLIST))
   {
     XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
-    return PVR_ERROR_UNKNOWN;
+    return false;
   }
 
   cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     XVDRLog(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
-    return PVR_ERROR_UNKNOWN;
+    return false;
   }
 
   while (!vresp->end())
   {
-    PVR_RECORDING tag;
-    tag.recordingTime   = vresp->extract_U32();
-    tag.iDuration       = vresp->extract_U32();
-    tag.iPriority       = vresp->extract_U32();
-    tag.iLifetime       = vresp->extract_U32();
-    strncpy(tag.strChannelName, vresp->extract_String(), sizeof(tag.strChannelName));
-    strncpy(tag.strTitle, vresp->extract_String(), sizeof(tag.strTitle));
-    strncpy(tag.strPlotOutline, vresp->extract_String(), sizeof(tag.strPlotOutline));
-    strncpy(tag.strPlot, vresp->extract_String(), sizeof(tag.strPlot));
-    strncpy(tag.strDirectory, vresp->extract_String(), sizeof(tag.strDirectory));
-    strncpy(tag.strRecordingId, vresp->extract_String(), sizeof(tag.strRecordingId));
-    tag.strStreamURL[0] = 0;
-    tag.iGenreType      = 0;
-    tag.iGenreSubType   = 0;
-    tag.iPlayCount      = 0;
+	cXVDRRecordingEntry rec;
+	rec[recording_time] = vresp->extract_U32();
+	rec[recording_duration] = vresp->extract_U32();
+	rec[recording_priority] = vresp->extract_U32();
+	rec[recording_lifetime] = vresp->extract_U32();
+	rec[recording_channelname] = vresp->extract_String();
+	rec[recording_title] = vresp->extract_String();
+	rec[recording_plotoutline] = vresp->extract_String();
+	rec[recording_plot] = vresp->extract_String();
+	rec[recording_directory] = vresp->extract_String();
+	rec[recording_id] = vresp->extract_String();
+	rec[recording_streamurl] = "";
+	rec[recording_genretype] = 0;
+	rec[recording_genresubtype] = 0;
+	rec[recording_playcount] = 0;
 
-    XVDRTransferRecordingEntry(&tag);
+    XVDRTransferRecordingEntry(rec);
   }
 
   delete vresp;
 
-  return PVR_ERROR_NO_ERROR;
+  return true;
 }
 
-PVR_ERROR cXVDRData::RenameRecording(const PVR_RECORDING& recinfo, const char* newname)
+bool cXVDRData::RenameRecording(const std::string& recid, const std::string& newname)
 {
   cRequestPacket vrp;
   if (!vrp.init(XVDR_RECORDINGS_RENAME))
   {
     XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
-    return PVR_ERROR_UNKNOWN;
+    return false;
   }
 
   // add uid
-  XVDRLog(XVDR_DEBUG, "%s - uid: %s", __FUNCTION__, recinfo.strRecordingId);
-  if (!vrp.add_String(recinfo.strRecordingId))
-    return PVR_ERROR_UNKNOWN;
+  XVDRLog(XVDR_DEBUG, "%s - uid: %s", __FUNCTION__, recid.c_str());
 
-  // add new title
-  if (!vrp.add_String(newname))
-    return PVR_ERROR_UNKNOWN;
+  vrp.add_String(recid.c_str());
+  vrp.add_String(newname.c_str());
 
   cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->noResponse())
   {
     delete vresp;
-    return PVR_ERROR_SERVER_ERROR;
+    return false;
   }
 
   uint32_t returnCode = vresp->extract_U32();
   delete vresp;
 
-  if(returnCode != 0)
-   return PVR_ERROR_FAILED;
-
-  return PVR_ERROR_NO_ERROR;
+  return (returnCode == XVDR_RET_OK);
 }
 
-PVR_ERROR cXVDRData::DeleteRecording(const PVR_RECORDING& recinfo)
+bool cXVDRData::DeleteRecording(const std::string& recid)
 {
   cRequestPacket vrp;
   if (!vrp.init(XVDR_RECORDINGS_DELETE))
   {
     XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
-    return PVR_ERROR_UNKNOWN;
+    return false;
   }
 
-  if (!vrp.add_String(recinfo.strRecordingId))
-    return PVR_ERROR_UNKNOWN;
+  vrp.add_String(recid.c_str());
 
   cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->noResponse())
   {
     delete vresp;
-    return PVR_ERROR_UNKNOWN;
+    return false;
   }
 
   uint32_t returnCode = vresp->extract_U32();
   delete vresp;
 
-  switch(returnCode)
-  {
-    case XVDR_RET_DATALOCKED:
-      return PVR_ERROR_FAILED;
-
-    case XVDR_RET_RECRUNNING:
-      return PVR_ERROR_RECORDING_RUNNING;
-
-    case XVDR_RET_DATAINVALID:
-      return PVR_ERROR_FAILED;
-
-    case XVDR_RET_ERROR:
-      return PVR_ERROR_SERVER_ERROR;
-  }
-
-  return PVR_ERROR_NO_ERROR;
+  return (returnCode == XVDR_RET_OK);
 }
 
 bool cXVDRData::OnResponsePacket(cXVDRResponsePacket* pkt)
@@ -1011,18 +975,18 @@ bool cXVDRData::GetChannelGroupList(bool bRadio)
 
   while (!vresp->end())
   {
-    PVR_CHANNEL_GROUP tag;
+    cXVDRChannelGroup group;
 
-    strncpy(tag.strGroupName, vresp->extract_String(), sizeof(tag.strGroupName));
-    tag.bIsRadio = vresp->extract_U8();
-    XVDRTransferChannelGroup(&tag);
+    group[channelgroup_name] = vresp->extract_String();
+    group[channelgroup_isradio] = vresp->extract_U8();
+    XVDRTransferChannelGroup(group);
   }
 
   delete vresp;
   return true;
 }
 
-bool cXVDRData::GetChannelGroupMembers(const PVR_CHANNEL_GROUP &group)
+bool cXVDRData::GetChannelGroupMembers(const std::string& groupname, bool radio)
 {
   cRequestPacket vrp;
   if (!vrp.init(XVDR_CHANNELGROUP_MEMBERS))
@@ -1031,8 +995,8 @@ bool cXVDRData::GetChannelGroupMembers(const PVR_CHANNEL_GROUP &group)
     return false;
   }
 
-  vrp.add_String(group.strGroupName);
-  vrp.add_U8(group.bIsRadio);
+  vrp.add_String(groupname.c_str());
+  vrp.add_U8(radio);
 
   cXVDRResponsePacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->noResponse())
@@ -1043,12 +1007,12 @@ bool cXVDRData::GetChannelGroupMembers(const PVR_CHANNEL_GROUP &group)
 
   while (!vresp->end())
   {
-    PVR_CHANNEL_GROUP_MEMBER tag;
-    strncpy(tag.strGroupName, group.strGroupName, sizeof(tag.strGroupName));
-    tag.iChannelUniqueId = vresp->extract_U32();
-    tag.iChannelNumber = vresp->extract_U32();
+    cXVDRChannelGroupMember member;
+    member[channelgroupmember_name] = groupname;
+    member[channelgroupmember_uid] = vresp->extract_U32();
+    member[channelgroupmember_number] = vresp->extract_U32();
 
-    XVDRTransferChannelGroupMember(&tag);
+    XVDRTransferChannelGroupMember(member);
   }
 
   delete vresp;

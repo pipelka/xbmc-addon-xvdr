@@ -25,19 +25,9 @@
 #include "XVDRSession.h"
 #include <string>
 
-#include "xbmc_pvr_types.h"
+#include "XVDRDataset.h"
 
 class cXVDRResponsePacket;
-
-struct SQuality
-{
-  std::string fe_name;
-  std::string fe_status;
-  uint32_t    fe_snr;
-  uint32_t    fe_signal;
-  uint32_t    fe_ber;
-  uint32_t    fe_unc;
-};
 
 class cXVDRDemux : public cXVDRSession
 {
@@ -46,13 +36,13 @@ public:
   cXVDRDemux();
   ~cXVDRDemux();
 
-  bool OpenChannel(const std::string& hostname, const PVR_CHANNEL &channelinfo);
+  bool OpenChannel(const std::string& hostname, uint32_t channeluid);
   void Abort();
-  bool GetStreamProperties(PVR_STREAM_PROPERTIES* props);
+  const cXVDRStreamProperties& GetStreamProperties();
   XVDRPacket* Read();
-  bool SwitchChannel(const PVR_CHANNEL &channelinfo);
-  int CurrentChannel() { return m_channelinfo.iChannelNumber; }
-  bool GetSignalStatus(PVR_SIGNAL_STATUS &qualityinfo);
+  bool SwitchChannel(uint32_t channeluid);
+  //int CurrentChannel() { return m_channelinfo.iChannelNumber; }
+  const cXVDRSignalStatus& GetSignalStatus();
   void SetPriority(int priority);
 
 protected:
@@ -66,8 +56,8 @@ protected:
 
 private:
 
-  PVR_STREAM_PROPERTIES m_Streams;
-  PVR_CHANNEL           m_channelinfo;
-  SQuality              m_Quality;
+  cXVDRStreamProperties m_streams;
+  cXVDRSignalStatus     m_signal;
   int                   m_priority;
+  uint32_t				m_channeluid;
 };

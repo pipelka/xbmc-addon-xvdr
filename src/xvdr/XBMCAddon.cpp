@@ -32,12 +32,12 @@
 
 #include "xbmc_pvr_dll.h"
 #include "xbmc_addon_types.h"
-#include "DVDDemuxPacket.h"
 
 #include <string.h>
 #include <sstream>
 #include <string>
 #include <iostream>
+#include <stdlib.h>
 
 using namespace std;
 using namespace ADDON;
@@ -53,6 +53,7 @@ cXBMCCallbacks  *Callbacks         = NULL;
 cMutex          XVDRMutex;
 cMutex          XVDRMutexDemux;
 cMutex          XVDRMutexRec;
+int             CurrentChannel = 0;
 
 static int priotable[] = { 0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,99,100 };
 
@@ -301,7 +302,7 @@ PVR_ERROR GetEPGForChannel(ADDON_HANDLE handle, const PVR_CHANNEL &channel, time
     return PVR_ERROR_SERVER_ERROR;
 
   Callbacks->SetHandle(handle);
-  return (XVDRData->GetEPGForChannel(channel, iStart, iEnd) ? PVR_ERROR_NO_ERROR: PVR_ERROR_SERVER_ERROR);
+  return (XVDRData->GetEPGForChannel(channel.iUniqueId, iStart, iEnd) ? PVR_ERROR_NO_ERROR: PVR_ERROR_SERVER_ERROR);
 }
 
 
@@ -365,7 +366,7 @@ PVR_ERROR GetChannelGroupMembers(ADDON_HANDLE handle, const PVR_CHANNEL_GROUP &g
     return PVR_ERROR_SERVER_ERROR;
 
   Callbacks->SetHandle(handle);
-  XVDRData->GetChannelGroupMembers(group);
+  XVDRData->GetChannelGroupMembers(group.strGroupName, group.bIsRadio);
   return PVR_ERROR_NO_ERROR;
 }
 
@@ -398,10 +399,13 @@ PVR_ERROR AddTimer(const PVR_TIMER &timer)
 {
   cMutexLock lock(&XVDRMutex);
 
+  cXVDRTimer xvdrtimer;
+  xvdrtimer << timer;
+
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return XVDRData->AddTimer(timer);
+  return XVDRData->AddTimer(xvdrtimer) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
 }
 
 PVR_ERROR DeleteTimer(const PVR_TIMER &timer, bool bForce)
@@ -411,7 +415,7 @@ PVR_ERROR DeleteTimer(const PVR_TIMER &timer, bool bForce)
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return XVDRData->DeleteTimer(timer, bForce);
+  return XVDRData->DeleteTimer(timer.iClientIndex, bForce) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
 }
 
 PVR_ERROR UpdateTimer(const PVR_TIMER &timer)
@@ -421,7 +425,10 @@ PVR_ERROR UpdateTimer(const PVR_TIMER &timer)
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return XVDRData->UpdateTimer(timer);
+  cXVDRTimer xvdrtimer;
+  xvdrtimer << timer;
+
+  return XVDRData->UpdateTimer(xvdrtimer) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
 }
 
 
@@ -446,7 +453,7 @@ PVR_ERROR GetRecordings(ADDON_HANDLE handle)
     return PVR_ERROR_SERVER_ERROR;
 
   Callbacks->SetHandle(handle);
-  return XVDRData->GetRecordingsList();
+  return XVDRData->GetRecordingsList() ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
 }
 
 PVR_ERROR RenameRecording(const PVR_RECORDING &recording)
@@ -456,7 +463,7 @@ PVR_ERROR RenameRecording(const PVR_RECORDING &recording)
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return XVDRData->RenameRecording(recording, recording.strTitle);
+  return XVDRData->RenameRecording(recording.strRecordingId, recording.strTitle) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
 }
 
 PVR_ERROR DeleteRecording(const PVR_RECORDING &recording)
@@ -466,7 +473,7 @@ PVR_ERROR DeleteRecording(const PVR_RECORDING &recording)
   if (!XVDRData)
     return PVR_ERROR_SERVER_ERROR;
 
-  return XVDRData->DeleteRecording(recording);
+  return XVDRData->DeleteRecording(recording.strRecordingId) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
 }
 
 /*******************************************/
@@ -489,7 +496,12 @@ bool OpenLiveStream(const PVR_CHANNEL &channel)
   XVDRDemuxer->SetAudioType(cXBMCSettings::GetInstance().AudioType());
   XVDRDemuxer->SetPriority(priotable[cXBMCSettings::GetInstance().Priority()]);
 
-  return XVDRDemuxer->OpenChannel(cXBMCSettings::GetInstance().Hostname(), channel);
+  if (XVDRDemuxer->OpenChannel(cXBMCSettings::GetInstance().Hostname(), channel.iUniqueId)) {
+	  CurrentChannel = channel.iChannelNumber;
+	  return true;
+  }
+
+  return false;
 }
 
 void CloseLiveStream(void)
@@ -511,7 +523,10 @@ PVR_ERROR GetStreamProperties(PVR_STREAM_PROPERTIES* pProperties)
   if (!XVDRDemuxer)
     return PVR_ERROR_SERVER_ERROR;
 
-  return (XVDRDemuxer->GetStreamProperties(pProperties) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
+  const cXVDRStreamProperties& streamprops = XVDRDemuxer->GetStreamProperties();
+
+  *pProperties << streamprops;
+  return PVR_ERROR_NO_ERROR;
 }
 
 void DemuxAbort(void)
@@ -547,7 +562,7 @@ int GetCurrentClientChannel(void)
   cMutexLock lock(&XVDRMutexDemux);
 
   if (XVDRDemuxer)
-    return XVDRDemuxer->CurrentChannel();
+    return CurrentChannel;
 
   return -1;
 }
@@ -563,7 +578,12 @@ bool SwitchChannel(const PVR_CHANNEL &channel)
   XVDRDemuxer->SetAudioType(cXBMCSettings::GetInstance().AudioType());
   XVDRDemuxer->SetPriority(priotable[cXBMCSettings::GetInstance().Priority()]);
 
-  return XVDRDemuxer->SwitchChannel(channel);
+  if(XVDRDemuxer->SwitchChannel(channel.iUniqueId)) {
+	  CurrentChannel = channel.iChannelNumber;
+	  return true;
+  }
+
+  return false;
 }
 
 PVR_ERROR SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
@@ -573,7 +593,11 @@ PVR_ERROR SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
   if (!XVDRDemuxer)
     return PVR_ERROR_SERVER_ERROR;
 
-  return (XVDRDemuxer->GetSignalStatus(signalStatus) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
+  const cXVDRSignalStatus& status = XVDRDemuxer->GetSignalStatus();
+
+  signalStatus << status;
+
+  return PVR_ERROR_NO_ERROR;
 }
 
 
@@ -594,7 +618,7 @@ bool OpenRecordedStream(const PVR_RECORDING &recording)
   XVDRRecording = new cXVDRRecording;
   XVDRRecording->SetTimeout(cXBMCSettings::GetInstance().ConnectTimeout() * 1000);
 
-  return XVDRRecording->OpenRecording(cXBMCSettings::GetInstance().Hostname(), recording);
+  return XVDRRecording->OpenRecording(cXBMCSettings::GetInstance().Hostname(), recording.strRecordingId);
 }
 
 void CloseRecordedStream(void)

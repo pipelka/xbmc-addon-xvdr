@@ -4,6 +4,8 @@
 #include "XVDRCallbacks.h"
 #include "XVDRThread.h"
 
+#include "xbmc_pvr_types.h"
+
 class cXBMCCallbacks : public cXVDRCallbacks
 {
 public:
@@ -30,17 +32,17 @@ public:
 
   void SetHandle(ADDON_HANDLE handle);
 
-  void TransferChannelEntry(PVR_CHANNEL* channel);
+  void TransferChannelEntry(const cXVDRChannel& channel);
 
-  void TransferEpgEntry(EPG_TAG* tag);
+  void TransferEpgEntry(const cXVDREpg& tag);
 
-  void TransferTimerEntry(PVR_TIMER* timer);
+  void TransferTimerEntry(const cXVDRTimer& timer);
 
-  void TransferRecordingEntry(PVR_RECORDING* rec);
+  void TransferRecordingEntry(const cXVDRRecordingEntry& rec);
 
-  void TransferChannelGroup(PVR_CHANNEL_GROUP* group);
+  void TransferChannelGroup(const cXVDRChannelGroup& group);
 
-  void TransferChannelGroupMember(PVR_CHANNEL_GROUP_MEMBER* member);
+  void TransferChannelGroupMember(const cXVDRChannelGroupMember& member);
 
   XVDRPacket* AllocatePacket(int length);
 
@@ -50,7 +52,33 @@ public:
 
   void FreePacket(XVDRPacket* packet);
 
+  XVDRPacket* StreamChange(const cXVDRStreamProperties& p);
+
+  XVDRPacket* ContentInfo(const cXVDRStreamProperties& p);
+
 private:
 
   ADDON_HANDLE m_handle;
 };
+
+PVR_CHANNEL& operator<< (PVR_CHANNEL& lhs, const cXVDRChannel& rhs);
+
+EPG_TAG& operator<< (EPG_TAG& lhs, const cXVDREpg& rhs);
+
+cXVDRTimer& operator<< (cXVDRTimer& lhs, const PVR_TIMER& rhs);
+
+PVR_TIMER& operator<< (PVR_TIMER& lhs, const cXVDRTimer& rhs);
+
+cXVDRRecordingEntry& operator<< (cXVDRRecordingEntry& lhs, const PVR_RECORDING& rhs);
+
+PVR_RECORDING& operator<< (PVR_RECORDING& lhs, const cXVDRRecordingEntry& rhs);
+
+PVR_CHANNEL_GROUP& operator<< (PVR_CHANNEL_GROUP& lhs, const cXVDRChannelGroup& rhs);
+
+PVR_CHANNEL_GROUP_MEMBER& operator<< (PVR_CHANNEL_GROUP_MEMBER& lhs, const cXVDRChannelGroupMember& rhs);
+
+PVR_STREAM_PROPERTIES& operator<< (PVR_STREAM_PROPERTIES& lhs, const cXVDRStreamProperties& rhs);
+
+PVR_STREAM_PROPERTIES::PVR_STREAM& operator<< (PVR_STREAM_PROPERTIES::PVR_STREAM& lhs, const cXVDRStream& rhs);
+
+PVR_SIGNAL_STATUS& operator<< (PVR_SIGNAL_STATUS& lhs, const cXVDRSignalStatus& rhs);

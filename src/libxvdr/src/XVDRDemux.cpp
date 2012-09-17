@@ -30,51 +30,33 @@
 #include "requestpacket.h"
 #include "xvdrcommand.h"
 
-#define DMX_SPECIALID_STREAMINFO    -10
-#define DMX_SPECIALID_STREAMCHANGE  -11
-
 cXVDRDemux::cXVDRDemux() : m_priority(50)
 {
-  m_Streams.iStreamCount = 0;
 }
 
 cXVDRDemux::~cXVDRDemux()
 {
 }
 
-bool cXVDRDemux::OpenChannel(const std::string& hostname, const PVR_CHANNEL &channelinfo)
+bool cXVDRDemux::OpenChannel(const std::string& hostname, uint32_t channeluid)
 {
-  m_channelinfo = channelinfo;
   if(!cXVDRSession::Open(hostname))
     return false;
 
   if(!cXVDRSession::Login())
     return false;
 
-  return SwitchChannel(m_channelinfo);
+  return SwitchChannel(channeluid);
 }
 
-bool cXVDRDemux::GetStreamProperties(PVR_STREAM_PROPERTIES* props)
+const cXVDRStreamProperties& cXVDRDemux::GetStreamProperties()
 {
-  props->iStreamCount = m_Streams.iStreamCount;
-  for (unsigned int i = 0; i < m_Streams.iStreamCount; i++)
-  {
-    props->stream[i].iStreamIndex = m_Streams.stream[i].iStreamIndex;
-    props->stream[i].iPhysicalId  = m_Streams.stream[i].iPhysicalId;
-    props->stream[i].iCodecType   = m_Streams.stream[i].iCodecType;
-    props->stream[i].iCodecId     = m_Streams.stream[i].iCodecId;
-    props->stream[i].iHeight      = m_Streams.stream[i].iHeight;
-    props->stream[i].iWidth       = m_Streams.stream[i].iWidth;
-    props->stream[i].iIdentifier  = m_Streams.stream[i].iIdentifier;
-
-    memcpy(props->stream[i].strLanguage, m_Streams.stream[i].strLanguage, 4);
-  }
-  return (props->iStreamCount > 0);
+  return m_streams;
 }
 
 void cXVDRDemux::Abort()
 {
-  m_Streams.iStreamCount = 0;
+  m_streams.clear();
   cXVDRSession::Abort();
 }
 
@@ -104,10 +86,7 @@ XVDRPacket* cXVDRDemux::Read()
   {
     case XVDR_STREAM_CHANGE:
       StreamChange(resp);
-      pkt = XVDRAllocatePacket(0);
-      if (pkt != NULL)
-        XVDRSetPacketData(pkt, NULL, DMX_SPECIALID_STREAMCHANGE, 0, 0);
-
+      pkt = XVDRStreamChange(m_streams);
       delete resp;
       return pkt;
 
@@ -124,56 +103,46 @@ XVDRPacket* cXVDRDemux::Read()
       if(!StreamContentInfo(resp))
         break;
 
-      pkt = XVDRAllocatePacket(sizeof(PVR_STREAM_PROPERTIES));
+      pkt = XVDRContentInfo(m_streams);
+      delete resp;
+      return pkt;
+      break;
+
+    case XVDR_STREAM_MUXPKT:
+      // figure out the stream for this packet
+      int id = resp->getStreamID();
+      cXVDRStream& stream = m_streams[id];
+
+      if(stream[stream_physicalid] != id) {
+          delete resp;
+          XVDRLog(XVDR_DEBUG, "stream id %i not found", id);
+    	  break;
+      }
+
+      int index = stream[stream_index];
+      pkt = (XVDRPacket*)resp->getUserData();
       if (pkt != NULL)
-        XVDRSetPacketData(pkt, (uint8_t*)&m_Streams, DMX_SPECIALID_STREAMINFO, 0, 0);
+        XVDRSetPacketData(pkt, NULL, index, resp->getDTS(), resp->getPTS());
 
       delete resp;
       return pkt;
-
-    case XVDR_STREAM_MUXPKT:
-      // figure out the stream id for this packet
-      for(unsigned int i = 0; i < m_Streams.iStreamCount; i++)
-      {
-        if(m_Streams.stream[i].iPhysicalId == (unsigned int)resp->getStreamID())
-        {
-          iStreamId = i;
-          break;
-        }
-      }
-
-      // stream found ?
-      if(iStreamId != -1)
-      {
-        pkt = (XVDRPacket*)resp->getUserData();
-        if (pkt != NULL)
-          XVDRSetPacketData(pkt, NULL, iStreamId, resp->getDTS(), resp->getPTS());
-
-        delete resp;
-        return pkt;
-      }
-      else
-      {
-        XVDRLog(XVDR_DEBUG, "stream id %i not found", resp->getStreamID());
-      }
-      break;
   }
 
   delete resp;
   return XVDRAllocatePacket(0);
 }
 
-bool cXVDRDemux::SwitchChannel(const PVR_CHANNEL &channelinfo)
+bool cXVDRDemux::SwitchChannel(uint32_t channeluid)
 {
-  XVDRLog(XVDR_DEBUG, "changing to channel %d (priority %i)", channelinfo.iChannelNumber, m_priority);
+  XVDRLog(XVDR_DEBUG, "changing to channel %d (priority %i)", channeluid, m_priority);
 
   cRequestPacket vrp;
   uint32_t rc = 0;
 
-  if (vrp.init(XVDR_CHANNELSTREAM_OPEN) && vrp.add_U32(channelinfo.iUniqueId) && vrp.add_S32(m_priority) && ReadSuccess(&vrp, rc))
+  if (vrp.init(XVDR_CHANNELSTREAM_OPEN) && vrp.add_U32(channeluid) && vrp.add_S32(m_priority) && ReadSuccess(&vrp, rc))
   {
-    m_channelinfo = channelinfo;
-    m_Streams.iStreamCount  = 0;
+    m_channeluid = channeluid;
+    m_streams.clear();
 
     return true;
   }
@@ -199,7 +168,7 @@ bool cXVDRDemux::SwitchChannel(const PVR_CHANNEL &channelinfo)
       break;
     // invalid channel
     case XVDR_RET_DATAINVALID:
-      XVDRNotification(XVDR_ERROR, XVDRGetLocalizedString(30065), channelinfo.strChannelName);
+      XVDRNotification(XVDR_ERROR, XVDRGetLocalizedString(30065), "");
       break;
   }
 
@@ -207,169 +176,108 @@ bool cXVDRDemux::SwitchChannel(const PVR_CHANNEL &channelinfo)
   return true;
 }
 
-bool cXVDRDemux::GetSignalStatus(PVR_SIGNAL_STATUS &qualityinfo)
+const cXVDRSignalStatus& cXVDRDemux::GetSignalStatus()
 {
-  if (ConnectionLost())
-    return false;
-
-  if (m_Quality.fe_name.empty())
-  {
-    memset(&qualityinfo, 0, sizeof(PVR_SIGNAL_STATUS));
-    return true;
-  }
-
-  strncpy(qualityinfo.strAdapterName, m_Quality.fe_name.c_str(), sizeof(qualityinfo.strAdapterName));
-  strncpy(qualityinfo.strAdapterStatus, m_Quality.fe_status.c_str(), sizeof(qualityinfo.strAdapterStatus));
-  qualityinfo.iSignal = (uint16_t)m_Quality.fe_signal;
-  qualityinfo.iSNR = (uint16_t)m_Quality.fe_snr;
-  qualityinfo.iBER = (uint32_t)m_Quality.fe_ber;
-  qualityinfo.iUNC = (uint32_t)m_Quality.fe_unc;
-  qualityinfo.dVideoBitrate = 0;
-  qualityinfo.dAudioBitrate = 0;
-  qualityinfo.dDolbyBitrate = 0;
-
-  return true;
+  return m_signal;
 }
 
 void cXVDRDemux::StreamChange(cXVDRResponsePacket *resp)
 {
-  m_Streams.iStreamCount = 0;
+  // TODO - locking
+  m_streams.clear();
+  int index = 0;
 
   while (!resp->end())
   {
     uint32_t    id   = resp->extract_U32();
     const char* type = resp->extract_String();
 
-    struct PVR_STREAM_PROPERTIES::PVR_STREAM* stream = &m_Streams.stream[m_Streams.iStreamCount];
+    cXVDRStream stream;
 
-    stream->iFPSScale      = 0;
-    stream->iFPSRate       = 0;
-    stream->iHeight        = 0;
-    stream->iWidth         = 0;
-    stream->fAspect        = 0.0;
-
-    stream->iChannels      = 0;
-    stream->iSampleRate    = 0;
-    stream->iBlockAlign    = 0;
-    stream->iBitRate       = 0;
-    stream->iBitsPerSample = 0;
-
-    stream->iStreamIndex   = m_Streams.iStreamCount;
-    stream->iPhysicalId    = id;
-    stream->iIdentifier    = -1;
-
-    memset(stream->strLanguage, 0, 4);
+    stream[stream_index] = index++;
+    stream[stream_physicalid] = id;
+    stream[stream_identifier] = -1;
 
     if(!strcmp(type, "AC3"))
     {
-      const char *language = resp->extract_String();
-
-      stream->iCodecType     = AVMEDIA_TYPE_AUDIO;
-      stream->iCodecId       = CODEC_ID_AC3;
-
-      memcpy(stream->strLanguage, language, 3);
-      m_Streams.iStreamCount++;
+      stream[stream_language] = resp->extract_String();
+      stream[stream_codectype] = AVMEDIA_TYPE_AUDIO;
+      stream[stream_codecid] = CODEC_ID_AC3;
     }
     else if(!strcmp(type, "MPEG2AUDIO"))
     {
-      const char *language = resp->extract_String();
-
-      stream->iCodecType     = AVMEDIA_TYPE_AUDIO;
-      stream->iCodecId       = CODEC_ID_MP2;
-
-      memcpy(stream->strLanguage, language, 3);
-      m_Streams.iStreamCount++;
+      stream[stream_language] = resp->extract_String();
+      stream[stream_codectype] = AVMEDIA_TYPE_AUDIO;
+      stream[stream_codecid] = CODEC_ID_MP2;
     }
     else if(!strcmp(type, "AAC"))
     {
-      const char *language = resp->extract_String();
-
-      stream->iCodecType     = AVMEDIA_TYPE_AUDIO;
-      stream->iCodecId       = CODEC_ID_AAC;
-
-      memcpy(stream->strLanguage, language, 3);
-      m_Streams.iStreamCount++;
+      stream[stream_language] = resp->extract_String();
+      stream[stream_codectype] = AVMEDIA_TYPE_AUDIO;
+      stream[stream_codecid] = CODEC_ID_AAC;
     }
     else if(!strcmp(type, "LATM"))
     {
-      const char *language = resp->extract_String();
-
-      stream->iCodecType     = AVMEDIA_TYPE_AUDIO;
-      stream->iCodecId       = CODEC_ID_AAC_LATM;
-
-      memcpy(stream->strLanguage, language, 3);
-      m_Streams.iStreamCount++;
+      stream[stream_language] = resp->extract_String();
+      stream[stream_codectype] = AVMEDIA_TYPE_AUDIO;
+      stream[stream_codecid] = CODEC_ID_AAC_LATM;
     }
     else if(!strcmp(type, "DTS"))
     {
-      const char *language = resp->extract_String();
-
-      stream->iCodecType     = AVMEDIA_TYPE_AUDIO;
-      stream->iCodecId       = CODEC_ID_DTS;
-
-      memcpy(stream->strLanguage, language, 3);
-      m_Streams.iStreamCount++;
+      stream[stream_language] = resp->extract_String();
+      stream[stream_codectype] = AVMEDIA_TYPE_AUDIO;
+      stream[stream_codecid] = CODEC_ID_DTS;
     }
     else if(!strcmp(type, "EAC3"))
     {
-      const char *language = resp->extract_String();
-
-      stream->iCodecType     = AVMEDIA_TYPE_AUDIO;
-      stream->iCodecId       = CODEC_ID_EAC3;
-
-      memcpy(stream->strLanguage, language, 3);
-      m_Streams.iStreamCount++;
+      stream[stream_language] = resp->extract_String();
+      stream[stream_codectype] = AVMEDIA_TYPE_AUDIO;
+      stream[stream_codecid] = CODEC_ID_EAC3;
     }
     else if(!strcmp(type, "MPEG2VIDEO"))
     {
-      stream->iCodecType     = AVMEDIA_TYPE_VIDEO;
-      stream->iCodecId       = CODEC_ID_MPEG2VIDEO;
-      stream->iFPSScale      = resp->extract_U32();
-      stream->iFPSRate       = resp->extract_U32();
-      stream->iHeight        = resp->extract_U32();
-      stream->iWidth         = resp->extract_U32();
-      stream->fAspect        = resp->extract_Double();
-
-      m_Streams.iStreamCount++;
+      stream[stream_codectype] = AVMEDIA_TYPE_VIDEO;
+      stream[stream_codecid] = CODEC_ID_MPEG2VIDEO;
+      stream[stream_fpsscale] = resp->extract_U32();
+      stream[stream_fpsrate] = resp->extract_U32();
+      stream[stream_height] = resp->extract_U32();
+      stream[stream_width] = resp->extract_U32();
+      stream[stream_aspect] = resp->extract_Double();
     }
     else if(!strcmp(type, "H264"))
     {
-      stream->iCodecType     = AVMEDIA_TYPE_VIDEO;
-      stream->iCodecId       = CODEC_ID_H264;
-      stream->iFPSScale      = resp->extract_U32();
-      stream->iFPSRate       = resp->extract_U32();
-      stream->iHeight        = resp->extract_U32();
-      stream->iWidth         = resp->extract_U32();
-      stream->fAspect        = resp->extract_Double();
-
-      m_Streams.iStreamCount++;
+      stream[stream_codectype] = AVMEDIA_TYPE_VIDEO;
+      stream[stream_codecid] = CODEC_ID_H264;
+      stream[stream_fpsscale] = resp->extract_U32();
+      stream[stream_fpsrate] = resp->extract_U32();
+      stream[stream_height] = resp->extract_U32();
+      stream[stream_width] = resp->extract_U32();
+      stream[stream_aspect] = resp->extract_Double();
     }
     else if(!strcmp(type, "DVBSUB"))
     {
-      const char *language    = resp->extract_String();
+      stream[stream_language] = resp->extract_String();
+      stream[stream_codectype] = AVMEDIA_TYPE_SUBTITLE;
+      stream[stream_codecid] = CODEC_ID_DVB_SUBTITLE;
+
       uint32_t composition_id = resp->extract_U32();
       uint32_t ancillary_id   = resp->extract_U32();
 
-      stream->iCodecType  = AVMEDIA_TYPE_SUBTITLE;
-      stream->iCodecId    = CODEC_ID_DVB_SUBTITLE;
-      stream->iIdentifier = (composition_id & 0xffff) | ((ancillary_id & 0xffff) << 16);
-
-      memcpy(stream->strLanguage, language, 3);
-      m_Streams.iStreamCount++;
+      stream[stream_identifier] = (composition_id & 0xffff) | ((ancillary_id & 0xffff) << 16);
     }
     else if(!strcmp(type, "TELETEXT"))
     {
-      stream->iCodecType = AVMEDIA_TYPE_SUBTITLE;
-      stream->iCodecId   = CODEC_ID_DVB_TELETEXT;
-
-      m_Streams.iStreamCount++;
+      stream[stream_codectype] = AVMEDIA_TYPE_SUBTITLE;
+      stream[stream_codecid] = CODEC_ID_DVB_TELETEXT;
     }
 
-    if (m_Streams.iStreamCount >= PVR_STREAM_MAX_STREAMS)
+    if (index > 16)
     {
       XVDRLog(XVDR_ERROR, "%s - max amount of streams reached", __FUNCTION__);
       break;
     }
+
+    m_streams[id] = stream;
   }
 }
 
@@ -383,7 +291,7 @@ void cXVDRDemux::StreamStatus(cXVDRResponsePacket *resp)
       break;
     case XVDR_STREAM_STATUS_SIGNALRESTORED:
       XVDRNotification(XVDR_INFO, XVDRGetLocalizedString(30048));
-      SwitchChannel(m_channelinfo);
+      SwitchChannel(m_channeluid);
       break;
     default:
       break;
@@ -395,69 +303,57 @@ void cXVDRDemux::StreamSignalInfo(cXVDRResponsePacket *resp)
   const char* name = resp->extract_String();
   const char* status = resp->extract_String();
 
-  m_Quality.fe_name   = name;
-  m_Quality.fe_status = status;
-  m_Quality.fe_snr    = resp->extract_U32();
-  m_Quality.fe_signal = resp->extract_U32();
-  m_Quality.fe_ber    = resp->extract_U32();
-  m_Quality.fe_unc    = resp->extract_U32();
+  m_signal[signal_adaptername] = name;
+  m_signal[signal_adapterstatus] = status;
+  m_signal[signal_snr] = resp->extract_U32();
+  m_signal[signal_strength] = resp->extract_U32();
+  m_signal[signal_ber] = resp->extract_U32();
+  m_signal[signal_unc] = resp->extract_U32();
 }
 
 bool cXVDRDemux::StreamContentInfo(cXVDRResponsePacket *resp)
 {
-  PVR_STREAM_PROPERTIES old = m_Streams;
+  cXVDRStreamProperties old = m_streams;
 
-  for (unsigned int i = 0; i < m_Streams.iStreamCount && !resp->end(); i++)
+  for (unsigned int i = 0; i < m_streams.size() && !resp->end(); i++)
   {
     uint32_t id = resp->extract_U32();
-    struct PVR_STREAM_PROPERTIES::PVR_STREAM* stream = NULL;
 
-    // find stream
-    for (unsigned int j = 0; j < m_Streams.iStreamCount; j++)
-    {
-   	   stream = &m_Streams.stream[j];
-       if (m_Streams.stream[j].iPhysicalId == id)
-    	 break;
-    }
-
-    if (stream == NULL)
+    if(m_streams.find(id) == m_streams.end())
       continue;
+
+    cXVDRStream& stream = m_streams[id];
 
     const char* language    = NULL;
     uint32_t composition_id = 0;
     uint32_t ancillary_id   = 0;
 
-    switch (stream->iCodecType)
+    switch (stream[stream_codectype])
     {
       case AVMEDIA_TYPE_AUDIO:
-        language = resp->extract_String();
-
-        stream->iChannels      = resp->extract_U32();
-        stream->iSampleRate    = resp->extract_U32();
-        stream->iBlockAlign    = resp->extract_U32();
-        stream->iBitRate       = resp->extract_U32();
-        stream->iBitsPerSample = resp->extract_U32();
-        stream->strLanguage[3] = 0;
-        memcpy(stream->strLanguage, language, 3);
+    	stream[stream_language] = resp->extract_String();
+        stream[stream_channels] = resp->extract_U32();
+        stream[stream_samplerate] = resp->extract_U32();
+        stream[stream_blockalign] = resp->extract_U32();
+        stream[stream_bitrate] = resp->extract_U32();
+        stream[stream_bitspersample] = resp->extract_U32();
         break;
 
       case AVMEDIA_TYPE_VIDEO:
-        stream->iFPSScale = resp->extract_U32();
-        stream->iFPSRate  = resp->extract_U32();
-        stream->iHeight   = resp->extract_U32();
-        stream->iWidth    = resp->extract_U32();
-        stream->fAspect   = resp->extract_Double();
+        stream[stream_fpsscale] = resp->extract_U32();
+        stream[stream_fpsrate] = resp->extract_U32();
+        stream[stream_height] = resp->extract_U32();
+        stream[stream_width] = resp->extract_U32();
+        stream[stream_aspect] = resp->extract_Double();
         break;
 
       case AVMEDIA_TYPE_SUBTITLE:
-        language = resp->extract_String();
+      	stream[stream_language] = resp->extract_String();
 
         composition_id = resp->extract_U32();
         ancillary_id   = resp->extract_U32();
 
-        stream->iIdentifier    = (composition_id & 0xffff) | ((ancillary_id & 0xffff) << 16);
-        stream->strLanguage[3] = 0;
-        memcpy(stream->strLanguage, language, 3);
+        stream[stream_identifier] = (composition_id & 0xffff) | ((ancillary_id & 0xffff) << 16);
         break;
 
       default:
@@ -465,7 +361,7 @@ bool cXVDRDemux::StreamContentInfo(cXVDRResponsePacket *resp)
     }
   }
 
-  return (memcmp(&old, &m_Streams, sizeof(m_Streams)) != 0);
+  return (old != m_streams);
 }
 
 void cXVDRDemux::OnReconnect()

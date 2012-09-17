@@ -37,7 +37,15 @@
 #include "xbmc_addon_types.h"
 #include "xbmc_epg_types.h"
 
+/*! @note Define "USE_DEMUX" at compile time if demuxing in the PVR add-on is used.
+ *        Also XBMC's "DVDDemuxPacket.h" file must be in the include path of the add-on,
+ *        and the add-on should set bHandlesDemuxing to true.
+ */
+#ifdef USE_DEMUX
+#include "DVDDemuxPacket.h"
+#else
 struct DemuxPacket;
+#endif
 
 #undef ATTRIBUTE_PACKED
 #undef PRAGMA_PACK_BEGIN
