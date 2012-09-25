@@ -33,7 +33,10 @@ CPPFLAGS = \
 	$(ARCH_DEFINES)
 
 INCLUDES = \
-	-I. -I$(top_srcdir)/src/libxvdr/include -I$(top_srcdir) -I$(srcdir)/include -DUSE_DEMUX -D__STDC_CONSTANT_MACROS -D_LINUX
+	-I. \
+	-I$(top_srcdir)/src/libxvdr/include \
+	-I$(top_srcdir) -I$(srcdir)/include \
+	-DUSE_DEMUX -D__STDC_CONSTANT_MACROS -D_LINUX
 
 EXTRA_DIST = \
 	include \

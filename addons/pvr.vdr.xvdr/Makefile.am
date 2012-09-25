@@ -9,6 +9,7 @@ XBMC_VDR_xvdr.pvr:
 	make -C ../../src
 
 install-data-hook: XBMC_VDR_xvdr.pvr
+	$(STRIP) -x -s XBMC_VDR_xvdr.pvr
 	-cp -Rf $(srcdir)/resources $(DESTDIR)$(addondir)
 	chmod -R +w $(DESTDIR)$(addondir)/resources
 
