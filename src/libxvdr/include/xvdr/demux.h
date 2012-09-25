@@ -21,43 +21,47 @@
  *
  */
 
-#include "XVDRCallbacks.h"
-#include "XVDRSession.h"
+#include "xvdr/callbacks.h"
+#include "xvdr/session.h"
 #include <string>
 
-#include "XVDRDataset.h"
+#include "xvdr/dataset.h"
 
-class cXVDRResponsePacket;
+namespace XVDR {
 
-class cXVDRDemux : public cXVDRSession
+class ResponsePacket;
+
+class Demux : public Session
 {
 public:
 
-  cXVDRDemux();
-  ~cXVDRDemux();
+  Demux();
+  ~Demux();
 
   bool OpenChannel(const std::string& hostname, uint32_t channeluid);
   void Abort();
-  const cXVDRStreamProperties& GetStreamProperties();
-  XVDRPacket* Read();
+  const StreamProperties& GetStreamProperties();
+  Packet* Read();
   bool SwitchChannel(uint32_t channeluid);
   //int CurrentChannel() { return m_channelinfo.iChannelNumber; }
-  const cXVDRSignalStatus& GetSignalStatus();
+  const SignalStatus& GetSignalStatus();
   void SetPriority(int priority);
 
 protected:
 
   void OnReconnect();
 
-  void StreamChange(cXVDRResponsePacket *resp);
-  void StreamStatus(cXVDRResponsePacket *resp);
-  void StreamSignalInfo(cXVDRResponsePacket *resp);
-  bool StreamContentInfo(cXVDRResponsePacket *resp);
+  void StreamChange(ResponsePacket *resp);
+  void StreamStatus(ResponsePacket *resp);
+  void StreamSignalInfo(ResponsePacket *resp);
+  bool StreamContentInfo(ResponsePacket *resp);
 
 private:
 
-  cXVDRStreamProperties m_streams;
-  cXVDRSignalStatus     m_signal;
+  StreamProperties m_streams;
+  SignalStatus     m_signal;
   int                   m_priority;
   uint32_t				m_channeluid;
 };
+
+} // namespace XVDR

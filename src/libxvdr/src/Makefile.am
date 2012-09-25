@@ -17,14 +17,14 @@ SOURCEFILES = \
 	iso639.h \
 	requestpacket.cpp \
 	tools.cpp \
-	XVDRCallbacks.cpp \
-	XVDRData.cpp \
-	XVDRDataset.cpp \
-	XVDRDemux.cpp \
-	XVDRRecording.cpp \
-	XVDRResponsePacket.cpp \
-	XVDRSession.cpp \
-	XVDRThread.cpp
+	callbacks.cpp \
+	connection.cpp \
+	dataset.cpp \
+	demux.cpp \
+	recording.cpp \
+	responsepacket.cpp \
+	session.cpp \
+	thread.cpp
 
 
 noinst_LTLIBRARIES = libxvdrstatic.la

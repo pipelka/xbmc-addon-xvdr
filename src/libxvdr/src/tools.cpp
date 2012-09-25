@@ -24,8 +24,10 @@
  * Most of this code is taken from tools.c in the Video Disk Recorder ('VDR')
  */
 
-#include "XVDRThread.h"
+#include "xvdr/thread.h"
 #include "libPlatform/os-dependent.h"
+
+using namespace XVDR;
 
 /* Byte order (just for windows)*/
 #ifdef __WINDOWS__
@@ -61,14 +63,14 @@ uint64_t htonll(uint64_t a)
 #endif
 }
 
-// --- cTimeMs ---------------------------------------------------------------
+// --- TimeMs ---------------------------------------------------------------
 
-cTimeMs::cTimeMs(int Ms)
+TimeMs::TimeMs(int Ms)
 {
   Set(Ms);
 }
 
-uint64_t cTimeMs::Now(void)
+uint64_t TimeMs::Now(void)
 {
   struct timeval t;
   if (gettimeofday(&t, NULL) == 0)
@@ -76,17 +78,17 @@ uint64_t cTimeMs::Now(void)
   return 0;
 }
 
-void cTimeMs::Set(int Ms)
+void TimeMs::Set(int Ms)
 {
   begin = Now() + Ms;
 }
 
-bool cTimeMs::TimedOut(void)
+bool TimeMs::TimedOut(void)
 {
   return Now() >= begin;
 }
 
-uint64_t cTimeMs::Elapsed(void)
+uint64_t TimeMs::Elapsed(void)
 {
   return Now() - begin;
 }

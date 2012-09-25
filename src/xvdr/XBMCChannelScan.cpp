@@ -22,13 +22,14 @@
 
 #include <limits.h>
 #include "XBMCChannelScan.h"
-#include "XVDRResponsePacket.h"
-#include "requestpacket.h"
-#include "xvdrcommand.h"
+#include "xvdr/responsepacket.h"
+#include "xvdr/requestpacket.h"
+#include "xvdr/command.h"
 
 #include <sstream>
 
 using namespace ADDON;
+using namespace XVDR;
 
 #define BUTTON_START                    5
 #define BUTTON_BACK                     6
@@ -73,7 +74,7 @@ bool cXBMCChannelScan::Open(const std::string& hostname, const char* name)
   m_progressDone    = NULL;
   m_progressSignal  = NULL;
 
-  if(!cXVDRData::Open(hostname, "XBMC channel scanner"))
+  if(!Connection::Open(hostname, "XBMC channel scanner"))
     return false;
 
   /* Load the Window as Dialog */
@@ -121,8 +122,8 @@ void cXBMCChannelScan::StartScan()
       break;
   }
 
-  cRequestPacket vrp;
-  cXVDRResponsePacket* vresp = NULL;
+  RequestPacket vrp;
+  ResponsePacket* vresp = NULL;
   uint32_t retCode = XVDR_RET_ERROR;
   if (!vrp.init(XVDR_SCAN_START))                          goto SCANError;
   if (!vrp.add_U32(source))                               goto SCANError;
@@ -159,11 +160,11 @@ SCANError:
 
 void cXBMCChannelScan::StopScan()
 {
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_SCAN_STOP))
     return;
 
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
     return;
 
@@ -414,11 +415,11 @@ bool cXBMCChannelScan::ReadCountries()
   std::string dvdlang = XBMC->GetDVDMenuLanguage();
   //dvdlang = dvdlang.ToUpper();
 
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_SCAN_GETCOUNTRIES))
     return false;
 
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
     return false;
 
@@ -451,11 +452,11 @@ bool cXBMCChannelScan::ReadSatellites()
   m_spinSatellites = GUI->Control_getSpin(m_window, CONTROL_SPIN_SATELLITES);
   m_spinSatellites->Clear();
 
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_SCAN_GETSATELLITES))
     return false;
 
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
     return false;
 
@@ -495,7 +496,7 @@ void cXBMCChannelScan::SetControlsVisible(scantype_t type)
   m_radioButtonHD->SetVisible(type == DVB_TERR || type == DVB_CABLE || type == DVB_SAT || type == DVB_ATSC);
 }
 
-bool cXBMCChannelScan::OnResponsePacket(cXVDRResponsePacket* resp)
+bool cXBMCChannelScan::OnResponsePacket(ResponsePacket* resp)
 {
   uint32_t requestID = resp->getRequestID();
 

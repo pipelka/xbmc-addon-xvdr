@@ -21,9 +21,9 @@
  *
  */
 
-#include "XVDRData.h"
-#include "XVDRResponsePacket.h"
-#include "XVDRThread.h"
+#include "xvdr/connection.h"
+#include "xvdr/responsepacket.h"
+#include "xvdr/thread.h"
 #include "XBMCAddon.h"
 #include <string>
 #include <map>
@@ -39,7 +39,7 @@ typedef enum scantype
 } scantype_t;
 
 
-class cXBMCChannelScan : public cXVDRData
+class cXBMCChannelScan : public XVDR::Connection
 {
 public:
 
@@ -60,7 +60,7 @@ public:
 
 protected:
 
-  bool OnResponsePacket(cXVDRResponsePacket* resp);
+  bool OnResponsePacket(XVDR::ResponsePacket* resp);
 
 private:
 

@@ -6,6 +6,7 @@
 #include "DVDDemuxPacket.h"
 
 using namespace ADDON;
+using namespace XVDR;
 
 cXBMCCallbacks::cXBMCCallbacks() : m_handle(NULL)
 {
@@ -109,7 +110,7 @@ void cXBMCCallbacks::TriggerTimerUpdate()
   PVR->TriggerTimerUpdate();
 }
 
-void cXBMCCallbacks::TransferChannelEntry(const cXVDRChannel& channel)
+void cXBMCCallbacks::TransferChannelEntry(const Channel& channel)
 {
   PVR_CHANNEL pvrchannel;
   pvrchannel << channel;
@@ -117,7 +118,7 @@ void cXBMCCallbacks::TransferChannelEntry(const cXVDRChannel& channel)
   PVR->TransferChannelEntry(m_handle, &pvrchannel);
 }
 
-void cXBMCCallbacks::TransferEpgEntry(const cXVDREpg& epg)
+void cXBMCCallbacks::TransferEpgEntry(const Epg& epg)
 {
   EPG_TAG pvrepg;
   pvrepg << epg;
@@ -125,7 +126,7 @@ void cXBMCCallbacks::TransferEpgEntry(const cXVDREpg& epg)
   PVR->TransferEpgEntry(m_handle, &pvrepg);
 }
 
-void cXBMCCallbacks::TransferTimerEntry(const cXVDRTimer& timer)
+void cXBMCCallbacks::TransferTimerEntry(const Timer& timer)
 {
   PVR_TIMER pvrtimer;
   pvrtimer << timer;
@@ -133,7 +134,7 @@ void cXBMCCallbacks::TransferTimerEntry(const cXVDRTimer& timer)
   PVR->TransferTimerEntry(m_handle, &pvrtimer);
 }
 
-void cXBMCCallbacks::TransferRecordingEntry(const cXVDRRecordingEntry& rec)
+void cXBMCCallbacks::TransferRecordingEntry(const RecordingEntry& rec)
 {
   PVR_RECORDING pvrrec;
   pvrrec << rec;
@@ -141,7 +142,7 @@ void cXBMCCallbacks::TransferRecordingEntry(const cXVDRRecordingEntry& rec)
   PVR->TransferRecordingEntry(m_handle, &pvrrec);
 }
 
-void cXBMCCallbacks::TransferChannelGroup(const cXVDRChannelGroup& group)
+void cXBMCCallbacks::TransferChannelGroup(const ChannelGroup& group)
 {
   PVR_CHANNEL_GROUP pvrgroup;
   pvrgroup << group;
@@ -149,7 +150,7 @@ void cXBMCCallbacks::TransferChannelGroup(const cXVDRChannelGroup& group)
   PVR->TransferChannelGroup(m_handle, &pvrgroup);
 }
 
-void cXBMCCallbacks::TransferChannelGroupMember(const cXVDRChannelGroupMember& member)
+void cXBMCCallbacks::TransferChannelGroupMember(const ChannelGroupMember& member)
 {
   PVR_CHANNEL_GROUP_MEMBER pvrmember;
   pvrmember << member;
@@ -157,24 +158,24 @@ void cXBMCCallbacks::TransferChannelGroupMember(const cXVDRChannelGroupMember& m
   PVR->TransferChannelGroupMember(m_handle, &pvrmember);
 }
 
-XVDRPacket* cXBMCCallbacks::AllocatePacket(int s)
+Packet* cXBMCCallbacks::AllocatePacket(int s)
 {
   DemuxPacket* d = PVR->AllocateDemuxPacket(s);
   if(d == NULL)
     return NULL;
 
   d->iSize = s;
-  return (XVDRPacket*)d;
+  return (Packet*)d;
 }
 
-uint8_t* cXBMCCallbacks::GetPacketPayload(XVDRPacket* packet) {
+uint8_t* cXBMCCallbacks::GetPacketPayload(Packet* packet) {
   if (packet == NULL)
     return NULL;
 
   return static_cast<DemuxPacket*>(packet)->pData;
 }
 
-void cXBMCCallbacks::SetPacketData(XVDRPacket* packet, uint8_t* data, int streamid, uint64_t dts, uint64_t pts)
+void cXBMCCallbacks::SetPacketData(Packet* packet, uint8_t* data, int streamid, uint64_t dts, uint64_t pts)
 {
   if (packet == NULL)
     return;
@@ -190,21 +191,21 @@ void cXBMCCallbacks::SetPacketData(XVDRPacket* packet, uint8_t* data, int stream
     memcpy(d->pData, data, d->iSize);
 }
 
-void cXBMCCallbacks::FreePacket(XVDRPacket* packet)
+void cXBMCCallbacks::FreePacket(Packet* packet)
 {
   PVR->FreeDemuxPacket((DemuxPacket*)packet);
 }
 
-XVDRPacket* cXBMCCallbacks::StreamChange(const cXVDRStreamProperties& p) {
-	XVDRPacket* pkt = XVDRAllocatePacket(0);
+Packet* cXBMCCallbacks::StreamChange(const StreamProperties& p) {
+	Packet* pkt = XVDRAllocatePacket(0);
     if (pkt != NULL)
       XVDRSetPacketData(pkt, NULL, DMX_SPECIALID_STREAMCHANGE, 0, 0);
 
     return pkt;
 }
 
-XVDRPacket* cXBMCCallbacks::ContentInfo(const cXVDRStreamProperties& p) {
-	XVDRPacket* pkt = XVDRAllocatePacket(sizeof(PVR_STREAM_PROPERTIES));
+Packet* cXBMCCallbacks::ContentInfo(const StreamProperties& p) {
+	Packet* pkt = XVDRAllocatePacket(sizeof(PVR_STREAM_PROPERTIES));
 
     if (pkt != NULL) {
     	PVR_STREAM_PROPERTIES props;
@@ -215,7 +216,7 @@ XVDRPacket* cXBMCCallbacks::ContentInfo(const cXVDRStreamProperties& p) {
     return pkt;
 }
 
-PVR_CHANNEL& operator<< (PVR_CHANNEL& lhs, const cXVDRChannel& rhs)
+PVR_CHANNEL& operator<< (PVR_CHANNEL& lhs, const Channel& rhs)
 {
 	memset(&lhs, 0, sizeof(lhs));
 
@@ -232,7 +233,7 @@ PVR_CHANNEL& operator<< (PVR_CHANNEL& lhs, const cXVDRChannel& rhs)
 	return lhs;
 }
 
-EPG_TAG& operator<< (EPG_TAG& lhs, const cXVDREpg& rhs) {
+EPG_TAG& operator<< (EPG_TAG& lhs, const Epg& rhs) {
 	memset(&lhs, 0, sizeof(lhs));
 
 	lhs.endTime = rhs[epg_endtime];
@@ -255,7 +256,7 @@ EPG_TAG& operator<< (EPG_TAG& lhs, const cXVDREpg& rhs) {
 
 }
 
-cXVDRTimer& operator<< (cXVDRTimer& lhs, const PVR_TIMER& rhs) {
+Timer& operator<< (Timer& lhs, const PVR_TIMER& rhs) {
 	lhs[timer_isrepeating] = rhs.bIsRepeating;
 	lhs[timer_endtime] = rhs.endTime;
 	lhs[timer_firstday] = rhs.firstDay;
@@ -276,7 +277,7 @@ cXVDRTimer& operator<< (cXVDRTimer& lhs, const PVR_TIMER& rhs) {
 	return lhs;
 }
 
-PVR_TIMER& operator<< (PVR_TIMER& lhs, const cXVDRTimer& rhs) {
+PVR_TIMER& operator<< (PVR_TIMER& lhs, const Timer& rhs) {
 	memset(&lhs, 0, sizeof(lhs));
 
 	lhs.bIsRepeating = rhs[timer_isrepeating];
@@ -299,7 +300,7 @@ PVR_TIMER& operator<< (PVR_TIMER& lhs, const cXVDRTimer& rhs) {
 	return lhs;
 }
 
-cXVDRRecordingEntry& operator<< (cXVDRRecordingEntry& lhs, const PVR_RECORDING& rhs) {
+RecordingEntry& operator<< (RecordingEntry& lhs, const PVR_RECORDING& rhs) {
 	lhs[recording_duration] = rhs.iDuration;
 	lhs[recording_genresubtype] = rhs.iGenreSubType;
 	lhs[recording_genretype] = rhs.iGenreType;
@@ -319,7 +320,7 @@ cXVDRRecordingEntry& operator<< (cXVDRRecordingEntry& lhs, const PVR_RECORDING& 
 	return lhs;
 }
 
-PVR_RECORDING& operator<< (PVR_RECORDING& lhs, const cXVDRRecordingEntry& rhs) {
+PVR_RECORDING& operator<< (PVR_RECORDING& lhs, const RecordingEntry& rhs) {
 	memset(&lhs, 0, sizeof(lhs));
 
 	lhs.iDuration = rhs[recording_duration];
@@ -340,7 +341,7 @@ PVR_RECORDING& operator<< (PVR_RECORDING& lhs, const cXVDRRecordingEntry& rhs) {
 	return lhs;
 }
 
-PVR_CHANNEL_GROUP& operator<< (PVR_CHANNEL_GROUP& lhs, const cXVDRChannelGroup& rhs) {
+PVR_CHANNEL_GROUP& operator<< (PVR_CHANNEL_GROUP& lhs, const ChannelGroup& rhs) {
 	memset(&lhs, 0, sizeof(lhs));
 
 	lhs.bIsRadio = rhs[channelgroup_isradio];
@@ -349,7 +350,7 @@ PVR_CHANNEL_GROUP& operator<< (PVR_CHANNEL_GROUP& lhs, const cXVDRChannelGroup& 
 	return lhs;
 }
 
-PVR_CHANNEL_GROUP_MEMBER& operator<< (PVR_CHANNEL_GROUP_MEMBER& lhs, const cXVDRChannelGroupMember& rhs) {
+PVR_CHANNEL_GROUP_MEMBER& operator<< (PVR_CHANNEL_GROUP_MEMBER& lhs, const ChannelGroupMember& rhs) {
 	memset(&lhs, 0, sizeof(lhs));
 
 	lhs.iChannelNumber = rhs[channelgroupmember_number];
@@ -359,7 +360,7 @@ PVR_CHANNEL_GROUP_MEMBER& operator<< (PVR_CHANNEL_GROUP_MEMBER& lhs, const cXVDR
 	return lhs;
 }
 
-PVR_STREAM_PROPERTIES::PVR_STREAM& operator<< (PVR_STREAM_PROPERTIES::PVR_STREAM& lhs, const cXVDRStream& rhs) {
+PVR_STREAM_PROPERTIES::PVR_STREAM& operator<< (PVR_STREAM_PROPERTIES::PVR_STREAM& lhs, const Stream& rhs) {
 	memset(&lhs, 0, sizeof(lhs));
 
 	lhs.fAspect = rhs[stream_aspect];
@@ -382,18 +383,18 @@ PVR_STREAM_PROPERTIES::PVR_STREAM& operator<< (PVR_STREAM_PROPERTIES::PVR_STREAM
 	return lhs;
 }
 
-PVR_STREAM_PROPERTIES& operator<< (PVR_STREAM_PROPERTIES& lhs, const cXVDRStreamProperties& rhs) {
+PVR_STREAM_PROPERTIES& operator<< (PVR_STREAM_PROPERTIES& lhs, const StreamProperties& rhs) {
 	lhs.iStreamCount = rhs.size();
 
 	int index = 0;
-	for(cXVDRStreamProperties::const_iterator i = rhs.begin(); i != rhs.end(); i++, index++) {
+	for(StreamProperties::const_iterator i = rhs.begin(); i != rhs.end(); i++, index++) {
 		lhs.stream[index] << (*i).second;
 	}
 
 	return lhs;
 }
 
-PVR_SIGNAL_STATUS& operator<< (PVR_SIGNAL_STATUS& lhs, const cXVDRSignalStatus& rhs) {
+PVR_SIGNAL_STATUS& operator<< (PVR_SIGNAL_STATUS& lhs, const SignalStatus& rhs) {
 	memset(&lhs, 0, sizeof(lhs));
 
 	lhs.dAudioBitrate = rhs[signal_audiobitrate];

@@ -24,41 +24,43 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "XVDRRecording.h"
-#include "XVDRCallbacks.h"
-#include "XVDRResponsePacket.h"
-#include "requestpacket.h"
-#include "xvdrcommand.h"
+#include "xvdr/recording.h"
+#include "xvdr/callbacks.h"
+#include "xvdr/responsepacket.h"
+#include "xvdr/requestpacket.h"
+#include "xvdr/command.h"
+
+using namespace XVDR;
 
 #define SEEK_POSSIBLE 0x10 // flag used to check if protocol allows seeks
 
-cXVDRRecording::cXVDRRecording()
+Recording::Recording()
 {
 }
 
-cXVDRRecording::~cXVDRRecording()
+Recording::~Recording()
 {
   Close();
 }
 
-bool cXVDRRecording::OpenRecording(const std::string& hostname, const std::string& recid)
+bool Recording::OpenRecording(const std::string& hostname, const std::string& recid)
 {
   m_recid = recid;
 
-  if(!cXVDRSession::Open(hostname, "XVDR RecordingStream Receiver"))
+  if(!Session::Open(hostname, "XVDR RecordingStream Receiver"))
     return false;
 
-  if(!cXVDRSession::Login())
+  if(!Session::Login())
     return false;
 
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_RECSTREAM_OPEN) ||
       !vrp.add_String(recid.c_str()))
   {
     return false;
   }
 
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
     return false;
 
@@ -76,18 +78,18 @@ bool cXVDRRecording::OpenRecording(const std::string& hostname, const std::strin
   return (returnCode == XVDR_RET_OK);
 }
 
-void cXVDRRecording::Close()
+void Recording::Close()
 {
   if(!IsOpen())
     return;
 
-  cRequestPacket vrp;
+  RequestPacket vrp;
   vrp.init(XVDR_RECSTREAM_CLOSE);
   ReadSuccess(&vrp);
-  cXVDRSession::Close();
+  Session::Close();
 }
 
-int cXVDRRecording::Read(unsigned char* buf, uint32_t buf_size)
+int Recording::Read(unsigned char* buf, uint32_t buf_size)
 {
   if (ConnectionLost() && !TryReconnect())
   {
@@ -99,9 +101,9 @@ int cXVDRRecording::Read(unsigned char* buf, uint32_t buf_size)
   if (m_currentPlayingRecordPosition >= m_currentPlayingRecordBytes)
     return 0;
 
-  cXVDRResponsePacket* vresp = NULL;
+  ResponsePacket* vresp = NULL;
 
-  cRequestPacket vrp1;
+  RequestPacket vrp1;
   if (vrp1.init(XVDR_RECSTREAM_UPDATE) && ((vresp = ReadResult(&vrp1)) != NULL))
   {
     uint32_t frames = vresp->extract_U32();
@@ -116,7 +118,7 @@ int cXVDRRecording::Read(unsigned char* buf, uint32_t buf_size)
     delete vresp;
   }
 
-  cRequestPacket vrp2;
+  RequestPacket vrp2;
   if (!vrp2.init(XVDR_RECSTREAM_GETBLOCK) ||
       !vrp2.add_U64(m_currentPlayingRecordPosition) ||
       !vrp2.add_U32(buf_size))
@@ -145,7 +147,7 @@ int cXVDRRecording::Read(unsigned char* buf, uint32_t buf_size)
   return length;
 }
 
-long long cXVDRRecording::Seek(long long pos, uint32_t whence)
+long long Recording::Seek(long long pos, uint32_t whence)
 {
   uint64_t nextPos = m_currentPlayingRecordPosition;
 
@@ -178,17 +180,17 @@ long long cXVDRRecording::Seek(long long pos, uint32_t whence)
   return m_currentPlayingRecordPosition;
 }
 
-long long cXVDRRecording::Position(void)
+long long Recording::Position(void)
 {
   return m_currentPlayingRecordPosition;
 }
 
-long long cXVDRRecording::Length(void)
+long long Recording::Length(void)
 {
   return m_currentPlayingRecordBytes;
 }
 
-void cXVDRRecording::OnReconnect()
+void Recording::OnReconnect()
 {
   OpenRecording(m_hostname, m_recid);
 }

@@ -25,17 +25,19 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "requestpacket.h"
-#include "xvdrcommand.h"
-#include "XVDRThread.h"
+#include "xvdr/requestpacket.h"
+#include "xvdr/command.h"
+#include "xvdr/thread.h"
 
 extern "C" {
 #include "libTcpSocket/os-dependent_socket.h"
 }
 
-uint32_t cRequestPacket::serialNumberCounter = 1;
+using namespace XVDR;
 
-cRequestPacket::cRequestPacket()
+uint32_t RequestPacket::serialNumberCounter = 1;
+
+RequestPacket::RequestPacket()
 {
   buffer        = NULL;
   bufSize       = 0;
@@ -45,12 +47,12 @@ cRequestPacket::cRequestPacket()
   opcode        = 0;
 }
 
-cRequestPacket::~cRequestPacket()
+RequestPacket::~RequestPacket()
 {
   free(buffer);
 }
 
-bool cRequestPacket::init(uint32_t topcode, bool stream, bool setUserDataLength, uint32_t userDataLength)
+bool RequestPacket::init(uint32_t topcode, bool stream, bool setUserDataLength, uint32_t userDataLength)
 {
   if (buffer) return false;
 
@@ -84,7 +86,7 @@ bool cRequestPacket::init(uint32_t topcode, bool stream, bool setUserDataLength,
   return true;
 }
 
-bool cRequestPacket::add_String(const char* string)
+bool RequestPacket::add_String(const char* string)
 {
   uint32_t len = strlen(string) + 1;
   if (!checkExtend(len)) return false;
@@ -94,7 +96,7 @@ bool cRequestPacket::add_String(const char* string)
   return true;
 }
 
-bool cRequestPacket::add_U8(uint8_t c)
+bool RequestPacket::add_U8(uint8_t c)
 {
   if (!checkExtend(sizeof(uint8_t))) return false;
   buffer[bufUsed] = c;
@@ -103,7 +105,7 @@ bool cRequestPacket::add_U8(uint8_t c)
   return true;
 }
 
-bool cRequestPacket::add_S32(int32_t l)
+bool RequestPacket::add_S32(int32_t l)
 {
   if (!checkExtend(sizeof(int32_t))) return false;
   *(int32_t*)&buffer[bufUsed] = htonl(l);
@@ -112,7 +114,7 @@ bool cRequestPacket::add_S32(int32_t l)
   return true;
 }
 
-bool cRequestPacket::add_U32(uint32_t ul)
+bool RequestPacket::add_U32(uint32_t ul)
 {
   if (!checkExtend(sizeof(uint32_t))) return false;
   *(uint32_t*)&buffer[bufUsed] = htonl(ul);
@@ -121,7 +123,7 @@ bool cRequestPacket::add_U32(uint32_t ul)
   return true;
 }
 
-bool cRequestPacket::add_U64(uint64_t ull)
+bool RequestPacket::add_U64(uint64_t ull)
 {
   if (!checkExtend(sizeof(uint64_t))) return false;
   *(uint64_t*)&buffer[bufUsed] = htonll(ull);
@@ -130,7 +132,7 @@ bool cRequestPacket::add_U64(uint64_t ull)
   return true;
 }
 
-bool cRequestPacket::checkExtend(uint32_t by)
+bool RequestPacket::checkExtend(uint32_t by)
 {
   if (lengthSet) return true;
   if ((bufUsed + by) <= bufSize) return true;

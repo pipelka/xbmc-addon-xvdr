@@ -24,11 +24,13 @@
 
 #include <stdint.h>
 
-class cRequestPacket
+namespace XVDR {
+
+class RequestPacket
 {
   public:
-    cRequestPacket();
-    ~cRequestPacket();
+    RequestPacket();
+    ~RequestPacket();
 
     bool init(uint32_t opcode, bool stream = false, bool setUserDataLength = false, uint32_t userDataLength = 0);
     bool add_String(const char* string);
@@ -62,3 +64,5 @@ class cRequestPacket
     const static uint32_t headerLength = 16;
     const static uint32_t userDataLenPos = 12;
 };
+
+} // namespace XVDR

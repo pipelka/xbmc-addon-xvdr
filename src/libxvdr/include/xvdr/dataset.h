@@ -5,7 +5,9 @@
 #include <sstream>
 #include <map>
 
-class cXVDRDatasetItem {
+namespace XVDR {
+
+class DatasetItem {
 public:
 
 	bool empty() const {
@@ -52,22 +54,22 @@ private:
 	std::string m_value;
 };
 
-template<> void cXVDRDatasetItem::operator=(std::string v);
-template<> void cXVDRDatasetItem::operator=(const char* v);
+template<> void DatasetItem::operator=(std::string v);
+template<> void DatasetItem::operator=(const char* v);
 
 template<class K>
-class cXVDRDataset {
+class Dataset {
 public:
 
-	typedef std::map<K, cXVDRDatasetItem> maptype;
+	typedef std::map<K, DatasetItem> maptype;
 
-	cXVDRDatasetItem& operator[](const K& key) {
+	DatasetItem& operator[](const K& key) {
 		return m_map[key];
 	}
 
-	const cXVDRDatasetItem& operator[](const K& key) const {
-		typename std::map<K, cXVDRDatasetItem>::const_iterator i = m_map.find(key);
-		static cXVDRDatasetItem empty;
+	const DatasetItem& operator[](const K& key) const {
+		typename std::map<K, DatasetItem>::const_iterator i = m_map.find(key);
+		static DatasetItem empty;
 
 		if(i == m_map.end()) {
 			return empty;
@@ -76,7 +78,7 @@ public:
 		return i->second;
 	}
 
-	bool equals(const cXVDRDataset& rhs) const {
+	bool equals(const Dataset& rhs) const {
 		if(m_map.size() != rhs.m_map.size()) {
 			return false;
 		}
@@ -111,9 +113,9 @@ typedef enum {
 	epg_title,
 	epg_plotoutline,
 	epg_plot
-} cXVDREpgKeyType;
+} EpgKeyType;
 
-class cXVDREpg : public cXVDRDataset<cXVDREpgKeyType> {
+class Epg : public Dataset<EpgKeyType> {
 };
 
 typedef enum {
@@ -126,9 +128,9 @@ typedef enum {
     channel_streamurl,
     channel_iconpath,
     channel_ishidden
-} cXVDRChannelKeyType;
+} ChannelKeyType;
 
-class cXVDRChannel : public cXVDRDataset<cXVDRChannelKeyType> {
+class Channel : public Dataset<ChannelKeyType> {
 };
 
 typedef enum {
@@ -148,9 +150,9 @@ typedef enum {
 	timer_title,
 	timer_directory,
 	timer_summary
-} cXVDRTimerKeyType;
+} TimerKeyType;
 
-class cXVDRTimer : public cXVDRDataset<cXVDRTimerKeyType> {
+class Timer : public Dataset<TimerKeyType> {
 };
 
 typedef enum {
@@ -168,26 +170,26 @@ typedef enum {
 	recording_genretype,
 	recording_genresubtype,
 	recording_playcount
-} cXVDRRecordingKeyType;
+} RecordingKeyType;
 
-class cXVDRRecordingEntry : public cXVDRDataset<cXVDRRecordingKeyType> {
+class RecordingEntry : public Dataset<RecordingKeyType> {
 };
 
 typedef enum {
 	channelgroup_name,
 	channelgroup_isradio
-} cXVDRChannelGroupKeyType;
+} ChannelGroupKeyType;
 
-class cXVDRChannelGroup : public cXVDRDataset<cXVDRChannelGroupKeyType> {
+class ChannelGroup : public Dataset<ChannelGroupKeyType> {
 };
 
 typedef enum {
 	channelgroupmember_name,
 	channelgroupmember_uid,
 	channelgroupmember_number
-}  cXVDRChannelGroupMemberKeyType;
+}  ChannelGroupMemberKeyType;
 
-class cXVDRChannelGroupMember : public cXVDRDataset<cXVDRChannelGroupMemberKeyType> {
+class ChannelGroupMember : public Dataset<ChannelGroupMemberKeyType> {
 };
 
 typedef enum {
@@ -200,9 +202,9 @@ typedef enum {
     signal_videobitrate,
     signal_audiobitrate,
     signal_dolbybitrate,
-} cXVDRSignalStatusKeyType;
+} SignalStatusKeyType;
 
-class cXVDRSignalStatus : public cXVDRDataset<cXVDRSignalStatusKeyType> {
+class SignalStatus : public Dataset<SignalStatusKeyType> {
 };
 
 typedef enum {
@@ -222,14 +224,16 @@ typedef enum {
   stream_blockalign,
   stream_bitrate,
   stream_bitspersample
-} cXVDRStreamKeyType;
+} StreamKeyType;
 
-class cXVDRStream : public cXVDRDataset<cXVDRStreamKeyType> {
+class Stream : public Dataset<StreamKeyType> {
 public:
 };
 
-bool operator==(cXVDRStream const& lhs, cXVDRStream const& rhs);
-bool operator==(cXVDRDatasetItem const& lhs, cXVDRDatasetItem const& rhs);
-
-class cXVDRStreamProperties : public std::map<uint32_t, cXVDRStream> {
+class StreamProperties : public std::map<uint32_t, Stream> {
 };
+
+bool operator==(Stream const& lhs, Stream const& rhs);
+bool operator==(DatasetItem const& lhs, DatasetItem const& rhs);
+
+} // namespace XVDR

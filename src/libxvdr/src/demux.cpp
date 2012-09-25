@@ -24,43 +24,46 @@
 #include <limits.h>
 #include <string.h>
 #include "codecids.h" // For codec id's
-#include "XVDRDemux.h"
-#include "XVDRCallbacks.h"
-#include "XVDRResponsePacket.h"
-#include "requestpacket.h"
-#include "xvdrcommand.h"
 
-cXVDRDemux::cXVDRDemux() : m_priority(50)
+#include "xvdr/demux.h"
+#include "xvdr/callbacks.h"
+#include "xvdr/responsepacket.h"
+#include "xvdr/requestpacket.h"
+#include "xvdr/command.h"
+
+using namespace XVDR;
+
+Demux::Demux() : m_priority(50)
 {
 }
 
-cXVDRDemux::~cXVDRDemux()
+Demux::~Demux()
 {
 }
 
-bool cXVDRDemux::OpenChannel(const std::string& hostname, uint32_t channeluid)
+bool Demux::OpenChannel(const std::string& hostname, uint32_t channeluid)
 {
-  if(!cXVDRSession::Open(hostname))
+  if(!Session::Open(hostname))
     return false;
 
-  if(!cXVDRSession::Login())
+  if(!Session::Login())
     return false;
 
   return SwitchChannel(channeluid);
 }
 
-const cXVDRStreamProperties& cXVDRDemux::GetStreamProperties()
+const StreamProperties& Demux::GetStreamProperties()
 {
   return m_streams;
 }
 
-void cXVDRDemux::Abort()
+void Demux::Abort()
 {
   m_streams.clear();
-  cXVDRSession::Abort();
+  Session::Abort();
 }
 
-XVDRPacket* cXVDRDemux::Read()
+Packet* Demux::Read()
 {
   if(ConnectionLost())
   {
@@ -68,7 +71,7 @@ XVDRPacket* cXVDRDemux::Read()
     return XVDRAllocatePacket(0);
   }
 
-  cXVDRResponsePacket *resp = ReadMessage();
+  ResponsePacket *resp = ReadMessage();
 
   if(resp == NULL)
     return XVDRAllocatePacket(0);
@@ -79,7 +82,7 @@ XVDRPacket* cXVDRDemux::Read()
     return XVDRAllocatePacket(0);
   }
 
-  XVDRPacket* pkt = NULL;
+  Packet* pkt = NULL;
   int iStreamId = -1;
 
   switch (resp->getOpCodeID())
@@ -111,7 +114,7 @@ XVDRPacket* cXVDRDemux::Read()
     case XVDR_STREAM_MUXPKT:
       // figure out the stream for this packet
       int id = resp->getStreamID();
-      cXVDRStream& stream = m_streams[id];
+      Stream& stream = m_streams[id];
 
       if(stream[stream_physicalid] != id) {
           delete resp;
@@ -120,7 +123,7 @@ XVDRPacket* cXVDRDemux::Read()
       }
 
       int index = stream[stream_index];
-      pkt = (XVDRPacket*)resp->getUserData();
+      pkt = (Packet*)resp->getUserData();
       if (pkt != NULL)
         XVDRSetPacketData(pkt, NULL, index, resp->getDTS(), resp->getPTS());
 
@@ -132,11 +135,11 @@ XVDRPacket* cXVDRDemux::Read()
   return XVDRAllocatePacket(0);
 }
 
-bool cXVDRDemux::SwitchChannel(uint32_t channeluid)
+bool Demux::SwitchChannel(uint32_t channeluid)
 {
   XVDRLog(XVDR_DEBUG, "changing to channel %d (priority %i)", channeluid, m_priority);
 
-  cRequestPacket vrp;
+  RequestPacket vrp;
   uint32_t rc = 0;
 
   if (vrp.init(XVDR_CHANNELSTREAM_OPEN) && vrp.add_U32(channeluid) && vrp.add_S32(m_priority) && ReadSuccess(&vrp, rc))
@@ -176,12 +179,12 @@ bool cXVDRDemux::SwitchChannel(uint32_t channeluid)
   return true;
 }
 
-const cXVDRSignalStatus& cXVDRDemux::GetSignalStatus()
+const SignalStatus& Demux::GetSignalStatus()
 {
   return m_signal;
 }
 
-void cXVDRDemux::StreamChange(cXVDRResponsePacket *resp)
+void Demux::StreamChange(ResponsePacket *resp)
 {
   // TODO - locking
   m_streams.clear();
@@ -192,7 +195,7 @@ void cXVDRDemux::StreamChange(cXVDRResponsePacket *resp)
     uint32_t    id   = resp->extract_U32();
     const char* type = resp->extract_String();
 
-    cXVDRStream stream;
+    Stream stream;
 
     stream[stream_index] = index++;
     stream[stream_physicalid] = id;
@@ -281,7 +284,7 @@ void cXVDRDemux::StreamChange(cXVDRResponsePacket *resp)
   }
 }
 
-void cXVDRDemux::StreamStatus(cXVDRResponsePacket *resp)
+void Demux::StreamStatus(ResponsePacket *resp)
 {
   uint32_t status = resp->extract_U32();
 
@@ -298,7 +301,7 @@ void cXVDRDemux::StreamStatus(cXVDRResponsePacket *resp)
   }
 }
 
-void cXVDRDemux::StreamSignalInfo(cXVDRResponsePacket *resp)
+void Demux::StreamSignalInfo(ResponsePacket *resp)
 {
   const char* name = resp->extract_String();
   const char* status = resp->extract_String();
@@ -311,9 +314,9 @@ void cXVDRDemux::StreamSignalInfo(cXVDRResponsePacket *resp)
   m_signal[signal_unc] = resp->extract_U32();
 }
 
-bool cXVDRDemux::StreamContentInfo(cXVDRResponsePacket *resp)
+bool Demux::StreamContentInfo(ResponsePacket *resp)
 {
-  cXVDRStreamProperties old = m_streams;
+  StreamProperties old = m_streams;
 
   for (unsigned int i = 0; i < m_streams.size() && !resp->end(); i++)
   {
@@ -322,7 +325,7 @@ bool cXVDRDemux::StreamContentInfo(cXVDRResponsePacket *resp)
     if(m_streams.find(id) == m_streams.end())
       continue;
 
-    cXVDRStream& stream = m_streams[id];
+    Stream& stream = m_streams[id];
 
     const char* language    = NULL;
     uint32_t composition_id = 0;
@@ -364,11 +367,11 @@ bool cXVDRDemux::StreamContentInfo(cXVDRResponsePacket *resp)
   return (old != m_streams);
 }
 
-void cXVDRDemux::OnReconnect()
+void Demux::OnReconnect()
 {
 }
 
-void cXVDRDemux::SetPriority(int priority)
+void Demux::SetPriority(int priority)
 {
   if(priority < -1 || priority > 99)
     priority = 50;

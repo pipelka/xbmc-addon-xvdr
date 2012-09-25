@@ -22,19 +22,21 @@
 
 #include <string.h>
 
-#include "XVDRData.h"
-#include "XVDRCallbacks.h"
-#include "XVDRResponsePacket.h"
-#include "requestpacket.h"
-#include "xvdrcommand.h"
+#include "xvdr/connection.h"
+#include "xvdr/callbacks.h"
+#include "xvdr/responsepacket.h"
+#include "xvdr/requestpacket.h"
+#include "xvdr/command.h"
 
 extern "C" {
 #include "libTcpSocket/os-dependent_socket.h"
 }
 
-#define CMD_LOCK cMutexLock CmdLock((cMutex*)&m_Mutex)
+using namespace XVDR;
 
-cXVDRData::cXVDRData()
+#define CMD_LOCK MutexLock CmdLock((Mutex*)&m_Mutex)
+
+Connection::Connection()
  : m_statusinterface(false)
  , m_aborting(false)
  , m_timercount(0)
@@ -42,18 +44,18 @@ cXVDRData::cXVDRData()
 {
 }
 
-cXVDRData::~cXVDRData()
+Connection::~Connection()
 {
   Abort();
   Cancel(1);
   Close();
 }
 
-bool cXVDRData::Open(const std::string& hostname, const char* name)
+bool Connection::Open(const std::string& hostname, const char* name)
 {
   m_aborting = false;
 
-  if(!cXVDRSession::Open(hostname, name))
+  if(!Session::Open(hostname, name))
     return false;
 
   if(name != NULL) {
@@ -62,38 +64,38 @@ bool cXVDRData::Open(const std::string& hostname, const char* name)
   return true;
 }
 
-bool cXVDRData::Login()
+bool Connection::Login()
 {
-  if(!cXVDRSession::Login())
+  if(!Session::Login())
     return false;
 
   Start();
   return true;
 }
 
-void cXVDRData::Abort()
+void Connection::Abort()
 {
   CMD_LOCK;
   m_aborting = true;
-  cXVDRSession::Abort();
+  Session::Abort();
 }
 
-void cXVDRData::SignalConnectionLost()
+void Connection::SignalConnectionLost()
 {
   CMD_LOCK;
 
   if(m_aborting)
     return;
 
-  cXVDRSession::SignalConnectionLost();
+  Session::SignalConnectionLost();
 }
 
-void cXVDRData::OnDisconnect()
+void Connection::OnDisconnect()
 {
   XVDRNotification(XVDR_ERROR, XVDRGetLocalizedString(30044));
 }
 
-void cXVDRData::OnReconnect()
+void Connection::OnReconnect()
 {
   XVDRNotification(XVDR_INFO, XVDRGetLocalizedString(30045));
 
@@ -105,17 +107,17 @@ void cXVDRData::OnReconnect()
   XVDRTriggerRecordingUpdate();
 }
 
-cXVDRResponsePacket* cXVDRData::ReadResult(cRequestPacket* vrp)
+ResponsePacket* Connection::ReadResult(RequestPacket* vrp)
 {
   m_Mutex.Lock();
 
   SMessage &message(m_queue[vrp->getSerial()]);
-  message.event = new cCondWait();
+  message.event = new CondWait();
   message.pkt   = NULL;
 
   m_Mutex.Unlock();
 
-  if(!cXVDRSession::SendMessage(vrp))
+  if(!Session::SendMessage(vrp))
   {
     CMD_LOCK;
     m_queue.erase(vrp->getSerial());
@@ -126,7 +128,7 @@ cXVDRResponsePacket* cXVDRData::ReadResult(cRequestPacket* vrp)
 
   m_Mutex.Lock();
 
-  cXVDRResponsePacket* vresp = message.pkt;
+  ResponsePacket* vresp = message.pkt;
   delete message.event;
 
   m_queue.erase(vrp->getSerial());
@@ -136,16 +138,16 @@ cXVDRResponsePacket* cXVDRData::ReadResult(cRequestPacket* vrp)
   return vresp;
 }
 
-bool cXVDRData::GetDriveSpace(long long *total, long long *used)
+bool Connection::GetDriveSpace(long long *total, long long *used)
 {
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_RECORDINGS_DISKSIZE))
   {
-    XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
+    XVDRLog(XVDR_ERROR, "%s - Can't init RequestPacket", __FUNCTION__);
     return false;
   }
 
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     XVDRLog(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
@@ -167,16 +169,16 @@ bool cXVDRData::GetDriveSpace(long long *total, long long *used)
   return true;
 }
 
-bool cXVDRData::SupportChannelScan()
+bool Connection::SupportChannelScan()
 {
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_SCAN_SUPPORTED))
   {
-    XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
+    XVDRLog(XVDR_ERROR, "%s - Can't init RequestPacket", __FUNCTION__);
     return false;
   }
 
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     XVDRLog(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
@@ -188,13 +190,13 @@ bool cXVDRData::SupportChannelScan()
   return ret == XVDR_RET_OK ? true : false;
 }
 
-bool cXVDRData::EnableStatusInterface(bool onOff, bool direct)
+bool Connection::EnableStatusInterface(bool onOff, bool direct)
 {
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_ENABLESTATUSINTERFACE)) return false;
   if (!vrp.add_U8(onOff)) return false;
 
-  cXVDRResponsePacket* vresp = direct ? cXVDRSession::ReadResult(&vrp) : ReadResult(&vrp);
+  ResponsePacket* vresp = direct ? Session::ReadResult(&vrp) : ReadResult(&vrp);
   if (!vresp)
   {
     XVDRLog(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
@@ -212,13 +214,13 @@ bool cXVDRData::EnableStatusInterface(bool onOff, bool direct)
   return false;
 }
 
-bool cXVDRData::SetUpdateChannels(uint8_t method, bool direct)
+bool Connection::SetUpdateChannels(uint8_t method, bool direct)
 {
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_UPDATECHANNELS)) return false;
   if (!vrp.add_U8(method)) return false;
 
-  cXVDRResponsePacket* vresp = direct ? cXVDRSession::ReadResult(&vrp) : ReadResult(&vrp);
+  ResponsePacket* vresp = direct ? Session::ReadResult(&vrp) : ReadResult(&vrp);
   if (!vresp)
   {
     XVDRLog(XVDR_INFO, "Setting channel update method not supported by server. Consider updating the XVDR server.");
@@ -238,10 +240,10 @@ bool cXVDRData::SetUpdateChannels(uint8_t method, bool direct)
   return false;
 }
 
-bool cXVDRData::ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& caids, bool direct)
+bool Connection::ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& caids, bool direct)
 {
   std::size_t count = caids.size();
-  cRequestPacket vrp;
+  RequestPacket vrp;
 
   if (!vrp.init(XVDR_CHANNELFILTER)) return false;
   if (!vrp.add_U32(fta)) return false;
@@ -251,7 +253,7 @@ bool cXVDRData::ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& c
   for(int i = 0; i < count; i++)
     if (!vrp.add_U32(caids[i])) return false;
 
-  cXVDRResponsePacket* vresp = direct ? cXVDRSession::ReadResult(&vrp) : ReadResult(&vrp);
+  ResponsePacket* vresp = direct ? Session::ReadResult(&vrp) : ReadResult(&vrp);
   if (!vresp)
   {
     XVDRLog(XVDR_INFO, "Channel filter method not supported by server. Consider updating the XVDR server.");
@@ -274,16 +276,16 @@ bool cXVDRData::ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& c
   return false;
 }
 
-int cXVDRData::GetChannelsCount()
+int Connection::GetChannelsCount()
 {
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_CHANNELS_GETCOUNT))
   {
-    XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
+    XVDRLog(XVDR_ERROR, "%s - Can't init RequestPacket", __FUNCTION__);
     return -1;
   }
 
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     XVDRLog(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
@@ -296,21 +298,21 @@ int cXVDRData::GetChannelsCount()
   return count;
 }
 
-bool cXVDRData::GetChannelsList(bool radio)
+bool Connection::GetChannelsList(bool radio)
 {
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_CHANNELS_GETCHANNELS))
   {
-    XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
+    XVDRLog(XVDR_ERROR, "%s - Can't init RequestPacket", __FUNCTION__);
     return false;
   }
   if (!vrp.add_U32(radio))
   {
-    XVDRLog(XVDR_ERROR, "%s - Can't add parameter to cRequestPacket", __FUNCTION__);
+    XVDRLog(XVDR_ERROR, "%s - Can't add parameter to RequestPacket", __FUNCTION__);
     return false;
   }
 
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     XVDRLog(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
@@ -319,7 +321,7 @@ bool cXVDRData::GetChannelsList(bool radio)
 
   while (!vresp->end())
   {
-	cXVDRChannel tag;
+	Channel tag;
 
     tag[channel_number] = vresp->extract_U32();
     tag[channel_name] = vresp->extract_String();
@@ -340,22 +342,22 @@ bool cXVDRData::GetChannelsList(bool radio)
   return true;
 }
 
-bool cXVDRData::GetEPGForChannel(uint32_t channeluid, time_t start, time_t end)
+bool Connection::GetEPGForChannel(uint32_t channeluid, time_t start, time_t end)
 {
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_EPG_GETFORCHANNEL))
   {
-    XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
+    XVDRLog(XVDR_ERROR, "%s - Can't init RequestPacket", __FUNCTION__);
     return false;
   }
 
   if (!vrp.add_U32(channeluid) || !vrp.add_U32(start) || !vrp.add_U32(end - start))
   {
-    XVDRLog(XVDR_ERROR, "%s - Can't add parameter to cRequestPacket", __FUNCTION__);
+    XVDRLog(XVDR_ERROR, "%s - Can't add parameter to RequestPacket", __FUNCTION__);
     return false;
   }
 
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     XVDRLog(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
@@ -366,7 +368,7 @@ bool cXVDRData::GetEPGForChannel(uint32_t channeluid, time_t start, time_t end)
   {
     while (!vresp->end())
     {
-      cXVDREpg tag;
+      Epg tag;
 
       tag[epg_uid] = channeluid;
       tag[epg_broadcastid] = vresp->extract_U32();
@@ -393,20 +395,20 @@ bool cXVDRData::GetEPGForChannel(uint32_t channeluid, time_t start, time_t end)
 
 /** OPCODE's 60 - 69: XVDR network functions for timer access */
 
-int cXVDRData::GetTimersCount()
+int Connection::GetTimersCount()
 {
   // return caches values on connection loss
   if(ConnectionLost())
     return m_timercount;
 
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_TIMER_GETCOUNT))
   {
-    XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
+    XVDRLog(XVDR_ERROR, "%s - Can't init RequestPacket", __FUNCTION__);
     return -1;
   }
 
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     XVDRLog(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
@@ -419,7 +421,7 @@ int cXVDRData::GetTimersCount()
   return m_timercount;
 }
 
-void cXVDRData::ReadTimerPacket(cXVDRResponsePacket* resp, cXVDRTimer& tag) {
+void Connection::ReadTimerPacket(ResponsePacket* resp, Timer& tag) {
   tag[timer_index] = resp->extract_U32();
 
   int iActive           = resp->extract_U32();
@@ -466,19 +468,19 @@ void cXVDRData::ReadTimerPacket(cXVDRResponsePacket* resp, cXVDRTimer& tag) {
   }
 }
 
-bool cXVDRData::GetTimerInfo(unsigned int timernumber, cXVDRTimer& tag)
+bool Connection::GetTimerInfo(unsigned int timernumber, Timer& tag)
 {
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_TIMER_GET))
   {
-    XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
+    XVDRLog(XVDR_ERROR, "%s - Can't init RequestPacket", __FUNCTION__);
     return false;
   }
 
   if (!vrp.add_U32(timernumber))
     return false;
 
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     XVDRLog(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
@@ -502,16 +504,16 @@ bool cXVDRData::GetTimerInfo(unsigned int timernumber, cXVDRTimer& tag)
   return true;
 }
 
-bool cXVDRData::GetTimersList()
+bool Connection::GetTimersList()
 {
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_TIMER_GETLIST))
   {
-    XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
+    XVDRLog(XVDR_ERROR, "%s - Can't init RequestPacket", __FUNCTION__);
     return false;
   }
 
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     delete vresp;
@@ -524,7 +526,7 @@ bool cXVDRData::GetTimersList()
   {
     while (!vresp->end())
     {
-      cXVDRTimer timer;
+      Timer timer;
       ReadTimerPacket(vresp, timer);
       XVDRTransferTimerEntry(timer);
     }
@@ -533,12 +535,12 @@ bool cXVDRData::GetTimersList()
   return true;
 }
 
-bool cXVDRData::AddTimer(const cXVDRTimer& timer)
+bool Connection::AddTimer(const Timer& timer)
 {
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_TIMER_ADD))
   {
-    XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
+    XVDRLog(XVDR_ERROR, "%s - Can't init RequestPacket", __FUNCTION__);
     return false;
   }
 
@@ -594,7 +596,7 @@ bool cXVDRData::AddTimer(const cXVDRTimer& timer)
   vrp.add_String(path.c_str());
   vrp.add_String("");
 
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->noResponse())
   {
     delete vresp;
@@ -607,9 +609,9 @@ bool cXVDRData::AddTimer(const cXVDRTimer& timer)
   return (returnCode == XVDR_RET_OK);
 }
 
-bool cXVDRData::DeleteTimer(uint32_t timerindex, bool force)
+bool Connection::DeleteTimer(uint32_t timerindex, bool force)
 {
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_TIMER_DELETE))
     return false;
 
@@ -619,7 +621,7 @@ bool cXVDRData::DeleteTimer(uint32_t timerindex, bool force)
   if (!vrp.add_U32(force))
     return false;
 
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->noResponse())
   {
     delete vresp;
@@ -632,7 +634,7 @@ bool cXVDRData::DeleteTimer(uint32_t timerindex, bool force)
   return (returnCode == XVDR_RET_OK);
 }
 
-bool cXVDRData::UpdateTimer(const cXVDRTimer& timer)
+bool Connection::UpdateTimer(const Timer& timer)
 {
   // use timer margin to calculate start/end times
   uint32_t starttime = timer[timer_starttime] - timer[timer_marginstart] * 60;
@@ -654,7 +656,7 @@ bool cXVDRData::UpdateTimer(const cXVDRTimer& timer)
   for(std::string::iterator i = title.begin(); i != title.end(); i++)
 	  if(*i == '/') *i = '~';
 
-  cRequestPacket vrp;
+  RequestPacket vrp;
   vrp.init(XVDR_TIMER_UPDATE);
   vrp.add_U32(timer[timer_index]);
   vrp.add_U32(2);
@@ -668,7 +670,7 @@ bool cXVDRData::UpdateTimer(const cXVDRTimer& timer)
   vrp.add_String(title.c_str());
   vrp.add_String("");
 
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->noResponse())
   {
     delete vresp;
@@ -681,16 +683,16 @@ bool cXVDRData::UpdateTimer(const cXVDRTimer& timer)
   return (returnCode == XVDR_RET_OK);
 }
 
-int cXVDRData::GetRecordingsCount()
+int Connection::GetRecordingsCount()
 {
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_RECORDINGS_GETCOUNT))
   {
-    XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
+    XVDRLog(XVDR_ERROR, "%s - Can't init RequestPacket", __FUNCTION__);
     return -1;
   }
 
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     XVDRLog(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
@@ -703,16 +705,16 @@ int cXVDRData::GetRecordingsCount()
   return count;
 }
 
-bool cXVDRData::GetRecordingsList()
+bool Connection::GetRecordingsList()
 {
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_RECORDINGS_GETLIST))
   {
-    XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
+    XVDRLog(XVDR_ERROR, "%s - Can't init RequestPacket", __FUNCTION__);
     return false;
   }
 
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     XVDRLog(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
@@ -721,7 +723,7 @@ bool cXVDRData::GetRecordingsList()
 
   while (!vresp->end())
   {
-	cXVDRRecordingEntry rec;
+	RecordingEntry rec;
 	rec[recording_time] = vresp->extract_U32();
 	rec[recording_duration] = vresp->extract_U32();
 	rec[recording_priority] = vresp->extract_U32();
@@ -745,12 +747,12 @@ bool cXVDRData::GetRecordingsList()
   return true;
 }
 
-bool cXVDRData::RenameRecording(const std::string& recid, const std::string& newname)
+bool Connection::RenameRecording(const std::string& recid, const std::string& newname)
 {
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_RECORDINGS_RENAME))
   {
-    XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
+    XVDRLog(XVDR_ERROR, "%s - Can't init RequestPacket", __FUNCTION__);
     return false;
   }
 
@@ -760,7 +762,7 @@ bool cXVDRData::RenameRecording(const std::string& recid, const std::string& new
   vrp.add_String(recid.c_str());
   vrp.add_String(newname.c_str());
 
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->noResponse())
   {
     delete vresp;
@@ -773,18 +775,18 @@ bool cXVDRData::RenameRecording(const std::string& recid, const std::string& new
   return (returnCode == XVDR_RET_OK);
 }
 
-bool cXVDRData::DeleteRecording(const std::string& recid)
+bool Connection::DeleteRecording(const std::string& recid)
 {
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_RECORDINGS_DELETE))
   {
-    XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
+    XVDRLog(XVDR_ERROR, "%s - Can't init RequestPacket", __FUNCTION__);
     return false;
   }
 
   vrp.add_String(recid.c_str());
 
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->noResponse())
   {
     delete vresp;
@@ -797,32 +799,32 @@ bool cXVDRData::DeleteRecording(const std::string& recid)
   return (returnCode == XVDR_RET_OK);
 }
 
-bool cXVDRData::OnResponsePacket(cXVDRResponsePacket* pkt)
+bool Connection::OnResponsePacket(ResponsePacket* pkt)
 {
   return false;
 }
 
-bool cXVDRData::SendPing()
+bool Connection::SendPing()
 {
   XVDRLog(XVDR_DEBUG, "%s", __FUNCTION__);
 
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_PING))
   {
-    XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
+    XVDRLog(XVDR_ERROR, "%s - Can't init RequestPacket", __FUNCTION__);
     return false;
   }
 
-  cXVDRResponsePacket* vresp = cXVDRSession::ReadResult(&vrp);
+  ResponsePacket* vresp = Session::ReadResult(&vrp);
   delete vresp;
 
   return (vresp != NULL);
 }
 
-void cXVDRData::Action()
+void Connection::Action()
 {
   uint32_t lastPing = 0;
-  cXVDRResponsePacket* vresp;
+  ResponsePacket* vresp;
 
   SetPriority(19);
 
@@ -836,7 +838,7 @@ void cXVDRData::Action()
    }
 
     // read message
-    vresp = cXVDRSession::ReadMessage();
+    vresp = Session::ReadMessage();
 
     // check if the connection is still up
     if ((vresp == NULL) && (time(NULL) - lastPing) > 5)
@@ -928,12 +930,12 @@ void cXVDRData::Action()
   }
 }
 
-int cXVDRData::GetChannelGroupCount(bool automatic)
+int Connection::GetChannelGroupCount(bool automatic)
 {
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_CHANNELGROUP_GETCOUNT))
   {
-    XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
+    XVDRLog(XVDR_ERROR, "%s - Can't init RequestPacket", __FUNCTION__);
     return 0;
   }
 
@@ -942,7 +944,7 @@ int cXVDRData::GetChannelGroupCount(bool automatic)
     return 0;
   }
 
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->noResponse())
   {
     delete vresp;
@@ -955,18 +957,18 @@ int cXVDRData::GetChannelGroupCount(bool automatic)
   return count;
 }
 
-bool cXVDRData::GetChannelGroupList(bool bRadio)
+bool Connection::GetChannelGroupList(bool bRadio)
 {
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_CHANNELGROUP_LIST))
   {
-    XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
+    XVDRLog(XVDR_ERROR, "%s - Can't init RequestPacket", __FUNCTION__);
     return false;
   }
 
   vrp.add_U8(bRadio);
 
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->noResponse())
   {
     delete vresp;
@@ -975,7 +977,7 @@ bool cXVDRData::GetChannelGroupList(bool bRadio)
 
   while (!vresp->end())
   {
-    cXVDRChannelGroup group;
+    ChannelGroup group;
 
     group[channelgroup_name] = vresp->extract_String();
     group[channelgroup_isradio] = vresp->extract_U8();
@@ -986,19 +988,19 @@ bool cXVDRData::GetChannelGroupList(bool bRadio)
   return true;
 }
 
-bool cXVDRData::GetChannelGroupMembers(const std::string& groupname, bool radio)
+bool Connection::GetChannelGroupMembers(const std::string& groupname, bool radio)
 {
-  cRequestPacket vrp;
+  RequestPacket vrp;
   if (!vrp.init(XVDR_CHANNELGROUP_MEMBERS))
   {
-    XVDRLog(XVDR_ERROR, "%s - Can't init cRequestPacket", __FUNCTION__);
+    XVDRLog(XVDR_ERROR, "%s - Can't init RequestPacket", __FUNCTION__);
     return false;
   }
 
   vrp.add_String(groupname.c_str());
   vrp.add_U8(radio);
 
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->noResponse())
   {
     delete vresp;
@@ -1007,7 +1009,7 @@ bool cXVDRData::GetChannelGroupMembers(const std::string& groupname, bool radio)
 
   while (!vresp->end())
   {
-    cXVDRChannelGroupMember member;
+    ChannelGroupMember member;
     member[channelgroupmember_name] = groupname;
     member[channelgroupmember_uid] = vresp->extract_U32();
     member[channelgroupmember_number] = vresp->extract_U32();

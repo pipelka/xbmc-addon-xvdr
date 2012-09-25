@@ -20,10 +20,10 @@
  *
  */
 
-#include "XVDRCallbacks.h"
-#include "XVDRSession.h"
-#include "XVDRResponsePacket.h"
-#include "XVDRThread.h"
+#include "xvdr/callbacks.h"
+#include "xvdr/session.h"
+#include "xvdr/responsepacket.h"
+#include "xvdr/thread.h"
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -32,8 +32,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "requestpacket.h"
-#include "xvdrcommand.h"
+#include "xvdr/requestpacket.h"
+#include "xvdr/command.h"
 #include "iso639.h"
 
 extern "C" {
@@ -46,7 +46,9 @@ extern "C" {
 #define SOL_TCP IPPROTO_TCP
 #endif
 
-cXVDRSession::cXVDRSession()
+using namespace XVDR;
+
+Session::Session()
   : m_timeout(3000)
   , m_fd(INVALID_SOCKET)
   , m_protocol(0)
@@ -57,17 +59,17 @@ cXVDRSession::cXVDRSession()
   m_port = 34891;
 }
 
-cXVDRSession::~cXVDRSession()
+Session::~Session()
 {
   Close();
 }
 
-void cXVDRSession::Abort()
+void Session::Abort()
 {
   tcp_shutdown(m_fd);
 }
 
-void cXVDRSession::Close()
+void Session::Close()
 {
   if(!IsOpen())
     return;
@@ -78,7 +80,7 @@ void cXVDRSession::Close()
   m_fd = INVALID_SOCKET;
 }
 
-bool cXVDRSession::Open(const std::string& hostname, const char *name)
+bool Session::Open(const std::string& hostname, const char *name)
 {
   Close();
 
@@ -102,14 +104,14 @@ bool cXVDRSession::Open(const std::string& hostname, const char *name)
   return true;
 }
 
-bool cXVDRSession::IsOpen()
+bool Session::IsOpen()
 {
   return m_fd != INVALID_SOCKET;
 }
 
-bool cXVDRSession::Login()
+bool Session::Login()
 {
-  cRequestPacket vrp;
+  RequestPacket vrp;
 
   if (!vrp.init(XVDR_LOGIN))
     return false;
@@ -134,7 +136,7 @@ bool cXVDRSession::Login()
     return false;
 
   // read welcome
-  cXVDRResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     XVDRLog(XVDR_ERROR, "failed to read greeting from server");
@@ -157,7 +159,7 @@ bool cXVDRSession::Login()
   return true;
 }
 
-cXVDRResponsePacket* cXVDRSession::ReadMessage()
+ResponsePacket* Session::ReadMessage()
 {
   uint32_t channelID = 0;
   uint32_t requestID;
@@ -169,7 +171,7 @@ cXVDRResponsePacket* cXVDRSession::ReadMessage()
   int64_t  dts = 0;
   int64_t  pts = 0;
 
-  cXVDRResponsePacket* vresp = NULL;
+  ResponsePacket* vresp = NULL;
 
   if(!readData((uint8_t*)&channelID, sizeof(uint32_t)))
     return NULL;
@@ -195,7 +197,7 @@ cXVDRResponsePacket* cXVDRSession::ReadMessage()
     userDataLength = ntohl(m_streamPacketHeader.userDataLength);
 
     if(opCodeID == XVDR_STREAM_MUXPKT) {
-      XVDRPacket* p = XVDRAllocatePacket(userDataLength);
+      Packet* p = XVDRAllocatePacket(userDataLength);
       userData = (uint8_t*)p;
       uint8_t* payload = XVDRGetPacketPayload(p);
       if (userDataLength > 0)
@@ -218,7 +220,7 @@ cXVDRResponsePacket* cXVDRSession::ReadMessage()
       }
     }
 
-    vresp = new cXVDRResponsePacket();
+    vresp = new ResponsePacket();
     vresp->setStream(opCodeID, streamID, duration, dts, pts, userData, userDataLength);
   }
   else
@@ -240,7 +242,7 @@ cXVDRResponsePacket* cXVDRSession::ReadMessage()
       }
     }
 
-    vresp = new cXVDRResponsePacket();
+    vresp = new ResponsePacket();
     if (channelID == XVDR_CHANNEL_STATUS)
       vresp->setStatus(requestID, userData, userDataLength);
     else
@@ -253,12 +255,12 @@ cXVDRResponsePacket* cXVDRSession::ReadMessage()
   return vresp;
 }
 
-bool cXVDRSession::SendMessage(cRequestPacket* vrp)
+bool Session::SendMessage(RequestPacket* vrp)
 {
   return (tcp_send_timeout(m_fd, vrp->getPtr(), vrp->getLen(), m_timeout) == 0);
 }
 
-cXVDRResponsePacket* cXVDRSession::ReadResult(cRequestPacket* vrp)
+ResponsePacket* Session::ReadResult(RequestPacket* vrp)
 {
   if(!SendMessage(vrp))
   {
@@ -266,7 +268,7 @@ cXVDRResponsePacket* cXVDRSession::ReadResult(cRequestPacket* vrp)
     return NULL;
   }
 
-  cXVDRResponsePacket *pkt = NULL;
+  ResponsePacket *pkt = NULL;
 
   while((pkt = ReadMessage()))
   {
@@ -283,14 +285,14 @@ cXVDRResponsePacket* cXVDRSession::ReadResult(cRequestPacket* vrp)
   return NULL;
 }
 
-bool cXVDRSession::ReadSuccess(cRequestPacket* vrp) {
+bool Session::ReadSuccess(RequestPacket* vrp) {
   uint32_t rc;
   return ReadSuccess(vrp, rc);
 }
 
-bool cXVDRSession::ReadSuccess(cRequestPacket* vrp, uint32_t& rc)
+bool Session::ReadSuccess(RequestPacket* vrp, uint32_t& rc)
 {
-  cXVDRResponsePacket *pkt = NULL;
+  ResponsePacket *pkt = NULL;
   if((pkt = ReadResult(vrp)) == NULL)
     return false;
 
@@ -306,13 +308,13 @@ bool cXVDRSession::ReadSuccess(cRequestPacket* vrp, uint32_t& rc)
   return true;
 }
 
-void cXVDRSession::OnReconnect() {
+void Session::OnReconnect() {
 }
 
-void cXVDRSession::OnDisconnect() {
+void Session::OnDisconnect() {
 }
 
-bool cXVDRSession::TryReconnect() {
+bool Session::TryReconnect() {
   if(!Open(m_hostname))
     return false;
 
@@ -327,7 +329,7 @@ bool cXVDRSession::TryReconnect() {
   return true;
 }
 
-void cXVDRSession::SignalConnectionLost()
+void Session::SignalConnectionLost()
 {
   if(m_connectionLost)
     return;
@@ -341,17 +343,17 @@ void cXVDRSession::SignalConnectionLost()
   OnDisconnect();
 }
 
-bool cXVDRSession::readData(uint8_t* buffer, int totalBytes)
+bool Session::readData(uint8_t* buffer, int totalBytes)
 {
   return (tcp_read_timeout(m_fd, buffer, totalBytes, m_timeout) == 0);
 }
 
-void cXVDRSession::SetTimeout(int ms)
+void Session::SetTimeout(int ms)
 {
   m_timeout = ms;
 }
 
-void cXVDRSession::SetCompressionLevel(int level)
+void Session::SetCompressionLevel(int level)
 {
   if (level < 0 || level > 9)
     return;
@@ -359,12 +361,12 @@ void cXVDRSession::SetCompressionLevel(int level)
   m_compressionlevel = level;
 }
 
-void cXVDRSession::SetAudioType(int type)
+void Session::SetAudioType(int type)
 {
   m_audiotype = type;
 }
 
-void cXVDRSession::SleepMs(int ms)
+void Session::SleepMs(int ms)
 {
 #ifdef __WINDOWS__
   Sleep(ms);
@@ -373,6 +375,6 @@ void cXVDRSession::SleepMs(int ms)
 #endif
 }
 
-bool cXVDRSession::ConnectionLost() {
+bool Session::ConnectionLost() {
   return m_connectionLost;
 }

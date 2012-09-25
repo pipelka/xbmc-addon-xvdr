@@ -21,24 +21,26 @@
  *
  */
 
-#include "XVDRSession.h"
-#include "XVDRThread.h"
+#include "xvdr/session.h"
+#include "xvdr/thread.h"
 
 #include <string>
 #include <map>
 #include <vector>
 
-#include "XVDRDataset.h"
+#include "xvdr/dataset.h"
 
-class cXVDRResponsePacket;
-class cRequestPacket;
+namespace XVDR {
 
-class cXVDRData : public cXVDRSession, public cThread
+class ResponsePacket;
+class RequestPacket;
+
+class Connection : public Session, public Thread
 {
 public:
 
-  cXVDRData();
-  virtual ~cXVDRData();
+  Connection();
+  virtual ~Connection();
 
   bool        Open(const std::string& hostname, const char* name = NULL);
   bool        Login();
@@ -61,28 +63,28 @@ public:
 
   bool        GetTimersList();
   int         GetTimersCount();
-  bool        AddTimer(const cXVDRTimer& timerinfo);
-  bool        GetTimerInfo(unsigned int timernumber, cXVDRTimer& tag);
+  bool        AddTimer(const Timer& timerinfo);
+  bool        GetTimerInfo(unsigned int timernumber, Timer& tag);
   bool        DeleteTimer(uint32_t timerindex, bool force = false);
-  bool        UpdateTimer(const cXVDRTimer& timerinfo);
+  bool        UpdateTimer(const Timer& timerinfo);
 
   int         GetRecordingsCount();
   bool        GetRecordingsList();
   bool        RenameRecording(const std::string& recid, const std::string& newname);
   bool        DeleteRecording(const std::string& recid);
 
-  cXVDRResponsePacket*  ReadResult(cRequestPacket* vrp);
+  ResponsePacket*  ReadResult(RequestPacket* vrp);
 
 protected:
 
   virtual void Action(void);
-  virtual bool OnResponsePacket(cXVDRResponsePacket *pkt);
+  virtual bool OnResponsePacket(ResponsePacket *pkt);
 
   void SignalConnectionLost();
   void OnDisconnect();
   void OnReconnect();
 
-  void ReadTimerPacket(cXVDRResponsePacket* resp, cXVDRTimer& tag);
+  void ReadTimerPacket(ResponsePacket* resp, Timer& tag);
 
   bool m_statusinterface;
 
@@ -92,12 +94,12 @@ private:
 
   struct SMessage
   {
-    cCondWait* event;
-    cXVDRResponsePacket* pkt;
+    CondWait* event;
+    ResponsePacket* pkt;
   };
   typedef std::map<int, SMessage> SMessages;
 
-  cMutex          m_Mutex;
+  Mutex          m_Mutex;
   SMessages       m_queue;
   bool            m_aborting;
   uint32_t        m_timercount;
@@ -107,3 +109,5 @@ private:
   std::vector<int> m_caids;
 
 };
+
+} // namespace XVDR

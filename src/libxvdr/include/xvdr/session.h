@@ -24,30 +24,28 @@
 #include <stdint.h>
 #include <string>
 
-//extern "C" {
-//#include "libTcpSocket/os-dependent_socket.h"
-//}
+namespace XVDR {
 
-class cXVDRResponsePacket;
-class cRequestPacket;
+class ResponsePacket;
+class RequestPacket;
 
-class cXVDRSession
+class Session
 {
 public:
-  cXVDRSession();
-  virtual ~cXVDRSession();
+  Session();
+  virtual ~Session();
 
   virtual bool      Open(const std::string& hostname, const char *name = NULL);
   virtual bool      Login();
   virtual void      Close();
   virtual void      Abort();
 
-  cXVDRResponsePacket*  ReadMessage();
-  bool              SendMessage(cRequestPacket* vrp);
+  ResponsePacket*  ReadMessage();
+  bool              SendMessage(RequestPacket* vrp);
 
-  cXVDRResponsePacket*  ReadResult(cRequestPacket* vrp);
-  bool              ReadSuccess(cRequestPacket* vrp, uint32_t& rc);
-  bool              ReadSuccess(cRequestPacket* vrp);
+  ResponsePacket*  ReadResult(RequestPacket* vrp);
+  bool              ReadSuccess(RequestPacket* vrp, uint32_t& rc);
+  bool              ReadSuccess(RequestPacket* vrp);
 
   int                GetProtocol()   { return m_protocol; }
   const std::string& GetServerName() { return m_server; }
@@ -103,3 +101,5 @@ private:
   } m_responsePacketHeader;
 
 };
+
+} // namespace XVDR

@@ -25,8 +25,8 @@
  */
 
 #include <errno.h>
-#include "XVDRThread.h"
-#include "XVDRCallbacks.h"
+#include "xvdr/thread.h"
+#include "xvdr/callbacks.h"
 
 #ifndef __APPLE__
 #include <malloc.h>
@@ -40,6 +40,8 @@
 #include <stdlib.h>
 
 #include "libPlatform/os-dependent.h"
+
+using namespace XVDR;
 
 static bool GetAbsTime(struct timespec *Abstime, int MillisecondsFromNow)
 {
@@ -58,29 +60,29 @@ static bool GetAbsTime(struct timespec *Abstime, int MillisecondsFromNow)
   return false;
 }
 
-// --- cCondWait -------------------------------------------------------------
+// --- CondWait -------------------------------------------------------------
 
-cCondWait::cCondWait(void)
+CondWait::CondWait(void)
 {
   signaled = false;
   pthread_mutex_init(&mutex, NULL);
   pthread_cond_init(&cond, NULL);
 }
 
-cCondWait::~cCondWait()
+CondWait::~CondWait()
 {
   pthread_cond_broadcast(&cond); // wake up any sleepers
   pthread_cond_destroy(&cond);
   pthread_mutex_destroy(&mutex);
 }
 
-void cCondWait::SleepMs(int TimeoutMs)
+void CondWait::SleepMs(int TimeoutMs)
 {
-  cCondWait w;
+  CondWait w;
   w.Wait(max(TimeoutMs, 3)); // making sure the time is >2ms to avoid a possible busy wait
 }
 
-bool cCondWait::Wait(int TimeoutMs)
+bool CondWait::Wait(int TimeoutMs)
 {
   pthread_mutex_lock(&mutex);
   if (!signaled) {
@@ -102,7 +104,7 @@ bool cCondWait::Wait(int TimeoutMs)
   return r;
 }
 
-void cCondWait::Signal(void)
+void CondWait::Signal(void)
 {
   pthread_mutex_lock(&mutex);
   signaled = true;
@@ -110,20 +112,20 @@ void cCondWait::Signal(void)
   pthread_mutex_unlock(&mutex);
 }
 
-// --- cCondVar --------------------------------------------------------------
+// --- CondVar --------------------------------------------------------------
 
-cCondVar::cCondVar(void)
+CondVar::CondVar(void)
 {
   pthread_cond_init(&cond, 0);
 }
 
-cCondVar::~cCondVar()
+CondVar::~CondVar()
 {
   pthread_cond_broadcast(&cond); // wake up any sleepers
   pthread_cond_destroy(&cond);
 }
 
-void cCondVar::Wait(cMutex &Mutex)
+void CondVar::Wait(Mutex &Mutex)
 {
   if (Mutex.locked) {
      int locked = Mutex.locked;
@@ -134,7 +136,7 @@ void cCondVar::Wait(cMutex &Mutex)
      }
 }
 
-bool cCondVar::TimedWait(cMutex &Mutex, int TimeoutMs)
+bool CondVar::TimedWait(Mutex &Mutex, int TimeoutMs)
 {
   bool r = true; // true = condition signaled, false = timeout
 
@@ -152,14 +154,14 @@ bool cCondVar::TimedWait(cMutex &Mutex, int TimeoutMs)
   return r;
 }
 
-void cCondVar::Broadcast(void)
+void CondVar::Broadcast(void)
 {
   pthread_cond_broadcast(&cond);
 }
 
-// --- cMutex ----------------------------------------------------------------
+// --- Mutex ----------------------------------------------------------------
 
-cMutex::cMutex(void)
+Mutex::Mutex(void)
 {
   locked = 0;
   pthread_mutexattr_t attr;
@@ -172,28 +174,28 @@ cMutex::cMutex(void)
   pthread_mutex_init(&mutex, &attr);
 }
 
-cMutex::~cMutex()
+Mutex::~Mutex()
 {
   pthread_mutex_destroy(&mutex);
 }
 
-void cMutex::Lock(void)
+void Mutex::Lock(void)
 {
   pthread_mutex_lock(&mutex);
   locked++;
 }
 
-void cMutex::Unlock(void)
+void Mutex::Unlock(void)
 {
  if (!--locked)
     pthread_mutex_unlock(&mutex);
 }
 
-// --- cThread ---------------------------------------------------------------
+// --- Thread ---------------------------------------------------------------
 
-tThreadId cThread::mainThreadId = 0;
+tThreadId Thread::mainThreadId = 0;
 
-cThread::cThread(const char *Description)
+Thread::Thread(const char *Description)
 {
   active = running = false;
 #if !defined(__WINDOWS__)
@@ -205,13 +207,13 @@ cThread::cThread(const char *Description)
      SetDescription(Description);
 }
 
-cThread::~cThread()
+Thread::~Thread()
 {
   Cancel(); // just in case the derived class didn't call it
   free(description);
 }
 
-void cThread::SetPriority(int Priority)
+void Thread::SetPriority(int Priority)
 {
 #if !defined(__WINDOWS__)
   if (setpriority(PRIO_PROCESS, 0, Priority) < 0)
@@ -219,7 +221,7 @@ void cThread::SetPriority(int Priority)
 #endif
 }
 
-void cThread::SetIOPriority(int Priority)
+void Thread::SetIOPriority(int Priority)
 {
 #if !defined(__WINDOWS__)
 #ifdef HAVE_LINUXIOPRIO
@@ -229,7 +231,7 @@ void cThread::SetIOPriority(int Priority)
 #endif
 }
 
-void cThread::SetDescription(const char *Description, ...)
+void Thread::SetDescription(const char *Description, ...)
 {
   free(description);
   description = NULL;
@@ -252,7 +254,7 @@ void cThread::SetDescription(const char *Description, ...)
   }
 }
 
-void *cThread::StartThread(cThread *Thread)
+void *Thread::StartThread(Thread *Thread)
 {
   Thread->childThreadId = ThreadId();
   if (Thread->description) {
@@ -273,15 +275,15 @@ void *cThread::StartThread(cThread *Thread)
 #define THREAD_STOP_TIMEOUT  3000 // ms to wait for a thread to stop before newly starting it
 #define THREAD_STOP_SLEEP      30 // ms to sleep while waiting for a thread to stop
 
-bool cThread::Start(void)
+bool Thread::Start(void)
 {
   if (!running) {
      if (active) {
         // Wait until the previous incarnation of this thread has completely ended
         // before starting it newly:
-        cTimeMs RestartTimeout;
+        TimeMs RestartTimeout;
         while (!running && active && RestartTimeout.Elapsed() < THREAD_STOP_TIMEOUT)
-              cCondWait::SleepMs(THREAD_STOP_SLEEP);
+              CondWait::SleepMs(THREAD_STOP_SLEEP);
         }
      if (!active) {
         active = running = true;
@@ -298,7 +300,7 @@ bool cThread::Start(void)
   return true;
 }
 
-bool cThread::Active(void)
+bool Thread::Active(void)
 {
   if (active) {
      //
@@ -325,7 +327,7 @@ bool cThread::Active(void)
   return false;
 }
 
-void cThread::Cancel(int WaitSeconds)
+void Thread::Cancel(int WaitSeconds)
 {
   running = false;
   if (active && WaitSeconds > -1)
@@ -336,7 +338,7 @@ void cThread::Cancel(int WaitSeconds)
       {
         if (!Active())
           return;
-        cCondWait::SleepMs(10);
+        CondWait::SleepMs(10);
       }
       XVDRLog(XVDR_ERROR, "ERROR: %s thread %d won't end (waited %d seconds) - canceling it...", description ? description : "", childThreadId, WaitSeconds);
     }
@@ -348,7 +350,7 @@ void cThread::Cancel(int WaitSeconds)
   }
 }
 
-tThreadId cThread::ThreadId(void)
+tThreadId Thread::ThreadId(void)
 {
 #ifdef __APPLE__
     return (int)pthread_self();
@@ -361,7 +363,7 @@ tThreadId cThread::ThreadId(void)
 #endif
 }
 
-void cThread::SetMainThreadId(void)
+void Thread::SetMainThreadId(void)
 {
   if (mainThreadId == 0)
      mainThreadId = ThreadId();
@@ -369,22 +371,22 @@ void cThread::SetMainThreadId(void)
      XVDRLog(XVDR_ERROR, "ERROR: attempt to set main thread id to %d while it already is %d", ThreadId(), mainThreadId);
 }
 
-// --- cMutexLock ------------------------------------------------------------
+// --- MutexLock ------------------------------------------------------------
 
-cMutexLock::cMutexLock(cMutex *Mutex)
+MutexLock::MutexLock(Mutex *Mutex)
 {
   mutex = NULL;
   locked = false;
   Lock(Mutex);
 }
 
-cMutexLock::~cMutexLock()
+MutexLock::~MutexLock()
 {
   if (mutex && locked)
     mutex->Unlock();
 }
 
-bool cMutexLock::Lock(cMutex *Mutex)
+bool MutexLock::Lock(Mutex *Mutex)
 {
   if (Mutex && !mutex)
   {
@@ -396,22 +398,22 @@ bool cMutexLock::Lock(cMutex *Mutex)
   return false;
 }
 
-// --- cThreadLock -----------------------------------------------------------
+// --- ThreadLock -----------------------------------------------------------
 
-cThreadLock::cThreadLock(cThread *Thread)
+ThreadLock::ThreadLock(Thread *Thread)
 {
   thread = NULL;
   locked = false;
   Lock(Thread);
 }
 
-cThreadLock::~cThreadLock()
+ThreadLock::~ThreadLock()
 {
   if (thread && locked)
     thread->Unlock();
 }
 
-bool cThreadLock::Lock(cThread *Thread)
+bool ThreadLock::Lock(Thread *Thread)
 {
   if (Thread && !thread)
   {

@@ -21,7 +21,7 @@
  */
 
 #include "XBMCAddon.h"
-#include "XVDRCallbacks.h"
+#include "xvdr/callbacks.h"
 #include <list>
 #include <vector>
 #include <string>

@@ -30,12 +30,14 @@
 uint64_t ntohll(uint64_t a);
 uint64_t htonll(uint64_t a);
 
-class cTimeMs
+namespace XVDR {
+
+class TimeMs
 {
 private:
   uint64_t begin;
 public:
-  cTimeMs(int Ms = 0);
+  TimeMs(int Ms = 0);
       ///< Creates a timer with ms resolution and an initial timeout of Ms.
   static uint64_t Now(void);
   void Set(int Ms = 0);
@@ -43,16 +45,16 @@ public:
   uint64_t Elapsed(void);
 };
 
-class cCondWait {
+class CondWait {
 private:
   pthread_mutex_t mutex;
   pthread_cond_t cond;
   bool signaled;
 public:
-  cCondWait(void);
-  ~cCondWait();
+  CondWait(void);
+  ~CondWait();
   static void SleepMs(int TimeoutMs);
-       ///< Creates a cCondWait object and uses it to sleep for TimeoutMs
+       ///< Creates a CondWait object and uses it to sleep for TimeoutMs
        ///< milliseconds, immediately giving up the calling thread's time
        ///< slice and thus avoiding a "busy wait".
        ///< In order to avoid a possible busy wait, TimeoutMs will be automatically
@@ -66,56 +68,56 @@ public:
        ///< Signals a caller of Wait() that the condition it is waiting for is met.
   };
 
-class cMutex;
+class Mutex;
 
-class cCondVar {
+class CondVar {
 private:
   pthread_cond_t cond;
 public:
-  cCondVar(void);
-  ~cCondVar();
-  void Wait(cMutex &Mutex);
-  bool TimedWait(cMutex &Mutex, int TimeoutMs);
+  CondVar(void);
+  ~CondVar();
+  void Wait(Mutex &Mutex);
+  bool TimedWait(Mutex &Mutex, int TimeoutMs);
   void Broadcast(void);
   };
 
-class cMutex {
-  friend class cCondVar;
+class Mutex {
+  friend class CondVar;
 private:
   pthread_mutex_t mutex;
   int locked;
 public:
-  cMutex(void);
-  ~cMutex();
+  Mutex(void);
+  ~Mutex();
   void Lock(void);
   void Unlock(void);
   };
 
 typedef pid_t tThreadId;
 
-class cThread {
-  friend class cThreadLock;
+class Thread {
+  friend class ThreadLock;
 private:
   bool active;
   bool running;
   pthread_t childTid;
   tThreadId childThreadId;
-  cMutex mutex;
+  Mutex mutex;
   char *description;
   static tThreadId mainThreadId;
-  static void *StartThread(cThread *Thread);
+  static void *StartThread(Thread *Thread);
 protected:
   void SetPriority(int Priority);
   void SetIOPriority(int Priority);
   void Lock(void) { mutex.Lock(); }
   void Unlock(void) { mutex.Unlock(); }
   virtual void Action(void) = 0;
-       ///< A derived cThread class must implement the code it wants to
+       ///< A derived Thread class must implement the code it wants to
        ///< execute as a separate thread in this function. If this is
        ///< a loop, it must check Running() repeatedly to see whether
        ///< it's time to stop.
   bool Running(void) { return running; }
-       ///< Returns false if a derived cThread object shall leave its Action()
+       ///< Returns false if a derived Thread object shall leave its Action()
        ///< function.
   void Cancel(int WaitSeconds = 0);
        ///< Cancels the thread by first setting 'running' to false, so that
@@ -125,12 +127,12 @@ protected:
        ///< If WaitSeconds is -1, only 'running' is set to false and Cancel()
        ///< returns immediately, without killing the thread.
 public:
-  cThread(const char *Description = NULL);
+  Thread(const char *Description = NULL);
        ///< Creates a new thread.
        ///< If Description is present, a log file entry will be made when
        ///< the thread starts and stops. The Start() function must be called
        ///< to actually start the thread.
-  virtual ~cThread();
+  virtual ~Thread();
   void SetDescription(const char *Description, ...);
   bool Start(void);
        ///< Actually starts the thread.
@@ -142,38 +144,40 @@ public:
   static void SetMainThreadId(void);
   };
 
-// cMutexLock can be used to easily set a lock on mutex and make absolutely
+// MutexLock can be used to easily set a lock on mutex and make absolutely
 // sure that it will be unlocked when the block will be left. Several locks can
 // be stacked, so a function that makes many calls to another function which uses
-// cMutexLock may itself use a cMutexLock to make one longer lock instead of many
+// MutexLock may itself use a MutexLock to make one longer lock instead of many
 // short ones.
 
-class cMutexLock {
+class MutexLock {
 private:
-  cMutex *mutex;
+  Mutex *mutex;
   bool locked;
 public:
-  cMutexLock(cMutex *Mutex = NULL);
-  ~cMutexLock();
-  bool Lock(cMutex *Mutex);
+  MutexLock(Mutex *Mutex = NULL);
+  ~MutexLock();
+  bool Lock(Mutex *Mutex);
   };
 
-// cThreadLock can be used to easily set a lock in a thread and make absolutely
+// ThreadLock can be used to easily set a lock in a thread and make absolutely
 // sure that it will be unlocked when the block will be left. Several locks can
 // be stacked, so a function that makes many calls to another function which uses
-// cThreadLock may itself use a cThreadLock to make one longer lock instead of many
+// ThreadLock may itself use a ThreadLock to make one longer lock instead of many
 // short ones.
 
-class cThreadLock {
+class ThreadLock {
 private:
-  cThread *thread;
+  Thread *thread;
   bool locked;
 public:
-  cThreadLock(cThread *Thread = NULL);
-  ~cThreadLock();
-  bool Lock(cThread *Thread);
+  ThreadLock(Thread *Thread = NULL);
+  ~ThreadLock();
+  bool Lock(Thread *Thread);
   };
 
-#define LOCK_THREAD cThreadLock ThreadLock(this)
+#define LOCK_THREAD ThreadLock threadLock_(this)
+
+} // namespace XVDR
 
 #endif //__THREAD_H

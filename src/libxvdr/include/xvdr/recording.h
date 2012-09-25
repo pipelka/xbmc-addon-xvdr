@@ -21,16 +21,16 @@
  *
  */
 
-#include "XVDRSession.h"
+#include "xvdr/session.h"
 
-//#include "xbmc_pvr_types.h"
+namespace XVDR {
 
-class cXVDRRecording : public cXVDRSession
+class Recording : public Session
 {
 public:
 
-  cXVDRRecording();
-  ~cXVDRRecording();
+  Recording();
+  ~Recording();
 
   bool OpenRecording(const std::string& hostname, const std::string& recid);
   void Close();
@@ -51,3 +51,5 @@ private:
   uint32_t        m_currentPlayingRecordFrames;
   uint64_t        m_currentPlayingRecordPosition;
 };
+
+} // namespace XVDR

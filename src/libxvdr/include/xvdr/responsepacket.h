@@ -26,11 +26,13 @@
 #include <stdint.h>
 #include <string>
 
-class cXVDRResponsePacket
+namespace XVDR {
+
+class ResponsePacket
 {
   public:
-    cXVDRResponsePacket();
-    ~cXVDRResponsePacket();
+    ResponsePacket();
+    ~ResponsePacket();
 
     void setResponse(uint32_t requestID, uint8_t* packet, uint32_t packetLength);
     void setStatus(uint32_t requestID, uint8_t* packet, uint32_t packetLength);
@@ -83,3 +85,5 @@ class cXVDRResponsePacket
 
     bool ownBlock;
 };
+
+} // namespace XVDR
