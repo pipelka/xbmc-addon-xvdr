@@ -6,7 +6,6 @@ libxvdrinclude_HEADERS = \
 	connection.h \
 	dataset.h \
 	demux.h \
-	recording.h \
 	requestpacket.h \
 	responsepacket.h \
 	session.h \

@@ -26,7 +26,6 @@
 #include "XBMCSettings.h"
 
 #include "xvdr/demux.h"
-#include "xvdr/recording.h"
 #include "xvdr/connection.h"
 #include "xvdr/thread.h"
 
@@ -48,7 +47,6 @@ CHelper_libXBMC_pvr   *PVR    = NULL;
 
 Demux* XVDRDemuxer = NULL;
 Connection* XVDRData = NULL;
-Recording* XVDRRecording = NULL;
 cXBMCCallbacks *mCallbacks = NULL;
 
 Mutex XVDRMutex;
@@ -616,40 +614,37 @@ bool OpenRecordedStream(const PVR_RECORDING &recording)
 
   CloseRecordedStream();
 
-  XVDRRecording = new XVDR::Recording;
-  XVDRRecording->SetTimeout(cXBMCSettings::GetInstance().ConnectTimeout() * 1000);
+  XVDRData->SetTimeout(cXBMCSettings::GetInstance().ConnectTimeout() * 1000);
 
-  return XVDRRecording->OpenRecording(cXBMCSettings::GetInstance().Hostname(), recording.strRecordingId);
+  return XVDRData->OpenRecording(recording.strRecordingId);
 }
 
 void CloseRecordedStream(void)
 {
   MutexLock lock(&XVDRMutexRec);
 
-  if (XVDRRecording)
-  {
-    XVDRRecording->Close();
-    delete XVDRRecording;
-    XVDRRecording = NULL;
-  }
+  if (!XVDRData)
+    return;
+
+  XVDRData->CloseRecording();
 }
 
 int ReadRecordedStream(unsigned char *pBuffer, unsigned int iBufferSize)
 {
   MutexLock lock(&XVDRMutexRec);
 
-  if (!XVDRRecording)
+  if (!XVDRData)
     return -1;
 
-  return XVDRRecording->Read(pBuffer, iBufferSize);
+  return XVDRData->ReadRecording(pBuffer, iBufferSize);
 }
 
 long long SeekRecordedStream(long long iPosition, int iWhence /* = SEEK_SET */)
 {
   MutexLock lock(&XVDRMutexRec);
 
-  if (XVDRRecording)
-    return XVDRRecording->Seek(iPosition, iWhence);
+  if (XVDRData)
+    return XVDRData->SeekRecording(iPosition, iWhence);
 
   return -1;
 }
@@ -658,8 +653,8 @@ long long PositionRecordedStream(void)
 {
   MutexLock lock(&XVDRMutexRec);
 
-  if (XVDRRecording)
-    return XVDRRecording->Position();
+  if (XVDRData)
+    return XVDRData->RecordingPosition();
 
   return 0;
 }
@@ -668,8 +663,8 @@ long long LengthRecordedStream(void)
 {
   MutexLock lock(&XVDRMutexRec);
 
-  if (XVDRRecording)
-    return XVDRRecording->Length();
+  if (XVDRData)
+    return XVDRData->RecordingLength();
 
   return 0;
 }

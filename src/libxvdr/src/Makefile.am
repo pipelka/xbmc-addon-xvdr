@@ -21,7 +21,6 @@ SOURCEFILES = \
 	connection.cpp \
 	dataset.cpp \
 	demux.cpp \
-	recording.cpp \
 	responsepacket.cpp \
 	session.cpp \
 	thread.cpp

@@ -20,6 +20,7 @@
  *
  */
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "xvdr/connection.h"
@@ -35,6 +36,7 @@ extern "C" {
 using namespace XVDR;
 
 #define CMD_LOCK MutexLock CmdLock((Mutex*)&m_Mutex)
+#define SEEK_POSSIBLE 0x10 // flag used to check if protocol allows seeks
 
 Connection::Connection()
  : m_statusinterface(false)
@@ -1019,4 +1021,147 @@ bool Connection::GetChannelGroupMembers(const std::string& groupname, bool radio
 
   delete vresp;
   return true;
+}
+
+bool Connection::OpenRecording(const std::string& recid)
+{
+  RequestPacket vrp;
+  if (!vrp.init(XVDR_RECSTREAM_OPEN) ||
+      !vrp.add_String(recid.c_str()))
+  {
+    return false;
+  }
+
+  ResponsePacket* vresp = ReadResult(&vrp);
+  if (!vresp)
+    return false;
+
+  uint32_t returnCode = vresp->extract_U32();
+  if (returnCode == XVDR_RET_OK)
+  {
+    m_currentPlayingRecordFrames    = vresp->extract_U32();
+    m_currentPlayingRecordBytes     = vresp->extract_U64();
+    m_currentPlayingRecordPosition  = 0;
+    m_recid = recid;
+  }
+  else {
+    XVDRLog(XVDR_ERROR, "%s - Can't open recording", __FUNCTION__);
+    m_recid.clear();
+
+  }
+  delete vresp;
+  return (returnCode == XVDR_RET_OK);
+}
+
+bool Connection::CloseRecording()
+{
+  if(m_recid.empty())
+    return false;
+
+  RequestPacket vrp;
+  vrp.init(XVDR_RECSTREAM_CLOSE);
+  m_recid.clear();
+
+  return ReadSuccess(&vrp);
+}
+
+int Connection::ReadRecording(unsigned char* buf, uint32_t buf_size)
+{
+  if (ConnectionLost() && !TryReconnect())
+  {
+    *buf = 0;
+    SleepMs(100);
+    return 1;
+  }
+
+  if (m_currentPlayingRecordPosition >= m_currentPlayingRecordBytes)
+    return 0;
+
+  ResponsePacket* vresp = NULL;
+
+  RequestPacket vrp1;
+  if (vrp1.init(XVDR_RECSTREAM_UPDATE) && ((vresp = ReadResult(&vrp1)) != NULL))
+  {
+    uint32_t frames = vresp->extract_U32();
+    uint64_t bytes  = vresp->extract_U64();
+
+    if(frames != m_currentPlayingRecordFrames || bytes != m_currentPlayingRecordBytes)
+    {
+      m_currentPlayingRecordFrames = frames;
+      m_currentPlayingRecordBytes  = bytes;
+      XVDRLog(XVDR_DEBUG, "Size of recording changed: %lu bytes (%u frames)", bytes, frames);
+    }
+    delete vresp;
+  }
+
+  RequestPacket vrp2;
+  if (!vrp2.init(XVDR_RECSTREAM_GETBLOCK) ||
+      !vrp2.add_U64(m_currentPlayingRecordPosition) ||
+      !vrp2.add_U32(buf_size))
+  {
+    return 0;
+  }
+
+  vresp = ReadResult(&vrp2);
+  if (!vresp)
+    return -1;
+
+  uint32_t length = vresp->getUserDataLength();
+  uint8_t *data   = vresp->getUserData();
+  if (length > buf_size)
+  {
+    XVDRLog(XVDR_ERROR, "%s: PANIC - Received more bytes as requested", __FUNCTION__);
+    free(data);
+    delete vresp;
+    return 0;
+  }
+
+  memcpy(buf, data, length);
+  m_currentPlayingRecordPosition += length;
+  free(data);
+  delete vresp;
+  return length;
+}
+
+long long Connection::SeekRecording(long long pos, uint32_t whence)
+{
+  uint64_t nextPos = m_currentPlayingRecordPosition;
+
+  switch (whence)
+  {
+    case SEEK_SET:
+      nextPos = pos;
+      break;
+
+    case SEEK_CUR:
+      nextPos += pos;
+      break;
+
+    case SEEK_END:
+      nextPos = m_currentPlayingRecordBytes + pos;
+      break;
+
+    case SEEK_POSSIBLE:
+      return 1;
+
+    default:
+      return -1;
+  }
+
+  if (nextPos > m_currentPlayingRecordBytes)
+    return -1;
+
+  m_currentPlayingRecordPosition = nextPos;
+
+  return m_currentPlayingRecordPosition;
+}
+
+long long Connection::RecordingPosition(void)
+{
+  return m_currentPlayingRecordPosition;
+}
+
+long long Connection::RecordingLength(void)
+{
+  return m_currentPlayingRecordBytes;
 }

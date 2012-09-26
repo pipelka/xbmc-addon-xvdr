@@ -75,6 +75,16 @@ public:
 
   ResponsePacket*  ReadResult(RequestPacket* vrp);
 
+  // Recordings
+
+  bool OpenRecording(const std::string& recid);
+  bool CloseRecording();
+
+  int ReadRecording(unsigned char* buf, uint32_t buf_size);
+  long long SeekRecording(long long pos, uint32_t whence);
+  long long RecordingPosition(void);
+  long long RecordingLength(void);
+
 protected:
 
   virtual void Action(void);
@@ -99,14 +109,19 @@ private:
   };
   typedef std::map<int, SMessage> SMessages;
 
-  Mutex          m_Mutex;
-  SMessages       m_queue;
-  bool            m_aborting;
-  uint32_t        m_timercount;
-  uint8_t         m_updatechannels;
-  bool            m_ftachannels;
-  bool            m_nativelang;
+  Mutex m_Mutex;
+  SMessages m_queue;
+  bool m_aborting;
+  uint32_t m_timercount;
+  uint8_t m_updatechannels;
+  bool m_ftachannels;
+  bool m_nativelang;
   std::vector<int> m_caids;
+
+  std::string m_recid;
+  uint64_t m_currentPlayingRecordBytes;
+  uint32_t m_currentPlayingRecordFrames;
+  uint64_t m_currentPlayingRecordPosition;
 
 };
 
