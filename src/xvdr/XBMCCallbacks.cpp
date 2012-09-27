@@ -1,3 +1,24 @@
+/*
+ *      Copyright (C) 2012 Alexander Pipelka
+ *      http://www.xbmc.org
+ *
+ *  This Program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2, or (at your option)
+ *  any later version.
+ *
+ *  This Program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with XBMC; see the file COPYING.  If not, write to
+ *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+ *  http://www.gnu.org/copyleft/gpl.html
+ *
+ */
+
 #include "XBMCCallbacks.h"
 #include "XBMCAddon.h"
 
@@ -66,12 +87,7 @@ void cXBMCCallbacks::Notification(LEVEL level, const std::string& text, ...)
 
   va_list ap;
   va_start(ap, &text);
-
-  char msg[512];
-  vsnprintf(msg, sizeof(msg), text.c_str(), ap);
-  va_end(ap);
-
-  XBMC->QueueNotification(qm, msg);
+  XBMC->QueueNotification(qm, ap);
 }
 
 void cXBMCCallbacks::Recording(const std::string& line1, const std::string& line2, bool on)
@@ -114,7 +130,7 @@ void cXBMCCallbacks::TransferChannelEntry(const Channel& channel)
 {
   PVR_CHANNEL pvrchannel;
   pvrchannel << channel;
-  Log(DEBUG, "%s - UID: %i", __FUNCTION__, pvrchannel.iUniqueId);
+
   PVR->TransferChannelEntry(m_handle, &pvrchannel);
 }
 
@@ -168,13 +184,6 @@ Packet* cXBMCCallbacks::AllocatePacket(int s)
   return (Packet*)d;
 }
 
-/*uint8_t* cXBMCCallbacks::GetPacketPayload(Packet* packet) {
-  if (packet == NULL)
-    return NULL;
-
-  return static_cast<DemuxPacket*>(packet)->pData;
-}*/
-
 void cXBMCCallbacks::SetPacketData(Packet* packet, uint8_t* data, int streamid, uint64_t dts, uint64_t pts)
 {
   if (packet == NULL)
@@ -183,7 +192,7 @@ void cXBMCCallbacks::SetPacketData(Packet* packet, uint8_t* data, int streamid, 
   DemuxPacket* d = static_cast<DemuxPacket*>(packet);
 
   d->iStreamId = streamid;
-  d->duration  = 0; //(double)resp->getDuration() * DVD_TIME_BASE / 1000000;
+  d->duration  = 0;
   d->dts       = (double)dts * DVD_TIME_BASE / 1000000;
   d->pts       = (double)pts * DVD_TIME_BASE / 1000000;
 
@@ -197,31 +206,31 @@ void cXBMCCallbacks::FreePacket(Packet* packet)
 }
 
 Packet* cXBMCCallbacks::StreamChange(const StreamProperties& p) {
-	Packet* pkt = AllocatePacket(0);
-    if (pkt != NULL)
-      SetPacketData(pkt, NULL, DMX_SPECIALID_STREAMCHANGE, 0, 0);
+  Packet* pkt = AllocatePacket(0);
+  if (pkt != NULL)
+    SetPacketData(pkt, NULL, DMX_SPECIALID_STREAMCHANGE, 0, 0);
 
-    return pkt;
+  return pkt;
 }
 
 Packet* cXBMCCallbacks::ContentInfo(const StreamProperties& p) {
-	Packet* pkt = AllocatePacket(sizeof(PVR_STREAM_PROPERTIES));
+  Packet* pkt = AllocatePacket(sizeof(PVR_STREAM_PROPERTIES));
 
-    if (pkt != NULL) {
-    	PVR_STREAM_PROPERTIES props;
-    	props << p;
-    	SetPacketData(pkt, (uint8_t*)&props, DMX_SPECIALID_STREAMINFO, 0, 0);
-    }
+  if (pkt != NULL) {
+    PVR_STREAM_PROPERTIES props;
+    props << p;
+    SetPacketData(pkt, (uint8_t*)&props, DMX_SPECIALID_STREAMINFO, 0, 0);
+  }
 
-    return pkt;
+  return pkt;
 }
 
 void cXBMCCallbacks::Lock() {
-	m_mutex.Lock();
+  m_mutex.Lock();
 }
 
 void cXBMCCallbacks::Unlock() {
-	m_mutex.Unlock();
+  m_mutex.Unlock();
 }
 
 PVR_CHANNEL& operator<< (PVR_CHANNEL& lhs, const Channel& rhs)
@@ -256,12 +265,7 @@ EPG_TAG& operator<< (EPG_TAG& lhs, const Epg& rhs) {
 	lhs.strPlotOutline = rhs[epg_plotoutline].c_str();
 	lhs.strTitle = rhs[epg_title].c_str();
 
-	/*strncpy(lhs.strPlot, rhs[epg_plot].c_str(), sizeof(lhs.strPlot));
-	strncpy(lhs.strPlotOutline, rhs[epg_plotoutline].c_str(), sizeof(lhs.strPlotOutline));
-	strncpy(lhs.strTitle, rhs[epg_title].c_str(), sizeof(lhs.strTitle));*/
-
 	return lhs;
-
 }
 
 Timer& operator<< (Timer& lhs, const PVR_TIMER& rhs) {

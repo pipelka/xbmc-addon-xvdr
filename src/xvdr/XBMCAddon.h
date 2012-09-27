@@ -26,5 +26,5 @@
 #include "addons/library.xbmc.pvr/libXBMC_pvr.h"
 
 extern ADDON::CHelper_libXBMC_addon *XBMC;
-extern CHelper_libXBMC_gui   *GUI;
-extern CHelper_libXBMC_pvr   *PVR;
+extern CHelper_libXBMC_gui *GUI;
+extern CHelper_libXBMC_pvr *PVR;

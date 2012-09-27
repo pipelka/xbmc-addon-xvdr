@@ -189,7 +189,6 @@ bool Connection::GetDriveSpace(long long *total, long long *used)
 
   uint32_t totalspace    = vresp->extract_U32();
   uint32_t freespace     = vresp->extract_U32();
-  /* vresp->extract_U32(); percent not used */
 
   *total = totalspace;
   *used  = (totalspace - freespace);
@@ -381,7 +380,6 @@ bool Connection::GetEPGForChannel(uint32_t channeluid, time_t start, time_t end)
       uint32_t content        = vresp->extract_U32();
       tag[epg_genretype] = content & 0xF0;
       tag[epg_genresubtype] = content & 0x0F;
-      //tag[epg_genredescription] = "";
       tag[epg_parentalrating] = vresp->extract_U32();
       tag[epg_title] = vresp->extract_String();
       tag[epg_plotoutline] = vresp->extract_String();
@@ -427,10 +425,6 @@ void Connection::ReadTimerPacket(ResponsePacket* resp, Timer& tag) {
   int iPending          = resp->extract_U32();
 
   tag[timer_state] = iRecording;
-  /*else if (iPending || iActive)
-    tag.state = PVR_TIMER_STATE_SCHEDULED;
-  else
-    tag.state = PVR_TIMER_STATE_CANCELLED;*/
   tag[timer_priority] = resp->extract_U32();
   tag[timer_lifetime] = resp->extract_U32();
                           resp->extract_U32(); // channel number - unused
@@ -752,18 +746,6 @@ bool Connection::DeleteRecording(const std::string& recid)
 bool Connection::OnResponsePacket(ResponsePacket* pkt)
 {
   return false;
-}
-
-bool Connection::SendPing()
-{
-  m_client->Log(XVDR_DEBUG, "%s", __FUNCTION__);
-
-  RequestPacket vrp(XVDR_PING);
-
-  ResponsePacket* vresp = Session::ReadResult(&vrp);
-  delete vresp;
-
-  return (vresp != NULL);
 }
 
 void Connection::Action()

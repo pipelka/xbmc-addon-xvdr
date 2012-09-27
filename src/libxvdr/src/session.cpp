@@ -135,21 +135,7 @@ ResponsePacket* Session::ReadMessage()
     dts = ntohll(*(int64_t*)m_streamPacketHeader.dts);
     userDataLength = ntohl(m_streamPacketHeader.userDataLength);
 
-    /*if(opCodeID == XVDR_STREAM_MUXPKT) {
-      Packet* p = client->AllocatePacket(userDataLength);
-      userData = (uint8_t*)p;
-      uint8_t* payload = client->GetPacketPayload(p);
-      if (userDataLength > 0)
-      {
-        if (!userData) return NULL;
-        if (payload == NULL || !readData(payload, userDataLength))
-        {
-          client->FreePacket(p);
-          return NULL;
-        }
-      }
-    }
-    else*/ if (userDataLength > 0) {
+    if (userDataLength > 0) {
       userData = (uint8_t*)malloc(userDataLength);
       if (!userData) return NULL;
       if (!readData(userData, userDataLength))
@@ -240,7 +226,6 @@ bool Session::ReadSuccess(RequestPacket* vrp, uint32_t& rc)
 
   if(rc != XVDR_RET_OK)
   {
-    //XVDRLog(XVDR_ERROR, "%s - failed with error code '%i'", __FUNCTION__, rc);
     return false;
   }
 
@@ -285,4 +270,13 @@ void Session::SleepMs(int ms)
 
 bool Session::ConnectionLost() {
   return m_connectionLost;
+}
+
+bool Session::SendPing()
+{
+  RequestPacket vrp(XVDR_PING);
+  ResponsePacket* vresp = Session::ReadResult(&vrp);
+  delete vresp;
+
+  return (vresp != NULL);
 }

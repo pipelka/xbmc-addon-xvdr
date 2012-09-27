@@ -23,8 +23,8 @@
 #include <stdint.h>
 #include <limits.h>
 #include <string.h>
-#include "codecids.h" // For codec id's
 
+#include "avcodec.h"
 #include "xvdr/demux.h"
 #include "xvdr/callbacks.h"
 #include "xvdr/responsepacket.h"

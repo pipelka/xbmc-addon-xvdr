@@ -33,19 +33,26 @@ class Callbacks;
 class Session
 {
 public:
+
   Session();
+
   virtual ~Session();
 
-  virtual bool      Open(const std::string& hostname);
-  virtual void      Close();
-  virtual void      Abort();
+  virtual bool Open(const std::string& hostname);
 
-  ResponsePacket*  ReadMessage();
-  bool              SendMessage(RequestPacket* vrp);
+  virtual void Close();
 
-  ResponsePacket*  ReadResult(RequestPacket* vrp);
-  bool              ReadSuccess(RequestPacket* vrp, uint32_t& rc);
-  bool              ReadSuccess(RequestPacket* vrp);
+  virtual void Abort();
+
+  ResponsePacket* ReadMessage();
+
+  bool SendMessage(RequestPacket* vrp);
+
+  ResponsePacket* ReadResult(RequestPacket* vrp);
+
+  bool ReadSuccess(RequestPacket* vrp, uint32_t& rc);
+
+  bool ReadSuccess(RequestPacket* vrp);
 
   bool ConnectionLost();
 
@@ -54,23 +61,30 @@ public:
 protected:
 
   virtual bool TryReconnect();
+
   bool IsOpen();
 
   virtual void OnDisconnect();
+
   virtual void OnReconnect();
 
   virtual void SignalConnectionLost();
 
-  std::string     m_hostname;
-  int             m_port;
-  int             m_timeout;
-  bool        m_connectionLost;
+  bool SendPing();
+
+  std::string m_hostname;
+
+  int m_port;
+
+  int m_timeout;
+
+  bool m_connectionLost;
 
 private:
 
   bool readData(uint8_t* buffer, int totalBytes);
 
-  int         m_fd;
+  int m_fd;
 
   struct {
         uint32_t opCodeID;

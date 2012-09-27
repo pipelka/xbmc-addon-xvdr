@@ -133,12 +133,12 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
 ADDON_STATUS ADDON_GetStatus()
 {
   if(mConnection != NULL) {
-	  if(mConnection->ConnectionLost()) {
-		  return ADDON_STATUS_LOST_CONNECTION;
-	  }
-	  else {
-		  return ADDON_STATUS_OK;
-	  }
+    if(mConnection->ConnectionLost()) {
+      return ADDON_STATUS_LOST_CONNECTION;
+    }
+    else {
+      return ADDON_STATUS_OK;
+    }
   }
 
   return ADDON_STATUS_UNKNOWN;
@@ -482,8 +482,8 @@ bool OpenLiveStream(const PVR_CHANNEL &channel)
   mDemuxer->SetPriority(priotable[cXBMCSettings::GetInstance().Priority()]);
 
   if (mDemuxer->OpenChannel(cXBMCSettings::GetInstance().Hostname(), channel.iUniqueId)) {
-	  CurrentChannel = channel.iChannelNumber;
-	  rc = true;
+    CurrentChannel = channel.iChannelNumber;
+    rc = true;
   }
 
   mCallbacks->Unlock();
@@ -515,19 +515,14 @@ PVR_ERROR GetStreamProperties(PVR_STREAM_PROPERTIES* pProperties)
 
 void DemuxAbort(void)
 {
-  XBMC->Log(LOG_DEBUG, "DemuxAbort");
-  //if (mDemuxer)
-  //  mDemuxer->Abort();
 }
 
 void DemuxReset(void)
 {
-  XBMC->Log(LOG_DEBUG, "DemuxReset");
 }
 
 void DemuxFlush(void)
 {
-  XBMC->Log(LOG_DEBUG, "DemuxFlush");
 }
 
 DemuxPacket* DemuxRead(void)
@@ -559,8 +554,8 @@ bool SwitchChannel(const PVR_CHANNEL &channel)
   mDemuxer->SetPriority(priotable[cXBMCSettings::GetInstance().Priority()]);
 
   if(mDemuxer->SwitchChannel(channel.iUniqueId)) {
-	  CurrentChannel = channel.iChannelNumber;
-	  rc = true;
+    CurrentChannel = channel.iChannelNumber;
+    rc = true;
   }
 
   mCallbacks->Unlock();

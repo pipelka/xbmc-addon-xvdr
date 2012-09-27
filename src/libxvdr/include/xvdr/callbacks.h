@@ -10,7 +10,6 @@
 #define XVDR_ERROR   XVDR::Callbacks::ERROR
 #define XVDR_DEBUG   XVDR::Callbacks::DEBUG
 
-
 namespace XVDR {
 
 typedef void Packet;
@@ -78,9 +77,9 @@ public:
 
   virtual void FreePacket(Packet* p) = 0;
 
-  virtual Packet* StreamChange(const StreamProperties& p) = 0;
+  virtual Packet* StreamChange(const StreamProperties& p);
 
-  virtual Packet* ContentInfo(const StreamProperties& p) = 0;
+  virtual Packet* ContentInfo(const StreamProperties& p);
 
 };
 

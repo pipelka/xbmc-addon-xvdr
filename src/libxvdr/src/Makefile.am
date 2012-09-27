@@ -12,7 +12,7 @@ EXTRA_DIST = \
 	libPlatform
 
 SOURCEFILES = \
-	codecids.h \
+	avcodec.h \
 	iso639.cpp \
 	iso639.h \
 	requestpacket.cpp \
