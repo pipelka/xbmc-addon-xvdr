@@ -34,21 +34,30 @@ namespace XVDR {
 
 class ResponsePacket;
 class RequestPacket;
+class Callbacks;
 
 class Connection : public Session, public Thread
 {
 public:
 
-  Connection();
+  Connection(Callbacks* client);
   virtual ~Connection();
 
-  bool        Open(const std::string& hostname, const char* name = NULL);
+  bool        Open(const std::string& hostname, const std::string& name = "");
   bool        Login();
   void        Abort();
 
-  bool        EnableStatusInterface(bool onOff, bool direct = false);
-  bool        SetUpdateChannels(uint8_t method, bool direct = false);
-  bool        ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& caids, bool direct = false);
+  void SetTimeout(int ms);
+  void SetCompressionLevel(int level);
+  void SetAudioType(int type);
+
+  int                GetProtocol()   { return m_protocol; }
+  const std::string& GetServerName() { return m_server; }
+  const std::string& GetVersion()    { return m_version; }
+
+  bool        EnableStatusInterface(bool onOff);
+  bool        SetUpdateChannels(uint8_t method);
+  bool        ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& caids);
 
   bool        SupportChannelScan();
   bool        GetDriveSpace(long long *total, long long *used);
@@ -89,6 +98,7 @@ protected:
 
   virtual void Action(void);
   virtual bool OnResponsePacket(ResponsePacket *pkt);
+  virtual bool TryReconnect();
 
   void SignalConnectionLost();
   void OnDisconnect();
@@ -97,6 +107,7 @@ protected:
   void ReadTimerPacket(ResponsePacket* resp, Timer& tag);
 
   bool m_statusinterface;
+  Callbacks* m_client;
 
 private:
 
@@ -109,7 +120,7 @@ private:
   };
   typedef std::map<int, SMessage> SMessages;
 
-  Mutex m_Mutex;
+  Mutex m_mutex;
   SMessages m_queue;
   bool m_aborting;
   uint32_t m_timercount;
@@ -123,6 +134,13 @@ private:
   uint32_t m_currentPlayingRecordFrames;
   uint64_t m_currentPlayingRecordPosition;
 
+  std::string m_server;
+  std::string m_version;
+  std::string m_name;
+
+  int m_compressionlevel;
+  int m_audiotype;
+  int m_protocol;
 };
 
 } // namespace XVDR

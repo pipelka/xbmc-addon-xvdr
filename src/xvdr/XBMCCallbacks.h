@@ -46,7 +46,7 @@ public:
 
   XVDR::Packet* AllocatePacket(int length);
 
-  uint8_t* GetPacketPayload(XVDR::Packet* packet);
+  //uint8_t* GetPacketPayload(XVDR::Packet* packet);
 
   void SetPacketData(XVDR::Packet* packet, uint8_t* data = NULL, int streamid = 0, uint64_t dts = 0, uint64_t pts = 0);
 
@@ -56,9 +56,15 @@ public:
 
   XVDR::Packet* ContentInfo(const XVDR::StreamProperties& p);
 
+  void Lock();
+
+  void Unlock();
+
 private:
 
   ADDON_HANDLE m_handle;
+
+  XVDR::Mutex m_mutex;
 };
 
 PVR_CHANNEL& operator<< (PVR_CHANNEL& lhs, const XVDR::Channel& rhs);

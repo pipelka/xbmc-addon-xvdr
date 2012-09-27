@@ -25,8 +25,8 @@ public:
 		return m_value;
 	}
 
-	operator int() const {
-		return value<int>();
+	operator int64_t() const {
+		return value<int64_t>();
 	}
 
 	template<class T>

@@ -43,7 +43,7 @@ class cXBMCChannelScan : public XVDR::Connection
 {
 public:
 
-  cXBMCChannelScan();
+  cXBMCChannelScan(XVDR::Callbacks* client);
   ~cXBMCChannelScan();
 
   bool Open(const std::string& hostname, const char* name = "XBMC channel scanner");

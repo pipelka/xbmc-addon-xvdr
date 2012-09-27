@@ -271,7 +271,7 @@ tcp_send_timeout(socket_t fdSock, void *buf, size_t nLen, int nTimeout)
     if (x == 0)
       return ETIMEDOUT;
 
-    x = send(fdSock, buf + tot, nLen - tot, MSG_DONTWAIT);
+    x = send(fdSock, buf + tot, nLen - tot, MSG_DONTWAIT | MSG_NOSIGNAL);
     if (x == -1)
     {
       if (errno == EAGAIN)

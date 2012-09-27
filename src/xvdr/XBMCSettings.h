@@ -21,7 +21,6 @@
  */
 
 #include "XBMCAddon.h"
-#include "xvdr/callbacks.h"
 #include <list>
 #include <vector>
 #include <string>
@@ -75,7 +74,6 @@ public:
     if (XBMC->GetSetting(m_setting.c_str(), &m_value))
       return true;
 
-    XVDRLog(XVDR_ERROR, "Couldn't get '%s' setting, falling back to default", m_setting.c_str());
     m_value = m_default;
 
     return true;
@@ -91,7 +89,6 @@ public:
     if(m_value == value)
       return false;
 
-    XVDRLog(XVDR_INFO, "Changed Setting '%s'", m_setting.c_str());
     m_value = value;
     return true;
   }

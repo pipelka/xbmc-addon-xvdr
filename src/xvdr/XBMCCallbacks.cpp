@@ -168,12 +168,12 @@ Packet* cXBMCCallbacks::AllocatePacket(int s)
   return (Packet*)d;
 }
 
-uint8_t* cXBMCCallbacks::GetPacketPayload(Packet* packet) {
+/*uint8_t* cXBMCCallbacks::GetPacketPayload(Packet* packet) {
   if (packet == NULL)
     return NULL;
 
   return static_cast<DemuxPacket*>(packet)->pData;
-}
+}*/
 
 void cXBMCCallbacks::SetPacketData(Packet* packet, uint8_t* data, int streamid, uint64_t dts, uint64_t pts)
 {
@@ -197,23 +197,31 @@ void cXBMCCallbacks::FreePacket(Packet* packet)
 }
 
 Packet* cXBMCCallbacks::StreamChange(const StreamProperties& p) {
-	Packet* pkt = XVDRAllocatePacket(0);
+	Packet* pkt = AllocatePacket(0);
     if (pkt != NULL)
-      XVDRSetPacketData(pkt, NULL, DMX_SPECIALID_STREAMCHANGE, 0, 0);
+      SetPacketData(pkt, NULL, DMX_SPECIALID_STREAMCHANGE, 0, 0);
 
     return pkt;
 }
 
 Packet* cXBMCCallbacks::ContentInfo(const StreamProperties& p) {
-	Packet* pkt = XVDRAllocatePacket(sizeof(PVR_STREAM_PROPERTIES));
+	Packet* pkt = AllocatePacket(sizeof(PVR_STREAM_PROPERTIES));
 
     if (pkt != NULL) {
     	PVR_STREAM_PROPERTIES props;
     	props << p;
-    	XVDRSetPacketData(pkt, (uint8_t*)&props, DMX_SPECIALID_STREAMINFO, 0, 0);
+    	SetPacketData(pkt, (uint8_t*)&props, DMX_SPECIALID_STREAMINFO, 0, 0);
     }
 
     return pkt;
+}
+
+void cXBMCCallbacks::Lock() {
+	m_mutex.Lock();
+}
+
+void cXBMCCallbacks::Unlock() {
+	m_mutex.Unlock();
 }
 
 PVR_CHANNEL& operator<< (PVR_CHANNEL& lhs, const Channel& rhs)

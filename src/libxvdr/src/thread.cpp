@@ -216,8 +216,7 @@ Thread::~Thread()
 void Thread::SetPriority(int Priority)
 {
 #if !defined(__WINDOWS__)
-  if (setpriority(PRIO_PROCESS, 0, Priority) < 0)
-     XVDRLog(XVDR_ERROR, "ERROR (%s,%d): %m", __FILE__, __LINE__);
+  setpriority(PRIO_PROCESS, 0, Priority);
 #endif
 }
 
@@ -225,8 +224,7 @@ void Thread::SetIOPriority(int Priority)
 {
 #if !defined(__WINDOWS__)
 #ifdef HAVE_LINUXIOPRIO
-  if (syscall(SYS_ioprio_set, 1, 0, (Priority & 0xff) | (2 << 13)) < 0) // best effort class
-     XVDRLog(XVDR_ERROR, "ERROR (%s,%d): %m", __FILE__, __LINE__);
+  syscall(SYS_ioprio_set, 1, 0, (Priority & 0xff) | (2 << 13));
 #endif
 #endif
 }
@@ -258,15 +256,11 @@ void *Thread::StartThread(Thread *Thread)
 {
   Thread->childThreadId = ThreadId();
   if (Thread->description) {
-     XVDRLog(XVDR_DEBUG, "%s thread started (pid=%d, tid=%d)", Thread->description, getpid(), Thread->childThreadId);
 #ifdef PR_SET_NAME
-     if (prctl(PR_SET_NAME, Thread->description, 0, 0, 0) < 0)
-        XVDRLog(XVDR_ERROR, "%s thread naming failed (pid=%d, tid=%d)", Thread->description, getpid(), Thread->childThreadId);
+  prctl(PR_SET_NAME, Thread->description, 0, 0, 0);
 #endif
      }
   Thread->Action();
-  if (Thread->description)
-     XVDRLog(XVDR_DEBUG, "%s thread ended (pid=%d, tid=%d)", Thread->description, getpid(), Thread->childThreadId);
   Thread->running = false;
   Thread->active = false;
   return NULL;
@@ -291,7 +285,6 @@ bool Thread::Start(void)
            pthread_detach(childTid); // auto-reap
            }
         else {
-           XVDRLog(XVDR_ERROR, "ERROR (%s,%d): %m", __FILE__, __LINE__);
            active = running = false;
            return false;
            }
@@ -314,8 +307,6 @@ bool Thread::Active(void)
      //
      int err;
      if ((err = pthread_kill(childTid, 0)) != 0) {
-        if (err != ESRCH)
-           XVDRLog(XVDR_ERROR, "ERROR (%s,%d): %m", __FILE__, __LINE__);
 #if !defined(__WINDOWS__)
         childTid = 0;
 #endif
@@ -340,7 +331,6 @@ void Thread::Cancel(int WaitSeconds)
           return;
         CondWait::SleepMs(10);
       }
-      XVDRLog(XVDR_ERROR, "ERROR: %s thread %d won't end (waited %d seconds) - canceling it...", description ? description : "", childThreadId, WaitSeconds);
     }
     pthread_cancel(childTid);
 #if !defined(__WINDOWS__)
@@ -367,8 +357,6 @@ void Thread::SetMainThreadId(void)
 {
   if (mainThreadId == 0)
      mainThreadId = ThreadId();
-  else
-     XVDRLog(XVDR_ERROR, "ERROR: attempt to set main thread id to %d while it already is %d", ThreadId(), mainThreadId);
 }
 
 // --- MutexLock ------------------------------------------------------------

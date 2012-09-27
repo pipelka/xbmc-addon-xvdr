@@ -22,34 +22,39 @@
  */
 
 #include "xvdr/callbacks.h"
-#include "xvdr/session.h"
-#include <string>
-
+#include "xvdr/connection.h"
 #include "xvdr/dataset.h"
+#include <string>
+#include <queue>
 
 namespace XVDR {
 
 class ResponsePacket;
 
-class Demux : public Session
+class Demux : public Connection
 {
 public:
 
-  Demux();
+  Demux(Callbacks* client);
   ~Demux();
 
   bool OpenChannel(const std::string& hostname, uint32_t channeluid);
+  void CloseChannel();
+
   void Abort();
-  const StreamProperties& GetStreamProperties();
+
   Packet* Read();
+
   bool SwitchChannel(uint32_t channeluid);
-  //int CurrentChannel() { return m_channelinfo.iChannelNumber; }
-  const SignalStatus& GetSignalStatus();
   void SetPriority(int priority);
+
+  StreamProperties GetStreamProperties();
+  SignalStatus GetSignalStatus();
 
 protected:
 
   void OnReconnect();
+  bool OnResponsePacket(ResponsePacket *resp);
 
   void StreamChange(ResponsePacket *resp);
   void StreamStatus(ResponsePacket *resp);
@@ -58,10 +63,16 @@ protected:
 
 private:
 
+  void CleanupPacketQueue();
+
   StreamProperties m_streams;
-  SignalStatus     m_signal;
-  int                   m_priority;
-  uint32_t				m_channeluid;
+  SignalStatus m_signal;
+  int m_priority;
+  uint32_t m_channeluid;
+  std::queue<Packet*> m_queue;
+  Mutex m_lock;
+  CondWait m_cond;
+  bool m_queuelocked;
 };
 
 } // namespace XVDR

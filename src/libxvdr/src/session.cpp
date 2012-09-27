@@ -23,7 +23,9 @@
 #include "xvdr/callbacks.h"
 #include "xvdr/session.h"
 #include "xvdr/responsepacket.h"
+#include "xvdr/requestpacket.h"
 #include "xvdr/thread.h"
+#include "xvdr/command.h"
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -31,10 +33,6 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
-#include "xvdr/requestpacket.h"
-#include "xvdr/command.h"
-#include "iso639.h"
 
 extern "C" {
 #include "libTcpSocket/os-dependent_socket.h"
@@ -51,10 +49,7 @@ using namespace XVDR;
 Session::Session()
   : m_timeout(3000)
   , m_fd(INVALID_SOCKET)
-  , m_protocol(0)
   , m_connectionLost(false)
-  , m_compressionlevel(0)
-  , m_audiotype(0)
 {
   m_port = 34891;
 }
@@ -80,7 +75,7 @@ void Session::Close()
   m_fd = INVALID_SOCKET;
 }
 
-bool Session::Open(const std::string& hostname, const char *name)
+bool Session::Open(const std::string& hostname)
 {
   Close();
 
@@ -90,16 +85,10 @@ bool Session::Open(const std::string& hostname, const char *name)
   m_fd = tcp_connect(hostname.c_str(), m_port, errbuf, sizeof(errbuf), m_timeout);
 
   if (m_fd == INVALID_SOCKET)
-  {
-    XVDRLog(XVDR_ERROR, "%s - Can't connect to XVDR Server: %s", __FUNCTION__, errbuf);
     return false;
-  }
 
   // store connection data
   m_hostname = hostname;
-
-  if(name != NULL)
-    m_name = name;
 
   return true;
 }
@@ -107,56 +96,6 @@ bool Session::Open(const std::string& hostname, const char *name)
 bool Session::IsOpen()
 {
   return m_fd != INVALID_SOCKET;
-}
-
-bool Session::Login()
-{
-  RequestPacket vrp;
-
-  if (!vrp.init(XVDR_LOGIN))
-    return false;
-  if (!vrp.add_U32(XVDRPROTOCOLVERSION))
-    return false;
-#ifdef HAVE_ZLIB
-  if (!vrp.add_U8(m_compressionlevel))
-    return false;
-#else
-  if (!vrp.add_U8(0))
-    return false;
-#endif
-  if (!vrp.add_String(m_name.empty() ? "XBMC Media Center" : m_name.c_str()))
-    return false;
-
-  std::string code = XVDRGetLanguageCode();
-  const char* lang = ISO639_FindLanguage(code);
-
-  if (!vrp.add_String((lang != NULL) ? lang : ""))
-    return false;
-  if (!vrp.add_U8(m_audiotype))
-    return false;
-
-  // read welcome
-  ResponsePacket* vresp = ReadResult(&vrp);
-  if (!vresp)
-  {
-    XVDRLog(XVDR_ERROR, "failed to read greeting from server");
-    return false;
-  }
-
-  m_protocol                = vresp->extract_U32();
-  uint32_t    vdrTime       = vresp->extract_U32();
-  int32_t     vdrTimeOffset = vresp->extract_S32();
-  m_server                  = vresp->extract_String();
-  m_version                 = vresp->extract_String();
-
-  if (m_name.empty())
-    XVDRLog(XVDR_INFO, "Logged in at '%u+%i' to '%s' Version: '%s' with protocol version '%u'", vdrTime, vdrTimeOffset, m_server.c_str(), m_version.c_str(), m_protocol);
-
-  XVDRLog(XVDR_INFO, "Preferred Audio Language: %s", lang);
-
-  delete vresp;
-
-  return true;
 }
 
 ResponsePacket* Session::ReadMessage()
@@ -196,21 +135,21 @@ ResponsePacket* Session::ReadMessage()
     dts = ntohll(*(int64_t*)m_streamPacketHeader.dts);
     userDataLength = ntohl(m_streamPacketHeader.userDataLength);
 
-    if(opCodeID == XVDR_STREAM_MUXPKT) {
-      Packet* p = XVDRAllocatePacket(userDataLength);
+    /*if(opCodeID == XVDR_STREAM_MUXPKT) {
+      Packet* p = client->AllocatePacket(userDataLength);
       userData = (uint8_t*)p;
-      uint8_t* payload = XVDRGetPacketPayload(p);
+      uint8_t* payload = client->GetPacketPayload(p);
       if (userDataLength > 0)
       {
         if (!userData) return NULL;
         if (payload == NULL || !readData(payload, userDataLength))
         {
-          XVDRFreePacket(p);
+          client->FreePacket(p);
           return NULL;
         }
       }
     }
-    else if (userDataLength > 0) {
+    else*/ if (userDataLength > 0) {
       userData = (uint8_t*)malloc(userDataLength);
       if (!userData) return NULL;
       if (!readData(userData, userDataLength))
@@ -301,7 +240,7 @@ bool Session::ReadSuccess(RequestPacket* vrp, uint32_t& rc)
 
   if(rc != XVDR_RET_OK)
   {
-    XVDRLog(XVDR_ERROR, "%s - failed with error code '%i'", __FUNCTION__, rc);
+    //XVDRLog(XVDR_ERROR, "%s - failed with error code '%i'", __FUNCTION__, rc);
     return false;
   }
 
@@ -314,27 +253,10 @@ void Session::OnReconnect() {
 void Session::OnDisconnect() {
 }
 
-bool Session::TryReconnect() {
-  if(!Open(m_hostname))
-    return false;
-
-  if(!Login())
-    return false;
-
-  XVDRLog(XVDR_DEBUG, "%s - reconnected", __FUNCTION__);
-  m_connectionLost = false;
-
-  OnReconnect();
-
-  return true;
-}
-
 void Session::SignalConnectionLost()
 {
   if(m_connectionLost)
     return;
-
-  XVDRLog(XVDR_ERROR, "%s - connection lost !!!", __FUNCTION__);
 
   m_connectionLost = true;
   Abort();
@@ -348,22 +270,8 @@ bool Session::readData(uint8_t* buffer, int totalBytes)
   return (tcp_read_timeout(m_fd, buffer, totalBytes, m_timeout) == 0);
 }
 
-void Session::SetTimeout(int ms)
-{
-  m_timeout = ms;
-}
-
-void Session::SetCompressionLevel(int level)
-{
-  if (level < 0 || level > 9)
-    return;
-
-  m_compressionlevel = level;
-}
-
-void Session::SetAudioType(int type)
-{
-  m_audiotype = type;
+bool Session::TryReconnect() {
+	return false;
 }
 
 void Session::SleepMs(int ms)

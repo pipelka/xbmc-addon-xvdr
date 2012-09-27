@@ -166,8 +166,6 @@ uint8_t* ResponsePacket::getUserData()
 bool ResponsePacket::uncompress()
 {
 #ifdef HAVE_ZLIB
-  XVDRLog(XVDR_DEBUG, "Uncompressing packet (%i bytes) ...", userDataLength - 4);
-
   uLongf original_size = ntohl(*(uint32_t*)&userData[0]);
   uint8_t* buffer = (uint8_t*)malloc(original_size);
 
@@ -179,11 +177,8 @@ bool ResponsePacket::uncompress()
     free(userData);
     userData        = buffer;
     userDataLength  = original_size;
-    XVDRLog(XVDR_DEBUG, "Done. (Now %i bytes)", original_size);
     return true;
   }
-  else
-    XVDRLog(XVDR_DEBUG, "Failed!");
 
   free(buffer);
 #endif

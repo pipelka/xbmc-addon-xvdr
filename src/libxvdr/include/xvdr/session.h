@@ -28,6 +28,7 @@ namespace XVDR {
 
 class ResponsePacket;
 class RequestPacket;
+class Callbacks;
 
 class Session
 {
@@ -35,8 +36,7 @@ public:
   Session();
   virtual ~Session();
 
-  virtual bool      Open(const std::string& hostname, const char *name = NULL);
-  virtual bool      Login();
+  virtual bool      Open(const std::string& hostname);
   virtual void      Close();
   virtual void      Abort();
 
@@ -47,21 +47,13 @@ public:
   bool              ReadSuccess(RequestPacket* vrp, uint32_t& rc);
   bool              ReadSuccess(RequestPacket* vrp);
 
-  int                GetProtocol()   { return m_protocol; }
-  const std::string& GetServerName() { return m_server; }
-  const std::string& GetVersion()    { return m_version; }
-
-  void SetTimeout(int ms);
-  void SetCompressionLevel(int level);
-  void SetAudioType(int type);
-
   bool ConnectionLost();
 
   static void SleepMs(int ms);
 
 protected:
 
-  bool TryReconnect();
+  virtual bool TryReconnect();
   bool IsOpen();
 
   virtual void OnDisconnect();
@@ -71,20 +63,14 @@ protected:
 
   std::string     m_hostname;
   int             m_port;
-  std::string     m_name;
   int             m_timeout;
+  bool        m_connectionLost;
 
 private:
 
   bool readData(uint8_t* buffer, int totalBytes);
 
   int         m_fd;
-  int         m_protocol;
-  std::string m_server;
-  std::string m_version;
-  bool        m_connectionLost;
-  int         m_compressionlevel;
-  int         m_audiotype;
 
   struct {
         uint32_t opCodeID;

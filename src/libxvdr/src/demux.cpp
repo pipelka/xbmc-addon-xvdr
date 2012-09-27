@@ -33,7 +33,7 @@
 
 using namespace XVDR;
 
-Demux::Demux() : m_priority(50)
+Demux::Demux(Callbacks* client) : Connection(client), m_priority(50), m_queuelocked(false)
 {
 }
 
@@ -43,44 +43,95 @@ Demux::~Demux()
 
 bool Demux::OpenChannel(const std::string& hostname, uint32_t channeluid)
 {
-  if(!Session::Open(hostname))
+  if(!Open(hostname))
     return false;
 
-  if(!Session::Login())
+  if(!Login())
     return false;
 
   return SwitchChannel(channeluid);
 }
 
-const StreamProperties& Demux::GetStreamProperties()
+void Demux::CloseChannel() {
+}
+
+StreamProperties Demux::GetStreamProperties()
 {
+  MutexLock lock(&m_lock);
   return m_streams;
+}
+
+void Demux::CleanupPacketQueue()
+{
+  MutexLock lock(&m_lock);
+  Packet* p = NULL;
+
+  while(!m_queue.empty())
+  {
+    p = m_queue.front();
+    m_queue.pop();
+    m_client->FreePacket(p);
+  }
 }
 
 void Demux::Abort()
 {
   m_streams.clear();
-  Session::Abort();
+  Connection::Abort();
+  CleanupPacketQueue();
+  m_cond.Signal();
 }
 
 Packet* Demux::Read()
 {
   if(ConnectionLost())
   {
-    SleepMs(100);
-    return XVDRAllocatePacket(0);
+	SleepMs(100);
+	return m_client->AllocatePacket(0);
   }
 
-  ResponsePacket *resp = ReadMessage();
+  Packet* p = NULL;
+  m_lock.Lock();
 
-  if(resp == NULL)
-    return XVDRAllocatePacket(0);
+  if(m_queuelocked) {
+      m_lock.Unlock();
+      return m_client->AllocatePacket(0);
+  }
+
+  bool bEmpty = m_queue.empty();
+
+  // empty queue -> wait for packet
+  if (bEmpty) {
+         m_lock.Unlock();
+         m_cond.Wait(100);
+         m_lock.Lock();
+         bEmpty = m_queue.empty();
+  }
+
+  if (!bEmpty)
+  {
+    p = m_queue.front();
+    m_queue.pop();
+  }
+
+  m_lock.Unlock();
+
+  if(p == NULL) {
+    p = m_client->AllocatePacket(0);
+  }
+
+  return p;
+}
+
+bool Demux::OnResponsePacket(ResponsePacket *resp) {
+  {
+    MutexLock lock(&m_lock);
+    if(m_queuelocked)
+    	return false;
+  }
 
   if (resp->getChannelID() != XVDR_CHANNEL_STREAM)
-  {
-    delete resp;
-    return XVDRAllocatePacket(0);
-  }
+	return false;
 
   Packet* pkt = NULL;
   int iStreamId = -1;
@@ -89,9 +140,8 @@ Packet* Demux::Read()
   {
     case XVDR_STREAM_CHANGE:
       StreamChange(resp);
-      pkt = XVDRStreamChange(m_streams);
-      delete resp;
-      return pkt;
+      pkt = m_client->StreamChange(m_streams);
+      break;
 
     case XVDR_STREAM_STATUS:
       StreamStatus(resp);
@@ -106,9 +156,7 @@ Packet* Demux::Read()
       if(!StreamContentInfo(resp))
         break;
 
-      pkt = XVDRContentInfo(m_streams);
-      delete resp;
-      return pkt;
+      pkt = m_client->ContentInfo(m_streams);
       break;
 
     case XVDR_STREAM_MUXPKT:
@@ -117,35 +165,71 @@ Packet* Demux::Read()
       Stream& stream = m_streams[id];
 
       if(stream[stream_physicalid] != id) {
-          delete resp;
-          XVDRLog(XVDR_DEBUG, "stream id %i not found", id);
+          m_client->Log(XVDR_DEBUG, "stream id %i not found", id);
     	  break;
       }
 
       int index = stream[stream_index];
-      pkt = (Packet*)resp->getUserData();
-      if (pkt != NULL)
-        XVDRSetPacketData(pkt, NULL, index, resp->getDTS(), resp->getPTS());
+      pkt = m_client->AllocatePacket(resp->getUserDataLength());
+   	  m_client->SetPacketData(pkt, resp->getUserData(), index, resp->getDTS(), resp->getPTS());
 
-      delete resp;
-      return pkt;
+      break;
+  }
+
+  if(pkt != NULL) {
+	  {
+	    MutexLock lock(&m_lock);
+
+	    // limit queue size
+	    if(m_queue.size() > 50)
+	    {
+	      m_client->FreePacket(pkt);
+	      return false;
+	    }
+
+        m_queue.push(pkt);
+	  }
+	  m_cond.Signal();
   }
 
   delete resp;
-  return XVDRAllocatePacket(0);
+  return true;
 }
 
 bool Demux::SwitchChannel(uint32_t channeluid)
 {
-  XVDRLog(XVDR_DEBUG, "changing to channel %d (priority %i)", channeluid, m_priority);
+  m_client->Log(XVDR_DEBUG, "changing to channel %d (priority %i)", channeluid, m_priority);
+
+  {
+    MutexLock lock(&m_lock);
+    m_queuelocked = true;
+  }
+
+  CleanupPacketQueue();
+  m_cond.Signal();
 
   RequestPacket vrp;
-  uint32_t rc = 0;
+  vrp.init(XVDR_CHANNELSTREAM_OPEN);
+  vrp.add_U32(channeluid);
+  vrp.add_S32(m_priority);
 
-  if (vrp.init(XVDR_CHANNELSTREAM_OPEN) && vrp.add_U32(channeluid) && vrp.add_S32(m_priority) && ReadSuccess(&vrp, rc))
+  ResponsePacket* vresp = ReadResult(&vrp);
+  uint32_t rc = XVDR_RET_ERROR;
+
+  if(vresp != NULL)
+	  rc = vresp->extract_U32();
+
+  delete vresp;
+
+  if(rc == XVDR_RET_OK)
   {
     m_channeluid = channeluid;
-    m_streams.clear();
+
+    {
+      MutexLock lock(&m_lock);
+      m_queuelocked = false;
+      m_streams.clear();
+    }
 
     return true;
   }
@@ -154,40 +238,44 @@ bool Demux::SwitchChannel(uint32_t channeluid)
   {
     // active recording
     case XVDR_RET_RECRUNNING:
-     XVDRNotification(XVDR_INFO, XVDRGetLocalizedString(30062));
+      m_client->Notification(XVDR_INFO, m_client->GetLocalizedString(30062));
       break;
     // all receivers busy
     case XVDR_RET_DATALOCKED:
-      XVDRNotification(XVDR_INFO, XVDRGetLocalizedString(30063));
+      m_client->Notification(XVDR_INFO, m_client->GetLocalizedString(30063));
       break;
     // encrypted channel
     case XVDR_RET_ENCRYPTED:
-      XVDRNotification(XVDR_INFO, XVDRGetLocalizedString(30066));
+      m_client->Notification(XVDR_INFO, m_client->GetLocalizedString(30066));
       break;
     // error on switching channel
     default:
     case XVDR_RET_ERROR:
-      XVDRNotification(XVDR_INFO, XVDRGetLocalizedString(30064));
+      m_client->Notification(XVDR_INFO, m_client->GetLocalizedString(30064));
       break;
     // invalid channel
     case XVDR_RET_DATAINVALID:
-      XVDRNotification(XVDR_ERROR, XVDRGetLocalizedString(30065), "");
+      m_client->Notification(XVDR_ERROR, m_client->GetLocalizedString(30065), "");
       break;
   }
 
-  XVDRLog(XVDR_ERROR, "%s - failed to set channel", __FUNCTION__);
+  m_cond.Signal();
+
+  m_client->Log(XVDR_ERROR, "%s - failed to set channel", __FUNCTION__);
   return true;
 }
 
-const SignalStatus& Demux::GetSignalStatus()
+SignalStatus Demux::GetSignalStatus()
 {
+  MutexLock lock(&m_lock);
   return m_signal;
 }
 
 void Demux::StreamChange(ResponsePacket *resp)
 {
-  // TODO - locking
+  MutexLock lock(&m_lock);
   m_streams.clear();
+
   int index = 0;
 
   while (!resp->end())
@@ -276,7 +364,7 @@ void Demux::StreamChange(ResponsePacket *resp)
 
     if (index > 16)
     {
-      XVDRLog(XVDR_ERROR, "%s - max amount of streams reached", __FUNCTION__);
+      m_client->Log(XVDR_ERROR, "%s - max amount of streams reached", __FUNCTION__);
       break;
     }
 
@@ -290,10 +378,10 @@ void Demux::StreamStatus(ResponsePacket *resp)
 
   switch(status) {
     case XVDR_STREAM_STATUS_SIGNALLOST:
-      XVDRNotification(XVDR_ERROR, XVDRGetLocalizedString(30047));
+      m_client->Notification(XVDR_ERROR, m_client->GetLocalizedString(30047));
       break;
     case XVDR_STREAM_STATUS_SIGNALRESTORED:
-      XVDRNotification(XVDR_INFO, XVDRGetLocalizedString(30048));
+      m_client->Notification(XVDR_INFO, m_client->GetLocalizedString(30048));
       SwitchChannel(m_channeluid);
       break;
     default:
@@ -306,6 +394,7 @@ void Demux::StreamSignalInfo(ResponsePacket *resp)
   const char* name = resp->extract_String();
   const char* status = resp->extract_String();
 
+  MutexLock lock(&m_lock);
   m_signal[signal_adaptername] = name;
   m_signal[signal_adapterstatus] = status;
   m_signal[signal_snr] = resp->extract_U32();
@@ -316,6 +405,7 @@ void Demux::StreamSignalInfo(ResponsePacket *resp)
 
 bool Demux::StreamContentInfo(ResponsePacket *resp)
 {
+  MutexLock lock(&m_lock);
   StreamProperties old = m_streams;
 
   for (unsigned int i = 0; i < m_streams.size() && !resp->end(); i++)

@@ -1,32 +1,8 @@
 #pragma once
 
 #include <stdint.h>
-#include <time.h>
 #include <string>
 #include "xvdr/dataset.h"
-
-#define XVDRLog(x...)                     XVDR::Callbacks::Get()->Log(x)
-#define XVDRNotification(x...)            XVDR::Callbacks::Get()->Notification(x)
-#define XVDRConvertToUTF8(t)              XVDR::Callbacks::Get()->ConvertToUTF8(t)
-#define XVDRGetLocalizedString(id)        XVDR::Callbacks::Get()->GetLocalizedString(id)
-#define XVDRAllocatePacket(s)             XVDR::Callbacks::Get()->AllocatePacket(s)
-#define XVDRSetPacketData(p, d, id, dts, pts) XVDR::Callbacks::Get()->SetPacketData(p, d, id, dts, pts)
-#define XVDRGetPacketPayload(p)           XVDR::Callbacks::Get()->GetPacketPayload(p)
-#define XVDRFreePacket(p)                 XVDR::Callbacks::Get()->FreePacket(p)
-#define XVDRGetLanguageCode()             XVDR::Callbacks::Get()->GetLanguageCode()
-#define XVDRGetSetting(n, v)              XVDR::Callbacks::Get()->GetSetting(n, v)
-#define XVDRTriggerChannelUpdate()        XVDR::Callbacks::Get()->TriggerChannelUpdate()
-#define XVDRTriggerRecordingUpdate()      XVDR::Callbacks::Get()->TriggerRecordingUpdate()
-#define XVDRTriggerTimerUpdate()          XVDR::Callbacks::Get()->TriggerTimerUpdate()
-#define XVDRTransferChannelEntry(c)       XVDR::Callbacks::Get()->TransferChannelEntry(c)
-#define XVDRTransferEpgEntry(t)           XVDR::Callbacks::Get()->TransferEpgEntry(t)
-#define XVDRTransferTimerEntry(t)         XVDR::Callbacks::Get()->TransferTimerEntry(t)
-#define XVDRTransferRecordingEntry(r)     XVDR::Callbacks::Get()->TransferRecordingEntry(r)
-#define XVDRTransferChannelGroup(g)       XVDR::Callbacks::Get()->TransferChannelGroup(g)
-#define XVDRTransferChannelGroupMember(m) XVDR::Callbacks::Get()->TransferChannelGroupMember(m)
-#define XVDRRecording(l1, l2, on)         XVDR::Callbacks::Get()->Recording(l1, l2, on)
-#define XVDRStreamChange(p)               XVDR::Callbacks::Get()->StreamChange(p)
-#define XVDRContentInfo(p)                XVDR::Callbacks::Get()->ContentInfo(p)
 
 #define XVDR_INFO    XVDR::Callbacks::INFO
 #define XVDR_NOTICE  XVDR::Callbacks::NOTICE
@@ -98,8 +74,6 @@ public:
 
   virtual Packet* AllocatePacket(int length) = 0;
 
-  virtual uint8_t* GetPacketPayload(Packet* packet) = 0;
-
   virtual void SetPacketData(Packet* packet, uint8_t* data = NULL, int streamid = 0, uint64_t dts = 0, uint64_t pts = 0) = 0;
 
   virtual void FreePacket(Packet* p) = 0;
@@ -107,16 +81,6 @@ public:
   virtual Packet* StreamChange(const StreamProperties& p) = 0;
 
   virtual Packet* ContentInfo(const StreamProperties& p) = 0;
-
-  // static registration and access
-
-  static void Register(Callbacks* callbacks);
-
-  static Callbacks* Get();
-
-private:
-
-  static Callbacks* m_callbacks;
 
 };
 

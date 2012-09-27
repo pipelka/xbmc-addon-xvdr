@@ -58,7 +58,7 @@ using namespace XVDR;
 #define PROGRESS_SIGNAL                 35
 #define LABEL_STATUS                    36
 
-cXBMCChannelScan::cXBMCChannelScan()
+cXBMCChannelScan::cXBMCChannelScan(XVDR::Callbacks* client) : XVDR::Connection(client)
 {
 }
 
