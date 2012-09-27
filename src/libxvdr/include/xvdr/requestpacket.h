@@ -29,7 +29,7 @@ namespace XVDR {
 class RequestPacket
 {
   public:
-    RequestPacket();
+    RequestPacket(uint32_t topcode);
     ~RequestPacket();
 
     bool init(uint32_t opcode, bool stream = false, bool setUserDataLength = false, uint32_t userDataLength = 0);

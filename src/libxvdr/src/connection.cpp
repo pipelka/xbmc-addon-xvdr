@@ -80,8 +80,7 @@ bool Connection::Login()
   std::string code = m_client->GetLanguageCode();
   const char* lang = ISO639_FindLanguage(code);
 
-  RequestPacket vrp;
-  vrp.init(XVDR_LOGIN);
+  RequestPacket vrp(XVDR_LOGIN);
   vrp.add_U32(XVDRPROTOCOLVERSION);
   vrp.add_U8(m_compressionlevel);
   vrp.add_String(m_name.empty() ? "XBMC Media Center" : m_name.c_str());
@@ -179,8 +178,7 @@ ResponsePacket* Connection::ReadResult(RequestPacket* vrp)
 
 bool Connection::GetDriveSpace(long long *total, long long *used)
 {
-  RequestPacket vrp;
-  vrp.init(XVDR_RECORDINGS_DISKSIZE);
+  RequestPacket vrp(XVDR_RECORDINGS_DISKSIZE);
 
   ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
@@ -206,8 +204,7 @@ bool Connection::GetDriveSpace(long long *total, long long *used)
 
 bool Connection::SupportChannelScan()
 {
-  RequestPacket vrp;
-  vrp.init(XVDR_SCAN_SUPPORTED);
+  RequestPacket vrp(XVDR_SCAN_SUPPORTED);
 
   ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
@@ -223,8 +220,7 @@ bool Connection::SupportChannelScan()
 
 bool Connection::EnableStatusInterface(bool onOff)
 {
-  RequestPacket vrp;
-  vrp.init(XVDR_ENABLESTATUSINTERFACE);
+  RequestPacket vrp(XVDR_ENABLESTATUSINTERFACE);
   vrp.add_U8(onOff);
 
   ResponsePacket* vresp = ReadResult(&vrp);
@@ -247,8 +243,7 @@ bool Connection::EnableStatusInterface(bool onOff)
 
 bool Connection::SetUpdateChannels(uint8_t method)
 {
-  RequestPacket vrp;
-  vrp.init(XVDR_UPDATECHANNELS);
+  RequestPacket vrp(XVDR_UPDATECHANNELS);
   vrp.add_U8(method);
 
   ResponsePacket* vresp = ReadResult(&vrp);
@@ -275,8 +270,7 @@ bool Connection::ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& 
 {
   std::size_t count = caids.size();
 
-  RequestPacket vrp;
-  vrp.init(XVDR_CHANNELFILTER);
+  RequestPacket vrp(XVDR_CHANNELFILTER);
   vrp.add_U32(fta);
   vrp.add_U32(nativelangonly);
   vrp.add_U32(count);
@@ -309,8 +303,7 @@ bool Connection::ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& 
 
 int Connection::GetChannelsCount()
 {
-  RequestPacket vrp;
-  vrp.init(XVDR_CHANNELS_GETCOUNT);
+  RequestPacket vrp(XVDR_CHANNELS_GETCOUNT);
 
   ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
@@ -327,8 +320,7 @@ int Connection::GetChannelsCount()
 
 bool Connection::GetChannelsList(bool radio)
 {
-  RequestPacket vrp;
-  vrp.init(XVDR_CHANNELS_GETCHANNELS);
+  RequestPacket vrp(XVDR_CHANNELS_GETCHANNELS);
   vrp.add_U32(radio);
 
   ResponsePacket* vresp = ReadResult(&vrp);
@@ -363,8 +355,7 @@ bool Connection::GetChannelsList(bool radio)
 
 bool Connection::GetEPGForChannel(uint32_t channeluid, time_t start, time_t end)
 {
-  RequestPacket vrp;
-  vrp.init(XVDR_EPG_GETFORCHANNEL);
+  RequestPacket vrp(XVDR_EPG_GETFORCHANNEL);
   vrp.add_U32(channeluid);
   vrp.add_U32(start);
   vrp.add_U32(end - start);
@@ -413,8 +404,7 @@ int Connection::GetTimersCount()
   if(ConnectionLost())
     return m_timercount;
 
-  RequestPacket vrp;
-  vrp.init(XVDR_TIMER_GETCOUNT);
+  RequestPacket vrp(XVDR_TIMER_GETCOUNT);
 
   ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
@@ -478,8 +468,7 @@ void Connection::ReadTimerPacket(ResponsePacket* resp, Timer& tag) {
 
 bool Connection::GetTimerInfo(unsigned int timernumber, Timer& tag)
 {
-  RequestPacket vrp;
-  vrp.init(XVDR_TIMER_GET);
+  RequestPacket vrp(XVDR_TIMER_GET);
   vrp.add_U32(timernumber);
 
   ResponsePacket* vresp = ReadResult(&vrp);
@@ -508,8 +497,7 @@ bool Connection::GetTimerInfo(unsigned int timernumber, Timer& tag)
 
 bool Connection::GetTimersList()
 {
-  RequestPacket vrp;
-  vrp.init(XVDR_TIMER_GETLIST);
+  RequestPacket vrp(XVDR_TIMER_GETLIST);
 
   ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
@@ -576,8 +564,7 @@ bool Connection::AddTimer(const Timer& timer)
   uint32_t starttime = (uint32_t)timer[timer_starttime] - (uint32_t)timer[timer_marginstart] * 60;
   uint32_t endtime = (uint32_t)timer[timer_endtime] + (uint32_t)timer[timer_marginend] * 60;
 
-  RequestPacket vrp;
-  vrp.init(XVDR_TIMER_ADD);
+  RequestPacket vrp(XVDR_TIMER_ADD);
   vrp.add_U32(1);
   vrp.add_U32(timer[timer_priority]);
   vrp.add_U32(timer[timer_lifetime]);
@@ -604,8 +591,7 @@ bool Connection::AddTimer(const Timer& timer)
 
 bool Connection::DeleteTimer(uint32_t timerindex, bool force)
 {
-  RequestPacket vrp;
-  vrp.init(XVDR_TIMER_DELETE);
+  RequestPacket vrp(XVDR_TIMER_DELETE);
   vrp.add_U32(timerindex);
   vrp.add_U32(force);
 
@@ -644,8 +630,7 @@ bool Connection::UpdateTimer(const Timer& timer)
   for(std::string::iterator i = title.begin(); i != title.end(); i++)
 	  if(*i == '/') *i = '~';
 
-  RequestPacket vrp;
-  vrp.init(XVDR_TIMER_UPDATE);
+  RequestPacket vrp(XVDR_TIMER_UPDATE);
   vrp.add_U32(timer[timer_index]);
   vrp.add_U32(2);
   vrp.add_U32(timer[timer_priority]);
@@ -673,8 +658,7 @@ bool Connection::UpdateTimer(const Timer& timer)
 
 int Connection::GetRecordingsCount()
 {
-  RequestPacket vrp;
-  vrp.init(XVDR_RECORDINGS_GETCOUNT);
+  RequestPacket vrp(XVDR_RECORDINGS_GETCOUNT);
 
   ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
@@ -691,8 +675,7 @@ int Connection::GetRecordingsCount()
 
 bool Connection::GetRecordingsList()
 {
-  RequestPacket vrp;
-  vrp.init(XVDR_RECORDINGS_GETLIST);
+  RequestPacket vrp(XVDR_RECORDINGS_GETLIST);
 
   ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
@@ -731,8 +714,7 @@ bool Connection::RenameRecording(const std::string& recid, const std::string& ne
 {
   m_client->Log(XVDR_DEBUG, "%s - uid: %s", __FUNCTION__, recid.c_str());
 
-  RequestPacket vrp;
-  vrp.init(XVDR_RECORDINGS_RENAME);
+  RequestPacket vrp(XVDR_RECORDINGS_RENAME);
   vrp.add_String(recid.c_str());
   vrp.add_String(newname.c_str());
 
@@ -751,8 +733,7 @@ bool Connection::RenameRecording(const std::string& recid, const std::string& ne
 
 bool Connection::DeleteRecording(const std::string& recid)
 {
-  RequestPacket vrp;
-  vrp.init(XVDR_RECORDINGS_DELETE);
+  RequestPacket vrp(XVDR_RECORDINGS_DELETE);
   vrp.add_String(recid.c_str());
 
   ResponsePacket* vresp = ReadResult(&vrp);
@@ -777,8 +758,7 @@ bool Connection::SendPing()
 {
   m_client->Log(XVDR_DEBUG, "%s", __FUNCTION__);
 
-  RequestPacket vrp;
-  vrp.init(XVDR_PING);
+  RequestPacket vrp(XVDR_PING);
 
   ResponsePacket* vresp = Session::ReadResult(&vrp);
   delete vresp;
@@ -899,8 +879,7 @@ void Connection::Action()
 
 int Connection::GetChannelGroupCount(bool automatic)
 {
-  RequestPacket vrp;
-  vrp.init(XVDR_CHANNELGROUP_GETCOUNT);
+  RequestPacket vrp(XVDR_CHANNELGROUP_GETCOUNT);
   vrp.add_U32(automatic);
 
   ResponsePacket* vresp = ReadResult(&vrp);
@@ -918,8 +897,7 @@ int Connection::GetChannelGroupCount(bool automatic)
 
 bool Connection::GetChannelGroupList(bool bRadio)
 {
-  RequestPacket vrp;
-  vrp.init(XVDR_CHANNELGROUP_LIST);
+  RequestPacket vrp(XVDR_CHANNELGROUP_LIST);
   vrp.add_U8(bRadio);
 
   ResponsePacket* vresp = ReadResult(&vrp);
@@ -944,8 +922,7 @@ bool Connection::GetChannelGroupList(bool bRadio)
 
 bool Connection::GetChannelGroupMembers(const std::string& groupname, bool radio)
 {
-  RequestPacket vrp;
-  vrp.init(XVDR_CHANNELGROUP_MEMBERS);
+  RequestPacket vrp(XVDR_CHANNELGROUP_MEMBERS);
   vrp.add_String(groupname.c_str());
   vrp.add_U8(radio);
 
@@ -972,8 +949,7 @@ bool Connection::GetChannelGroupMembers(const std::string& groupname, bool radio
 
 bool Connection::OpenRecording(const std::string& recid)
 {
-  RequestPacket vrp;
-  vrp.init(XVDR_RECSTREAM_OPEN);
+  RequestPacket vrp(XVDR_RECSTREAM_OPEN);
   vrp.add_String(recid.c_str());
 
   ResponsePacket* vresp = ReadResult(&vrp);
@@ -1002,10 +978,9 @@ bool Connection::CloseRecording()
   if(m_recid.empty())
     return false;
 
-  RequestPacket vrp;
-  vrp.init(XVDR_RECSTREAM_CLOSE);
   m_recid.clear();
 
+  RequestPacket vrp(XVDR_RECSTREAM_CLOSE);
   return ReadSuccess(&vrp);
 }
 
@@ -1023,8 +998,8 @@ int Connection::ReadRecording(unsigned char* buf, uint32_t buf_size)
 
   ResponsePacket* vresp = NULL;
 
-  RequestPacket vrp1;
-  if (vrp1.init(XVDR_RECSTREAM_UPDATE) && ((vresp = ReadResult(&vrp1)) != NULL))
+  RequestPacket vrp1(XVDR_RECSTREAM_UPDATE);
+  if ((vresp = ReadResult(&vrp1)) != NULL)
   {
     uint32_t frames = vresp->extract_U32();
     uint64_t bytes  = vresp->extract_U64();
@@ -1038,13 +1013,9 @@ int Connection::ReadRecording(unsigned char* buf, uint32_t buf_size)
     delete vresp;
   }
 
-  RequestPacket vrp2;
-  if (!vrp2.init(XVDR_RECSTREAM_GETBLOCK) ||
-      !vrp2.add_U64(m_currentPlayingRecordPosition) ||
-      !vrp2.add_U32(buf_size))
-  {
-    return 0;
-  }
+  RequestPacket vrp2(XVDR_RECSTREAM_GETBLOCK);
+  vrp2.add_U64(m_currentPlayingRecordPosition);
+  vrp2.add_U32(buf_size);
 
   vresp = ReadResult(&vrp2);
   if (!vresp)

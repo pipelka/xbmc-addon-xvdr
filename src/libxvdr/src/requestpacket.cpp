@@ -37,7 +37,7 @@ using namespace XVDR;
 
 uint32_t RequestPacket::serialNumberCounter = 1;
 
-RequestPacket::RequestPacket()
+RequestPacket::RequestPacket(uint32_t topcode)
 {
   buffer        = NULL;
   bufSize       = 0;
@@ -45,6 +45,7 @@ RequestPacket::RequestPacket()
   lengthSet     = false;
   serialNumber  = 0;
   opcode        = 0;
+  init(topcode);
 }
 
 RequestPacket::~RequestPacket()
@@ -54,7 +55,9 @@ RequestPacket::~RequestPacket()
 
 bool RequestPacket::init(uint32_t topcode, bool stream, bool setUserDataLength, uint32_t userDataLength)
 {
-  if (buffer) return false;
+  if (buffer) {
+	  free(buffer);
+  }
 
   if (setUserDataLength)
   {

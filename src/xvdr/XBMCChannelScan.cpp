@@ -122,23 +122,23 @@ void cXBMCChannelScan::StartScan()
       break;
   }
 
-  RequestPacket vrp;
   ResponsePacket* vresp = NULL;
   uint32_t retCode = XVDR_RET_ERROR;
-  if (!vrp.init(XVDR_SCAN_START))                          goto SCANError;
-  if (!vrp.add_U32(source))                               goto SCANError;
-  if (!vrp.add_U8(m_radioButtonTV->IsSelected()))         goto SCANError;
-  if (!vrp.add_U8(m_radioButtonRadio->IsSelected()))      goto SCANError;
-  if (!vrp.add_U8(m_radioButtonFTA->IsSelected()))        goto SCANError;
-  if (!vrp.add_U8(m_radioButtonScrambled->IsSelected()))  goto SCANError;
-  if (!vrp.add_U8(m_radioButtonHD->IsSelected()))         goto SCANError;
-  if (!vrp.add_U32(m_spinCountries->GetValue()))          goto SCANError;
-  if (!vrp.add_U32(m_spinDVBCInversion->GetValue()))      goto SCANError;
-  if (!vrp.add_U32(m_spinDVBCSymbolrates->GetValue()))    goto SCANError;
-  if (!vrp.add_U32(m_spinDVBCqam->GetValue()))            goto SCANError;
-  if (!vrp.add_U32(m_spinDVBTInversion->GetValue()))      goto SCANError;
-  if (!vrp.add_U32(m_spinSatellites->GetValue()))         goto SCANError;
-  if (!vrp.add_U32(m_spinATSCType->GetValue()))           goto SCANError;
+
+  RequestPacket vrp(XVDR_SCAN_START);
+  vrp.add_U32(source);
+  vrp.add_U8(m_radioButtonTV->IsSelected());
+  vrp.add_U8(m_radioButtonRadio->IsSelected());
+  vrp.add_U8(m_radioButtonFTA->IsSelected());
+  vrp.add_U8(m_radioButtonScrambled->IsSelected());
+  vrp.add_U8(m_radioButtonHD->IsSelected());
+  vrp.add_U32(m_spinCountries->GetValue());
+  vrp.add_U32(m_spinDVBCInversion->GetValue());
+  vrp.add_U32(m_spinDVBCSymbolrates->GetValue());
+  vrp.add_U32(m_spinDVBCqam->GetValue());
+  vrp.add_U32(m_spinDVBTInversion->GetValue());
+  vrp.add_U32(m_spinSatellites->GetValue());
+  vrp.add_U32(m_spinATSCType->GetValue());
 
   vresp = ReadResult(&vrp);
   if (!vresp)
@@ -160,10 +160,7 @@ SCANError:
 
 void cXBMCChannelScan::StopScan()
 {
-  RequestPacket vrp;
-  if (!vrp.init(XVDR_SCAN_STOP))
-    return;
-
+  RequestPacket vrp(XVDR_SCAN_STOP);
   ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
     return;
@@ -415,10 +412,7 @@ bool cXBMCChannelScan::ReadCountries()
   std::string dvdlang = XBMC->GetDVDMenuLanguage();
   //dvdlang = dvdlang.ToUpper();
 
-  RequestPacket vrp;
-  if (!vrp.init(XVDR_SCAN_GETCOUNTRIES))
-    return false;
-
+  RequestPacket vrp(XVDR_SCAN_GETCOUNTRIES);
   ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
     return false;
@@ -452,10 +446,7 @@ bool cXBMCChannelScan::ReadSatellites()
   m_spinSatellites = GUI->Control_getSpin(m_window, CONTROL_SPIN_SATELLITES);
   m_spinSatellites->Clear();
 
-  RequestPacket vrp;
-  if (!vrp.init(XVDR_SCAN_GETSATELLITES))
-    return false;
-
+  RequestPacket vrp(XVDR_SCAN_GETSATELLITES);
   ResponsePacket* vresp = ReadResult(&vrp);
   if (!vresp)
     return false;

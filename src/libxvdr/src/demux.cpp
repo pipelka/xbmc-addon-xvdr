@@ -208,8 +208,7 @@ bool Demux::SwitchChannel(uint32_t channeluid)
   CleanupPacketQueue();
   m_cond.Signal();
 
-  RequestPacket vrp;
-  vrp.init(XVDR_CHANNELSTREAM_OPEN);
+  RequestPacket vrp(XVDR_CHANNELSTREAM_OPEN);
   vrp.add_U32(channeluid);
   vrp.add_S32(m_priority);
 
