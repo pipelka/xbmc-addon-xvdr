@@ -968,12 +968,8 @@ bool Connection::CloseRecording()
 
 int Connection::ReadRecording(unsigned char* buf, uint32_t buf_size)
 {
-  if (ConnectionLost() && !TryReconnect())
-  {
-    *buf = 0;
-    SleepMs(100);
-    return 1;
-  }
+  if (ConnectionLost())
+    return 0;
 
   if (m_currentPlayingRecordPosition >= m_currentPlayingRecordBytes)
     return 0;
