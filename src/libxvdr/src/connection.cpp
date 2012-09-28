@@ -137,16 +137,15 @@ void Connection::OnReconnect()
 {
   m_client->Notification(XVDR_INFO, m_client->GetLocalizedString(30045));
 
-  EnableStatusInterface(m_statusinterface);
-  ChannelFilter(m_ftachannels, m_nativelang, m_caids);
-  SetUpdateChannels(m_updatechannels);
-
   m_client->TriggerTimerUpdate();
   m_client->TriggerRecordingUpdate();
 }
 
 ResponsePacket* Connection::ReadResult(RequestPacket* vrp)
 {
+  if(m_connectionLost)
+	return Session::ReadResult(vrp);
+
   m_mutex.Lock();
 
   SMessage &message(m_queue[vrp->getSerial()]);
@@ -775,6 +774,8 @@ void Connection::Action()
       {
         lastPing = time(NULL);
 
+    	m_client->Log(XVDR_DEBUG, "Ping ...");
+
         if(!SendPing())
           SignalConnectionLost();
       }
@@ -1063,8 +1064,9 @@ bool Connection::TryReconnect() {
   if(!Open(m_hostname))
     return false;
 
-  if(!Login())
-    return false;
+  EnableStatusInterface(m_statusinterface);
+  ChannelFilter(m_ftachannels, m_nativelang, m_caids);
+  SetUpdateChannels(m_updatechannels);
 
   m_client->Log(XVDR_DEBUG, "%s - reconnected", __FUNCTION__);
   m_connectionLost = false;
