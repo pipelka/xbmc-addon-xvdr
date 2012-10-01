@@ -60,7 +60,7 @@ public:
 
 protected:
 
-  bool OnResponsePacket(XVDR::ResponsePacket* resp);
+  void OnResponsePacket(XVDR::ResponsePacket* resp);
 
 private:
 

@@ -487,7 +487,7 @@ void cXBMCChannelScan::SetControlsVisible(scantype_t type)
   m_radioButtonHD->SetVisible(type == DVB_TERR || type == DVB_CABLE || type == DVB_SAT || type == DVB_ATSC);
 }
 
-bool cXBMCChannelScan::OnResponsePacket(ResponsePacket* resp)
+void cXBMCChannelScan::OnResponsePacket(ResponsePacket* resp)
 {
   uint32_t requestID = resp->getRequestID();
 
@@ -573,9 +573,4 @@ bool cXBMCChannelScan::OnResponsePacket(ResponsePacket* resp)
       m_window->SetControlLabel(LABEL_STATUS, XBMC->GetLocalizedString(30038));
     }
   }
-  else {
-    return false;
-  }
-
-  return true;
 }

@@ -742,9 +742,8 @@ bool Connection::DeleteRecording(const std::string& recid)
   return (returnCode == XVDR_RET_OK);
 }
 
-bool Connection::OnResponsePacket(ResponsePacket* pkt)
+void Connection::OnResponsePacket(ResponsePacket* pkt)
 {
-  return false;
 }
 
 void Connection::Action()
@@ -797,10 +796,7 @@ void Connection::Action()
       {
         it->second.pkt = vresp;
         it->second.event->Signal();
-      }
-      else
-      {
-        delete vresp;
+        vresp = NULL;
       }
     }
 
@@ -846,17 +842,16 @@ void Connection::Action()
     	m_client->Log(XVDR_DEBUG, "Server requested recordings update");
     	m_client->TriggerRecordingUpdate();
       }
-
-      delete vresp;
     }
 
     // OTHER CHANNELID
 
-    else if (!OnResponsePacket(vresp))
+    else
     {
-      //m_client->Log(XVDR_ERROR, "%s - Rxd a response packet on channel %lu !!", __FUNCTION__, vresp->getChannelID());
-      delete vresp;
+      OnResponsePacket(vresp);
     }
+
+    delete vresp;
   }
 }
 

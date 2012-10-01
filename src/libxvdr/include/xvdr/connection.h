@@ -97,7 +97,7 @@ public:
 protected:
 
   virtual void Action(void);
-  virtual bool OnResponsePacket(ResponsePacket *pkt);
+  virtual void OnResponsePacket(ResponsePacket *pkt);
   virtual bool TryReconnect();
 
   void SignalConnectionLost();

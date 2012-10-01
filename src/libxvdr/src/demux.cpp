@@ -21,6 +21,7 @@
  */
 
 #include <stdint.h>
+#include <stdlib.h>
 #include <limits.h>
 #include <string.h>
 
@@ -123,15 +124,15 @@ Packet* Demux::Read()
   return p;
 }
 
-bool Demux::OnResponsePacket(ResponsePacket *resp) {
+void Demux::OnResponsePacket(ResponsePacket *resp) {
   {
     MutexLock lock(&m_lock);
     if(m_queuelocked)
-    	return false;
+    	return;
   }
 
   if (resp->getChannelID() != XVDR_CHANNEL_STREAM)
-	return false;
+	return;
 
   Packet* pkt = NULL;
   int iStreamId = -1;
@@ -172,7 +173,7 @@ bool Demux::OnResponsePacket(ResponsePacket *resp) {
       int index = stream[stream_index];
       pkt = m_client->AllocatePacket(resp->getUserDataLength());
    	  m_client->SetPacketData(pkt, resp->getUserData(), index, resp->getDTS(), resp->getPTS());
-
+   	  free(resp->getUserData());
       break;
   }
 
@@ -184,7 +185,7 @@ bool Demux::OnResponsePacket(ResponsePacket *resp) {
 	    if(m_queue.size() > 50)
 	    {
 	      m_client->FreePacket(pkt);
-	      return false;
+	      return;
 	    }
 
         m_queue.push(pkt);
@@ -192,8 +193,7 @@ bool Demux::OnResponsePacket(ResponsePacket *resp) {
 	  m_cond.Signal();
   }
 
-  delete resp;
-  return true;
+  return;
 }
 
 bool Demux::SwitchChannel(uint32_t channeluid)

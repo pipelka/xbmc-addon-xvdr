@@ -54,7 +54,7 @@ public:
 protected:
 
   void OnReconnect();
-  bool OnResponsePacket(ResponsePacket *resp);
+  void OnResponsePacket(ResponsePacket *resp);
 
   void StreamChange(ResponsePacket *resp);
   void StreamStatus(ResponsePacket *resp);
