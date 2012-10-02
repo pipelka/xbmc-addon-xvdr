@@ -87,8 +87,7 @@ Packet* Demux::Read()
 {
   if(ConnectionLost())
   {
-	SleepMs(100);
-	return m_client->AllocatePacket(0);
+    return NULL;
   }
 
   Packet* p = NULL;
