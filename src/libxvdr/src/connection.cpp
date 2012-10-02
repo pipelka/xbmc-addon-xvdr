@@ -999,6 +999,11 @@ int Connection::ReadRecording(unsigned char* buf, uint32_t buf_size)
     return -1;
 
   uint32_t length = vresp->getUserDataLength();
+
+  if(length == 0) {
+	  return -1;
+  }
+
   uint8_t *data   = vresp->getUserData();
   if (length > buf_size)
   {
