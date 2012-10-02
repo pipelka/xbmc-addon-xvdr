@@ -47,9 +47,6 @@ bool Demux::OpenChannel(const std::string& hostname, uint32_t channeluid)
   if(!Open(hostname))
     return false;
 
-  if(!Login())
-    return false;
-
   return SwitchChannel(channeluid);
 }
 

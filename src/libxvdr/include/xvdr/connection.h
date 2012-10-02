@@ -44,7 +44,6 @@ public:
   virtual ~Connection();
 
   bool        Open(const std::string& hostname, const std::string& name = "");
-  bool        Login();
   void        Abort();
 
   void SetTimeout(int ms);
@@ -110,6 +109,8 @@ protected:
   Callbacks* m_client;
 
 private:
+
+  bool        Login();
 
   struct SMessage
   {

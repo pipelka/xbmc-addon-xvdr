@@ -113,12 +113,6 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
     return ADDON_STATUS_LOST_CONNECTION;
   }
 
-
-  if (!mConnection->Login())
-  {
-    return ADDON_STATUS_LOST_CONNECTION;
-  }
-
   if (!mConnection->EnableStatusInterface(s.HandleMessages()))
   {
     return ADDON_STATUS_LOST_CONNECTION;

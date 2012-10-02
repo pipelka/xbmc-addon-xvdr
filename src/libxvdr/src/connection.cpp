@@ -70,6 +70,9 @@ bool Connection::Open(const std::string& hostname, const std::string& name)
 
   m_name = name;
 
+  if(!Login())
+	 return false;
+
   Start();
 
   return true;
@@ -88,7 +91,7 @@ bool Connection::Login()
   vrp.add_U8(m_audiotype);
 
   // read welcome
-  ResponsePacket* vresp = ReadResult(&vrp);
+  ResponsePacket* vresp = Session::ReadResult(&vrp);
   if (!vresp)
   {
 	m_client->Log(XVDR_ERROR, "failed to read greeting from server");
