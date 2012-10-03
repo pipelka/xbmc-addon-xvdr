@@ -55,7 +55,9 @@ public:
 
 protected:
 
+  void OnDisconnect();
   void OnReconnect();
+
   void OnResponsePacket(ResponsePacket *resp);
 
   void StreamChange(ResponsePacket *resp);

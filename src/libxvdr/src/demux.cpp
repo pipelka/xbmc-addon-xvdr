@@ -451,6 +451,10 @@ bool Demux::StreamContentInfo(ResponsePacket *resp)
   return (old != m_streams);
 }
 
+void Demux::OnDisconnect()
+{
+}
+
 void Demux::OnReconnect()
 {
 }
