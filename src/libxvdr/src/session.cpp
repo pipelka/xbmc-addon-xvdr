@@ -293,28 +293,6 @@ ResponsePacket* Session::ReadResult(RequestPacket* vrp)
   return NULL;
 }
 
-bool Session::ReadSuccess(RequestPacket* vrp) {
-  uint32_t rc;
-  return ReadSuccess(vrp, rc);
-}
-
-bool Session::ReadSuccess(RequestPacket* vrp, uint32_t& rc)
-{
-  ResponsePacket *pkt = NULL;
-  if((pkt = ReadResult(vrp)) == NULL)
-    return false;
-
-  rc = pkt->extract_U32();
-  delete pkt;
-
-  if(rc != XVDR_RET_OK)
-  {
-    return false;
-  }
-
-  return true;
-}
-
 void Session::OnReconnect() {
 }
 

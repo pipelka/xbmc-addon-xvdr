@@ -50,10 +50,6 @@ public:
 
   ResponsePacket* ReadResult(RequestPacket* vrp);
 
-  bool ReadSuccess(RequestPacket* vrp, uint32_t& rc);
-
-  bool ReadSuccess(RequestPacket* vrp);
-
   bool ConnectionLost();
 
 protected:

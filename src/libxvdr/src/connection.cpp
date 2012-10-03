@@ -956,7 +956,12 @@ bool Connection::CloseRecording()
   m_recid.clear();
 
   RequestPacket vrp(XVDR_RECSTREAM_CLOSE);
-  return ReadSuccess(&vrp);
+  ResponsePacket* vresp = ReadResult(&vrp);
+  if (!vresp)
+    return false;
+
+  uint32_t returnCode = vresp->extract_U32();
+  return (returnCode == XVDR_RET_OK);
 }
 
 int Connection::ReadRecording(unsigned char* buf, uint32_t buf_size)
