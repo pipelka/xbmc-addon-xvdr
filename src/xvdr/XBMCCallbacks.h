@@ -32,6 +32,8 @@ public:
 
   cXBMCCallbacks();
 
+  ~cXBMCCallbacks();
+
   void Log(LEVEL level, const std::string& text, ...);
 
   void Notification(LEVEL level, const std::string& text, ...);
@@ -85,6 +87,8 @@ private:
   ADDON_HANDLE m_handle;
 
   XVDR::Mutex m_mutex;
+
+  char* m_msg;
 };
 
 PVR_CHANNEL& operator<< (PVR_CHANNEL& lhs, const XVDR::Channel& rhs);

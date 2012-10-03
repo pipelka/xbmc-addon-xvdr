@@ -23,14 +23,23 @@
 #include "XBMCAddon.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdarg.h>
 #include "DVDDemuxPacket.h"
 
 using namespace ADDON;
 using namespace XVDR;
 
+#define MSG_MAXLEN 512
+
 cXBMCCallbacks::cXBMCCallbacks() : m_handle(NULL)
 {
+  m_msg = (char*)malloc(MSG_MAXLEN);
+}
+
+cXBMCCallbacks::~cXBMCCallbacks()
+{
+  free(m_msg);
 }
 
 void cXBMCCallbacks::SetHandle(ADDON_HANDLE handle)
@@ -61,11 +70,10 @@ void cXBMCCallbacks::Log(LEVEL level, const std::string& text, ...)
   va_list ap;
   va_start(ap, &text);
 
-  char msg[512];
-  vsnprintf(msg, sizeof(msg), text.c_str(), ap);
+  vsnprintf(m_msg, MSG_MAXLEN, text.c_str(), ap);
   va_end(ap);
 
-  XBMC->Log(lt, msg);
+  XBMC->Log(lt, m_msg);
 }
 
 void cXBMCCallbacks::Notification(LEVEL level, const std::string& text, ...)
@@ -87,7 +95,11 @@ void cXBMCCallbacks::Notification(LEVEL level, const std::string& text, ...)
 
   va_list ap;
   va_start(ap, &text);
-  XBMC->QueueNotification(qm, ap);
+
+  vsnprintf(m_msg, MSG_MAXLEN, text.c_str(), ap);
+  va_end(ap);
+
+  XBMC->QueueNotification(qm, m_msg);
 }
 
 void cXBMCCallbacks::Recording(const std::string& line1, const std::string& line2, bool on)
