@@ -20,7 +20,7 @@
  *
  */
 
-#include "xvdr/callbacks.h"
+#include "xvdr/clientinterface.h"
 #include "xvdr/session.h"
 #include "xvdr/responsepacket.h"
 #include "xvdr/requestpacket.h"

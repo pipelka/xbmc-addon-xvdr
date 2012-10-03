@@ -4,17 +4,17 @@
 #include <string>
 #include "xvdr/dataset.h"
 
-#define XVDR_INFO    XVDR::Callbacks::INFO
-#define XVDR_NOTICE  XVDR::Callbacks::NOTICE
-#define XVDR_WARNING XVDR::Callbacks::WARNING
-#define XVDR_ERROR   XVDR::Callbacks::ERROR
-#define XVDR_DEBUG   XVDR::Callbacks::DEBUG
+#define XVDR_INFO    XVDR::ClientInterface::INFO
+#define XVDR_NOTICE  XVDR::ClientInterface::NOTICE
+#define XVDR_WARNING XVDR::ClientInterface::WARNING
+#define XVDR_ERROR   XVDR::ClientInterface::ERROR
+#define XVDR_DEBUG   XVDR::ClientInterface::DEBUG
 
 namespace XVDR {
 
 typedef void Packet;
 
-class Callbacks
+class ClientInterface
 {
 public:
 
@@ -27,9 +27,9 @@ public:
     DEBUG
   } LEVEL;
 
-  Callbacks();
+  ClientInterface();
 
-  virtual ~Callbacks();
+  virtual ~ClientInterface();
 
   // log and notification
 

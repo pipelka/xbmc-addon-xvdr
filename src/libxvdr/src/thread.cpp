@@ -26,7 +26,7 @@
 
 #include <errno.h>
 #include "xvdr/thread.h"
-#include "xvdr/callbacks.h"
+#include "xvdr/clientinterface.h"
 
 #ifndef __APPLE__
 #include <malloc.h>

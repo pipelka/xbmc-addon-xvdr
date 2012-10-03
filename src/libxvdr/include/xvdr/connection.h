@@ -34,13 +34,13 @@ namespace XVDR {
 
 class ResponsePacket;
 class RequestPacket;
-class Callbacks;
+class ClientInterface;
 
 class Connection : public Session, public Thread
 {
 public:
 
-  Connection(Callbacks* client);
+  Connection(ClientInterface* client);
   virtual ~Connection();
 
   bool        Open(const std::string& hostname, const std::string& name = "");
@@ -106,7 +106,7 @@ protected:
   void ReadTimerPacket(ResponsePacket* resp, Timer& tag);
 
   bool m_statusinterface;
-  Callbacks* m_client;
+  ClientInterface* m_client;
 
 private:
 

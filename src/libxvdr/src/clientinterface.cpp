@@ -19,22 +19,22 @@
  *
  */
 
-#include "xvdr/callbacks.h"
+#include "xvdr/clientinterface.h"
 
 using namespace XVDR;
 
-Callbacks::Callbacks()
+ClientInterface::ClientInterface()
 {
 }
 
-Callbacks::~Callbacks()
+ClientInterface::~ClientInterface()
 {
 }
 
-Packet* Callbacks::StreamChange(const StreamProperties& p) {
+Packet* ClientInterface::StreamChange(const StreamProperties& p) {
 	return NULL;
 }
 
-Packet* Callbacks::ContentInfo(const StreamProperties& p) {
+Packet* ClientInterface::ContentInfo(const StreamProperties& p) {
 	return NULL;
 }

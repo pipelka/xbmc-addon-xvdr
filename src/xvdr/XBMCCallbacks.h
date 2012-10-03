@@ -21,12 +21,12 @@
  */
 
 #include "XBMCAddon.h"
-#include "xvdr/callbacks.h"
+#include "xvdr/clientinterface.h"
 #include "xvdr/thread.h"
 
 #include "xbmc_pvr_types.h"
 
-class cXBMCCallbacks : public XVDR::Callbacks
+class cXBMCCallbacks : public XVDR::ClientInterface
 {
 public:
 

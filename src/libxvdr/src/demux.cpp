@@ -27,14 +27,13 @@
 
 #include "avcodec.h"
 #include "xvdr/demux.h"
-#include "xvdr/callbacks.h"
 #include "xvdr/responsepacket.h"
 #include "xvdr/requestpacket.h"
 #include "xvdr/command.h"
 
 using namespace XVDR;
 
-Demux::Demux(Callbacks* client) : Connection(client), m_priority(50), m_queuelocked(false)
+Demux::Demux(ClientInterface* client) : Connection(client), m_priority(50), m_queuelocked(false)
 {
 }
 

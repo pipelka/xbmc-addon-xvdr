@@ -1,7 +1,7 @@
 libxvdrincludedir = $(includedir)/xvdr
 
 libxvdrinclude_HEADERS = \
-	callbacks.h \
+	clientinterface.h \
 	command.h \
 	connection.h \
 	dataset.h \

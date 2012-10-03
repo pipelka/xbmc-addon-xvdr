@@ -17,7 +17,7 @@ SOURCEFILES = \
 	iso639.h \
 	requestpacket.cpp \
 	tools.cpp \
-	callbacks.cpp \
+	clientinterface.cpp \
 	connection.cpp \
 	dataset.cpp \
 	demux.cpp \

@@ -25,7 +25,7 @@
 #include <string.h>
 
 #include "xvdr/responsepacket.h"
-#include "xvdr/callbacks.h"
+#include "xvdr/clientinterface.h"
 #include "xvdr/thread.h"
 #include "xvdr/command.h"
 

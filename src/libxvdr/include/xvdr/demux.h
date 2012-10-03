@@ -21,21 +21,23 @@
  *
  */
 
-#include "xvdr/callbacks.h"
-#include "xvdr/connection.h"
-#include "xvdr/dataset.h"
 #include <string>
 #include <queue>
 
+#include "xvdr/clientinterface.h"
+#include "xvdr/connection.h"
+#include "xvdr/dataset.h"
+
 namespace XVDR {
 
+class ClientInterface;
 class ResponsePacket;
 
 class Demux : public Connection
 {
 public:
 
-  Demux(Callbacks* client);
+  Demux(ClientInterface* client);
   ~Demux();
 
   bool OpenChannel(const std::string& hostname, uint32_t channeluid);
