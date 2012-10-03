@@ -27,9 +27,6 @@
 #include <sys/types.h>
 #include "stdint.h"
 
-uint64_t ntohll(uint64_t a);
-uint64_t htonll(uint64_t a);
-
 namespace XVDR {
 
 class TimeMs
@@ -47,8 +44,8 @@ public:
 
 class CondWait {
 private:
-  pthread_mutex_t mutex;
-  pthread_cond_t cond;
+  struct props_t;
+  props_t* props;
   bool signaled;
 public:
   CondWait(void);
@@ -70,21 +67,12 @@ public:
 
 class Mutex;
 
-class CondVar {
-private:
-  pthread_cond_t cond;
-public:
-  CondVar(void);
-  ~CondVar();
-  void Wait(Mutex &Mutex);
-  bool TimedWait(Mutex &Mutex, int TimeoutMs);
-  void Broadcast(void);
-  };
-
 class Mutex {
   friend class CondVar;
 private:
-  pthread_mutex_t mutex;
+  struct props_t;
+  props_t* props;
+  void* mutex;
   int locked;
 public:
   Mutex(void);
@@ -93,22 +81,16 @@ public:
   void Unlock(void);
   };
 
-typedef pid_t tThreadId;
-
 class Thread {
   friend class ThreadLock;
 private:
   bool active;
   bool running;
-  pthread_t childTid;
-  tThreadId childThreadId;
+  struct props_t;
+  props_t* props;
   Mutex mutex;
-  char *description;
-  static tThreadId mainThreadId;
   static void *StartThread(Thread *Thread);
 protected:
-  void SetPriority(int Priority);
-  void SetIOPriority(int Priority);
   void Lock(void) { mutex.Lock(); }
   void Unlock(void) { mutex.Unlock(); }
   virtual void Action(void) = 0;
@@ -127,21 +109,15 @@ protected:
        ///< If WaitSeconds is -1, only 'running' is set to false and Cancel()
        ///< returns immediately, without killing the thread.
 public:
-  Thread(const char *Description = NULL);
+  Thread();
        ///< Creates a new thread.
-       ///< If Description is present, a log file entry will be made when
-       ///< the thread starts and stops. The Start() function must be called
-       ///< to actually start the thread.
+       ///< The Start() function must be called to actually start the thread.
   virtual ~Thread();
-  void SetDescription(const char *Description, ...);
   bool Start(void);
        ///< Actually starts the thread.
        ///< If the thread is already running, nothing happens.
   bool Active(void);
        ///< Checks whether the thread is still alive.
-  static tThreadId ThreadId(void);
-  static tThreadId IsMainThread(void) { return ThreadId() == mainThreadId; }
-  static void SetMainThreadId(void);
   };
 
 // MutexLock can be used to easily set a lock on mutex and make absolutely

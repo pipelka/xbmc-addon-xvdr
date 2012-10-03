@@ -29,9 +29,7 @@
 #include "xvdr/thread.h"
 #include "xvdr/command.h"
 
-extern "C" {
-#include "libTcpSocket/os-dependent_socket.h"
-}
+#include "os-config.h"
 
 #ifdef HAVE_ZLIB
 #include "zlib.h"
@@ -92,7 +90,7 @@ bool ResponsePacket::end()
 
 int ResponsePacket::serverError()
 {
-  if ((packetPos == 0) && (userDataLength == 4) && !ntohl(*(uint32_t*)userData)) return 1;
+  if ((packetPos == 0) && (userDataLength == 4) && !be32toh(*(uint32_t*)userData)) return 1;
   else return 0;
 }
 
@@ -118,7 +116,7 @@ uint8_t ResponsePacket::extract_U8()
 uint32_t ResponsePacket::extract_U32()
 {
   if ((packetPos + sizeof(uint32_t)) > userDataLength) return 0;
-  uint32_t ul = ntohl(*(uint32_t*)&userData[packetPos]);
+  uint32_t ul = be32toh(*(uint32_t*)&userData[packetPos]);
   packetPos += sizeof(uint32_t);
   return ul;
 }
@@ -126,7 +124,7 @@ uint32_t ResponsePacket::extract_U32()
 uint64_t ResponsePacket::extract_U64()
 {
   if ((packetPos + sizeof(uint64_t)) > userDataLength) return 0;
-  uint64_t ull = ntohll(*(uint64_t*)&userData[packetPos]);
+  uint64_t ull = be64toh(*(uint64_t*)&userData[packetPos]);
   packetPos += sizeof(uint64_t);
   return ull;
 }
@@ -134,7 +132,7 @@ uint64_t ResponsePacket::extract_U64()
 double ResponsePacket::extract_Double()
 {
   if ((packetPos + sizeof(uint64_t)) > userDataLength) return 0;
-  uint64_t ull = ntohll(*(uint64_t*)&userData[packetPos]);
+  uint64_t ull = be64toh(*(uint64_t*)&userData[packetPos]);
   double d;
   memcpy(&d,&ull,sizeof(double));
   packetPos += sizeof(uint64_t);
@@ -144,7 +142,7 @@ double ResponsePacket::extract_Double()
 int32_t ResponsePacket::extract_S32()
 {
   if ((packetPos + sizeof(int32_t)) > userDataLength) return 0;
-  int32_t l = ntohl(*(int32_t*)&userData[packetPos]);
+  int32_t l = be32toh(*(int32_t*)&userData[packetPos]);
   packetPos += sizeof(int32_t);
   return l;
 }
@@ -152,7 +150,7 @@ int32_t ResponsePacket::extract_S32()
 int64_t ResponsePacket::extract_S64()
 {
   if ((packetPos + sizeof(int64_t)) > userDataLength) return 0;
-  int64_t ll = ntohll(*(int64_t*)&userData[packetPos]);
+  int64_t ll = be32toh(*(int64_t*)&userData[packetPos]);
   packetPos += sizeof(int64_t);
   return ll;
 }
@@ -166,7 +164,7 @@ uint8_t* ResponsePacket::getUserData()
 bool ResponsePacket::uncompress()
 {
 #ifdef HAVE_ZLIB
-  uLongf original_size = ntohl(*(uint32_t*)&userData[0]);
+  uLongf original_size = be32toh(*(uint32_t*)&userData[0]);
   uint8_t* buffer = (uint8_t*)malloc(original_size);
 
   if(buffer == NULL)

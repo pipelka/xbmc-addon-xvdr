@@ -101,7 +101,7 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
   bool bConnected = false;
 
   while (!(bConnected = mConnection->Open(s.Hostname())) && RetryTimeout.Elapsed() < (uint)s.ConnectTimeout() * 1000)
-    Session::SleepMs(100);
+	XVDR::CondWait::SleepMs(100);
 
   if (!bConnected){
     delete mConnection;

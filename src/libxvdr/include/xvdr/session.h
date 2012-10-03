@@ -46,7 +46,7 @@ public:
 
   ResponsePacket* ReadMessage();
 
-  bool SendMessage(RequestPacket* vrp);
+  bool TransmitMessage(RequestPacket* vrp);
 
   ResponsePacket* ReadResult(RequestPacket* vrp);
 
@@ -55,8 +55,6 @@ public:
   bool ReadSuccess(RequestPacket* vrp);
 
   bool ConnectionLost();
-
-  static void SleepMs(int ms);
 
 protected:
 
@@ -81,6 +79,8 @@ protected:
   bool m_connectionLost;
 
 private:
+
+  int OpenSocket(const std::string& hostname, int port);
 
   bool readData(uint8_t* buffer, int totalBytes);
 

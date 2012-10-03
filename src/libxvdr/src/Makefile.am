@@ -5,18 +5,13 @@
 # how to reach the author.
 #
 
-SUBDIRS = \
-	libTcpSocket
-
-EXTRA_DIST = \
-	libPlatform
-
 SOURCEFILES = \
+	os-config.cpp \
+	os-config.h \
 	avcodec.h \
 	iso639.cpp \
 	iso639.h \
 	requestpacket.cpp \
-	tools.cpp \
 	clientinterface.cpp \
 	connection.cpp \
 	dataset.cpp \
@@ -33,7 +28,6 @@ libxvdrstatic_la_SOURCES = \
 
 libxvdrstatic_la_LIBADD = \
 	-lpthread \
-	./libTcpSocket/libTcpSocket.la \
 	$(ZLIB_LIBS)
 
 
@@ -43,7 +37,6 @@ libxvdr_la_SOURCES = \
 	$(SOURCEFILES)
 
 libxvdr_la_LIBADD = \
-	./libTcpSocket/libTcpSocket.la \
 	-lpthread \
 	$(ZLIB_LIBS)
 

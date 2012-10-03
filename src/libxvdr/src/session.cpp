@@ -31,18 +31,11 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
-extern "C" {
-#include "libTcpSocket/os-dependent_socket.h"
-}
-
-/* Needed on Mac OS/X */
- 
-#ifndef SOL_TCP
-#define SOL_TCP IPPROTO_TCP
-#endif
+#include "os-config.h"
 
 using namespace XVDR;
 
@@ -61,7 +54,7 @@ Session::~Session()
 
 void Session::Abort()
 {
-  tcp_shutdown(m_fd);
+  shutdown(m_fd, SHUT_RDWR);
 }
 
 void Session::Close()
@@ -71,18 +64,86 @@ void Session::Close()
 
   Abort();
 
-  tcp_close(m_fd);
+  closesocket(m_fd);
   m_fd = INVALID_SOCKET;
+}
+
+int Session::OpenSocket(const std::string& hostname, int port) {
+	int sock = INVALID_SOCKET;
+	char service[10];
+	snprintf(service, sizeof(service), "%i", port);
+
+	struct addrinfo hints;
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family   = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+
+	struct addrinfo* result;
+
+	if(getaddrinfo(hostname.c_str(), service, &hints, &result) != 0) {
+		return INVALID_SOCKET;
+	}
+
+	// loop through results
+	struct addrinfo* info = result;
+
+	while(sock == INVALID_SOCKET && info != NULL) {
+		sock = socket(info->ai_family, info->ai_socktype, info->ai_protocol);
+
+		// try to connect
+		if(sock != INVALID_SOCKET) {
+			break;
+		}
+
+		info = info->ai_next;
+	}
+
+	if(sock == INVALID_SOCKET) {
+		freeaddrinfo(result);
+		return false;
+	}
+
+	setsock_nonblock(sock);
+
+	int rc = 0;
+
+	if(connect(sock, info->ai_addr, info->ai_addrlen) == -1) {
+		if(sockerror() == EINPROGRESS || sockerror() == SEWOULDBLOCK) {
+
+			if(!pollfd(sock, m_timeout, false)) {
+				freeaddrinfo(result);
+				return false;
+			}
+
+			socklen_t optlen = sizeof(int);
+			getsockopt(sock, SOL_SOCKET, SO_ERROR, (sockval_t*)&rc, &optlen);
+		}
+		else {
+			rc = sockerror();
+		}
+	}
+
+	if(rc != 0) {
+		freeaddrinfo(result);
+		return INVALID_SOCKET;
+	}
+
+	setsock_nonblock(sock, false);
+
+	int val = 1;
+	setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (sockval_t*)&val, sizeof(val));
+
+	freeaddrinfo(result);
+
+	return sock;
 }
 
 bool Session::Open(const std::string& hostname)
 {
   Close();
 
-  char errbuf[128];
-  errbuf[0] = 0;
-
-  m_fd = tcp_connect(hostname.c_str(), m_port, errbuf, sizeof(errbuf), m_timeout);
+  m_fd = OpenSocket(hostname, m_port);
 
   if (m_fd == INVALID_SOCKET)
     return false;
@@ -117,23 +178,23 @@ ResponsePacket* Session::ReadMessage()
 
   // Data was read
 
-  bool compressed = (channelID & htonl(0x80000000));
+  bool compressed = (channelID & htobe32(0x80000000));
 
   if(compressed)
-    channelID ^= htonl(0x80000000);
+    channelID ^= htobe32(0x80000000);
 
-  channelID = ntohl(channelID);
+  channelID = be32toh(channelID);
 
   if (channelID == XVDR_CHANNEL_STREAM)
   {
     if (!readData((uint8_t*)&m_streamPacketHeader, sizeof(m_streamPacketHeader))) return NULL;
 
-    opCodeID = ntohl(m_streamPacketHeader.opCodeID);
-    streamID = ntohl(m_streamPacketHeader.streamID);
-    duration = ntohl(m_streamPacketHeader.duration);
-    pts = ntohll(*(int64_t*)m_streamPacketHeader.pts);
-    dts = ntohll(*(int64_t*)m_streamPacketHeader.dts);
-    userDataLength = ntohl(m_streamPacketHeader.userDataLength);
+    opCodeID = be32toh(m_streamPacketHeader.opCodeID);
+    streamID = be32toh(m_streamPacketHeader.streamID);
+    duration = be32toh(m_streamPacketHeader.duration);
+    pts = be64toh(*(int64_t*)m_streamPacketHeader.pts);
+    dts = be64toh(*(int64_t*)m_streamPacketHeader.dts);
+    userDataLength = be32toh(m_streamPacketHeader.userDataLength);
 
     if (userDataLength > 0) {
       userData = (uint8_t*)malloc(userDataLength);
@@ -152,8 +213,8 @@ ResponsePacket* Session::ReadMessage()
   {
     if (!readData((uint8_t*)&m_responsePacketHeader, sizeof(m_responsePacketHeader))) return NULL;
 
-    requestID = ntohl(m_responsePacketHeader.requestID);
-    userDataLength = ntohl(m_responsePacketHeader.userDataLength);
+    requestID = be32toh(m_responsePacketHeader.requestID);
+    userDataLength = be32toh(m_responsePacketHeader.userDataLength);
 
     if (userDataLength > 5000000) return NULL; // how big can these packets get?
     userData = NULL;
@@ -180,14 +241,36 @@ ResponsePacket* Session::ReadMessage()
   return vresp;
 }
 
-bool Session::SendMessage(RequestPacket* vrp)
+bool Session::TransmitMessage(RequestPacket* vrp)
 {
-  return (tcp_send_timeout(m_fd, vrp->getPtr(), vrp->getLen(), m_timeout) == 0);
+	int written = 0;
+	int length = vrp->getLen();
+	uint8_t* data = vrp->getPtr();
+
+	while(written < length) {
+		if(pollfd(m_fd, m_timeout, false) == 0) {
+			return false;
+		}
+
+		int rc = send(m_fd, (sendval_t*)(data + written), length - written, MSG_DONTWAIT | MSG_NOSIGNAL);
+
+		if(rc == -1 || rc == 0) {
+			if(sockerror() == SEWOULDBLOCK) {
+				continue;
+			}
+
+			return false;
+		}
+
+		written += rc;
+	}
+
+	return true;
 }
 
 ResponsePacket* Session::ReadResult(RequestPacket* vrp)
 {
-  if(!SendMessage(vrp))
+  if(!TransmitMessage(vrp))
   {
     SignalConnectionLost();
     return NULL;
@@ -252,20 +335,34 @@ void Session::SignalConnectionLost()
 
 bool Session::readData(uint8_t* buffer, int totalBytes)
 {
-  return (tcp_read_timeout(m_fd, buffer, totalBytes, m_timeout) == 0);
+	int read = 0;
+
+	while(read < totalBytes) {
+		if(pollfd(m_fd, m_timeout, true) == 0) {
+			return false;
+		}
+
+		int rc = recv(m_fd, (char*)(buffer + read), totalBytes - read, MSG_DONTWAIT);
+
+		if(rc == 0) {
+			return false;
+		}
+		else if(rc == -1) {
+			if(sockerror() == SEWOULDBLOCK) {
+				continue;
+			}
+
+			return false;
+		}
+
+		read += rc;
+	}
+
+	return true;
 }
 
 bool Session::TryReconnect() {
 	return false;
-}
-
-void Session::SleepMs(int ms)
-{
-#ifdef __WINDOWS__
-  Sleep(ms);
-#else
-  usleep(ms * 1000);
-#endif
 }
 
 bool Session::ConnectionLost() {

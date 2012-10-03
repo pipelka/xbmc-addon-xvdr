@@ -29,9 +29,7 @@
 #include "xvdr/command.h"
 #include "xvdr/thread.h"
 
-extern "C" {
-#include "libTcpSocket/os-dependent_socket.h"
-}
+#include "os-config.h"
 
 using namespace XVDR;
 
@@ -80,10 +78,10 @@ bool RequestPacket::init(uint32_t topcode, bool stream, bool setUserDataLength, 
   serialNumber  = serialNumberCounter++;
   opcode        = topcode;
 
-  *(uint32_t*)&buffer[0] = htonl(channel);
-  *(uint32_t*)&buffer[4] = htonl(serialNumber);
-  *(uint32_t*)&buffer[8] = htonl(opcode);
-  *(uint32_t*)&buffer[userDataLenPos] = htonl(userDataLength);
+  *(uint32_t*)&buffer[0] = htobe32(channel);
+  *(uint32_t*)&buffer[4] = htobe32(serialNumber);
+  *(uint32_t*)&buffer[8] = htobe32(opcode);
+  *(uint32_t*)&buffer[userDataLenPos] = htobe32(userDataLength);
   bufUsed = headerLength;
 
   return true;
@@ -95,7 +93,7 @@ bool RequestPacket::add_String(const char* string)
   if (!checkExtend(len)) return false;
   memcpy(buffer + bufUsed, string, len);
   bufUsed += len;
-  if (!lengthSet) *(uint32_t*)&buffer[userDataLenPos] = htonl(bufUsed - headerLength);
+  if (!lengthSet) *(uint32_t*)&buffer[userDataLenPos] = htobe32(bufUsed - headerLength);
   return true;
 }
 
@@ -104,34 +102,34 @@ bool RequestPacket::add_U8(uint8_t c)
   if (!checkExtend(sizeof(uint8_t))) return false;
   buffer[bufUsed] = c;
   bufUsed += sizeof(uint8_t);
-  if (!lengthSet) *(uint32_t*)&buffer[userDataLenPos] = htonl(bufUsed - headerLength);
+  if (!lengthSet) *(uint32_t*)&buffer[userDataLenPos] = htobe32(bufUsed - headerLength);
   return true;
 }
 
 bool RequestPacket::add_S32(int32_t l)
 {
   if (!checkExtend(sizeof(int32_t))) return false;
-  *(int32_t*)&buffer[bufUsed] = htonl(l);
+  *(int32_t*)&buffer[bufUsed] = htobe32(l);
   bufUsed += sizeof(int32_t);
-  if (!lengthSet) *(uint32_t*)&buffer[userDataLenPos] = htonl(bufUsed - headerLength);
+  if (!lengthSet) *(uint32_t*)&buffer[userDataLenPos] = htobe32(bufUsed - headerLength);
   return true;
 }
 
 bool RequestPacket::add_U32(uint32_t ul)
 {
   if (!checkExtend(sizeof(uint32_t))) return false;
-  *(uint32_t*)&buffer[bufUsed] = htonl(ul);
+  *(uint32_t*)&buffer[bufUsed] = htobe32(ul);
   bufUsed += sizeof(uint32_t);
-  if (!lengthSet) *(uint32_t*)&buffer[userDataLenPos] = htonl(bufUsed - headerLength);
+  if (!lengthSet) *(uint32_t*)&buffer[userDataLenPos] = htobe32(bufUsed - headerLength);
   return true;
 }
 
 bool RequestPacket::add_U64(uint64_t ull)
 {
   if (!checkExtend(sizeof(uint64_t))) return false;
-  *(uint64_t*)&buffer[bufUsed] = htonll(ull);
+  *(uint64_t*)&buffer[bufUsed] = htobe64(ull);
   bufUsed += sizeof(uint64_t);
-  if (!lengthSet) *(uint32_t*)&buffer[userDataLenPos] = htonl(bufUsed - headerLength);
+  if (!lengthSet) *(uint32_t*)&buffer[userDataLenPos] = htobe32(bufUsed - headerLength);
   return true;
 }
 

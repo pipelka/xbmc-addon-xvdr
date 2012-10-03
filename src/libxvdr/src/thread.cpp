@@ -24,22 +24,14 @@
  * Most of this code is taken from thread.c in the Video Disk Recorder ('VDR')
  */
 
-#include <errno.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <sys/time.h>
+
 #include "xvdr/thread.h"
 #include "xvdr/clientinterface.h"
 
-#ifndef __APPLE__
-#include <malloc.h>
-#endif
-
-#if !defined(__WINDOWS__)
-#include <sys/signal.h>
-#endif
-
-#include <stdarg.h>
-#include <stdlib.h>
-
-#include "libPlatform/os-dependent.h"
+#include "os-config.h"
 
 using namespace XVDR;
 
@@ -60,108 +52,100 @@ static bool GetAbsTime(struct timespec *Abstime, int MillisecondsFromNow)
   return false;
 }
 
+// --- TimeMs ---------------------------------------------------------------
+
+TimeMs::TimeMs(int Ms)
+{
+  Set(Ms);
+}
+
+uint64_t TimeMs::Now(void)
+{
+  struct timeval t;
+  if (gettimeofday(&t, NULL) == 0)
+     return (uint64_t(t.tv_sec)) * 1000 + t.tv_usec / 1000;
+  return 0;
+}
+
+void TimeMs::Set(int Ms)
+{
+  begin = Now() + Ms;
+}
+
+bool TimeMs::TimedOut(void)
+{
+  return Now() >= begin;
+}
+
+uint64_t TimeMs::Elapsed(void)
+{
+  return Now() - begin;
+}
+
 // --- CondWait -------------------------------------------------------------
 
-CondWait::CondWait(void)
+struct CondWait::props_t {
+  pthread_mutex_t mutex;
+  pthread_cond_t cond;
+};
+
+CondWait::CondWait(void) : signaled(false), props(new props_t)
 {
-  signaled = false;
-  pthread_mutex_init(&mutex, NULL);
-  pthread_cond_init(&cond, NULL);
+  pthread_mutex_init(&props->mutex, NULL);
+  pthread_cond_init(&props->cond, NULL);
 }
 
 CondWait::~CondWait()
 {
-  pthread_cond_broadcast(&cond); // wake up any sleepers
-  pthread_cond_destroy(&cond);
-  pthread_mutex_destroy(&mutex);
+  pthread_cond_broadcast(&props->cond); // wake up any sleepers
+  pthread_cond_destroy(&props->cond);
+  pthread_mutex_destroy(&props->mutex);
+  delete props;
 }
 
 void CondWait::SleepMs(int TimeoutMs)
 {
   CondWait w;
-  w.Wait(max(TimeoutMs, 3)); // making sure the time is >2ms to avoid a possible busy wait
+  w.Wait(TimeoutMs);
 }
 
 bool CondWait::Wait(int TimeoutMs)
 {
-  pthread_mutex_lock(&mutex);
+  pthread_mutex_lock(&props->mutex);
   if (!signaled) {
      if (TimeoutMs) {
         struct timespec abstime;
         if (GetAbsTime(&abstime, TimeoutMs)) {
            while (!signaled) {
-                 if (pthread_cond_timedwait(&cond, &mutex, &abstime) == ETIMEDOUT)
+                 if (pthread_cond_timedwait(&props->cond, &props->mutex, &abstime) == ETIMEDOUT)
                     break;
                  }
            }
         }
      else
-        pthread_cond_wait(&cond, &mutex);
+        pthread_cond_wait(&props->cond, &props->mutex);
      }
   bool r = signaled;
   signaled = false;
-  pthread_mutex_unlock(&mutex);
+  pthread_mutex_unlock(&props->mutex);
   return r;
 }
 
 void CondWait::Signal(void)
 {
-  pthread_mutex_lock(&mutex);
+  pthread_mutex_lock(&props->mutex);
   signaled = true;
-  pthread_cond_broadcast(&cond);
-  pthread_mutex_unlock(&mutex);
-}
-
-// --- CondVar --------------------------------------------------------------
-
-CondVar::CondVar(void)
-{
-  pthread_cond_init(&cond, 0);
-}
-
-CondVar::~CondVar()
-{
-  pthread_cond_broadcast(&cond); // wake up any sleepers
-  pthread_cond_destroy(&cond);
-}
-
-void CondVar::Wait(Mutex &Mutex)
-{
-  if (Mutex.locked) {
-     int locked = Mutex.locked;
-     Mutex.locked = 0; // have to clear the locked count here, as pthread_cond_wait
-                       // does an implicit unlock of the mutex
-     pthread_cond_wait(&cond, &Mutex.mutex);
-     Mutex.locked = locked;
-     }
-}
-
-bool CondVar::TimedWait(Mutex &Mutex, int TimeoutMs)
-{
-  bool r = true; // true = condition signaled, false = timeout
-
-  if (Mutex.locked) {
-     struct timespec abstime;
-     if (GetAbsTime(&abstime, TimeoutMs)) {
-        int locked = Mutex.locked;
-        Mutex.locked = 0; // have to clear the locked count here, as pthread_cond_timedwait
-                          // does an implicit unlock of the mutex.
-        if (pthread_cond_timedwait(&cond, &Mutex.mutex, &abstime) == ETIMEDOUT)
-           r = false;
-        Mutex.locked = locked;
-        }
-     }
-  return r;
-}
-
-void CondVar::Broadcast(void)
-{
-  pthread_cond_broadcast(&cond);
+  pthread_cond_broadcast(&props->cond);
+  pthread_mutex_unlock(&props->mutex);
 }
 
 // --- Mutex ----------------------------------------------------------------
 
-Mutex::Mutex(void)
+struct Mutex::props_t {
+	pthread_mutex_t mutex;
+};
+
+Mutex::Mutex(void) : props(new props_t)
 {
   locked = 0;
   pthread_mutexattr_t attr;
@@ -171,95 +155,48 @@ Mutex::Mutex(void)
 #else
   pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
 #endif
-  pthread_mutex_init(&mutex, &attr);
+  pthread_mutex_init(&props->mutex, &attr);
+  mutex = &props->mutex;
 }
 
 Mutex::~Mutex()
 {
-  pthread_mutex_destroy(&mutex);
+  pthread_mutex_destroy(&props->mutex);
+  delete props;
 }
 
 void Mutex::Lock(void)
 {
-  pthread_mutex_lock(&mutex);
+  pthread_mutex_lock(&props->mutex);
   locked++;
 }
 
 void Mutex::Unlock(void)
 {
  if (!--locked)
-    pthread_mutex_unlock(&mutex);
+    pthread_mutex_unlock(&props->mutex);
 }
 
 // --- Thread ---------------------------------------------------------------
 
-tThreadId Thread::mainThreadId = 0;
+struct Thread::props_t {
+  pthread_t childTid;
+};
 
-Thread::Thread(const char *Description)
+Thread::Thread() : props(new props_t)
 {
   active = running = false;
-#if !defined(__WINDOWS__)
-  childTid = 0;
-#endif
-  childThreadId = 0;
-  description = NULL;
-  if (Description)
-     SetDescription(Description);
 }
 
 Thread::~Thread()
 {
   Cancel(); // just in case the derived class didn't call it
-  free(description);
-}
-
-void Thread::SetPriority(int Priority)
-{
-#if !defined(__WINDOWS__)
-  setpriority(PRIO_PROCESS, 0, Priority);
-#endif
-}
-
-void Thread::SetIOPriority(int Priority)
-{
-#if !defined(__WINDOWS__)
-#ifdef HAVE_LINUXIOPRIO
-  syscall(SYS_ioprio_set, 1, 0, (Priority & 0xff) | (2 << 13));
-#endif
-#endif
-}
-
-void Thread::SetDescription(const char *Description, ...)
-{
-  free(description);
-  description = NULL;
-  if (Description)
-  {
-     va_list ap;
-
-     // get string size
-     va_start(ap, Description);
-     int s = vsnprintf(NULL, 0, Description, ap);
-     va_end(ap);
-
-     if(s <= 0)
-       return;
-
-     va_start(ap, Description);
-     description = (char*)malloc(s+1);
-     vsnprintf(description, s+1, Description, ap);
-     va_end(ap);
-  }
+  delete props;
 }
 
 void *Thread::StartThread(Thread *Thread)
 {
-  Thread->childThreadId = ThreadId();
-  if (Thread->description) {
-#ifdef PR_SET_NAME
-  prctl(PR_SET_NAME, Thread->description, 0, 0, 0);
-#endif
-     }
+  Thread->props->childTid = pthread_self();
   Thread->Action();
   Thread->running = false;
   Thread->active = false;
@@ -281,8 +218,8 @@ bool Thread::Start(void)
         }
      if (!active) {
         active = running = true;
-        if (pthread_create(&childTid, NULL, (void *(*) (void *))&StartThread, (void *)this) == 0) {
-           pthread_detach(childTid); // auto-reap
+        if (pthread_create(&props->childTid, NULL, (void *(*) (void *))&StartThread, (void *)this) == 0) {
+           pthread_detach(props->childTid); // auto-reap
            }
         else {
            active = running = false;
@@ -306,10 +243,7 @@ bool Thread::Active(void)
      // performed but no signal is actually sent.
      //
      int err;
-     if ((err = pthread_kill(childTid, 0)) != 0) {
-#if !defined(__WINDOWS__)
-        childTid = 0;
-#endif
+     if ((err = pthread_kill(props->childTid, 0)) != 0) {
         active = running = false;
         }
      else
@@ -332,31 +266,9 @@ void Thread::Cancel(int WaitSeconds)
         CondWait::SleepMs(10);
       }
     }
-    pthread_cancel(childTid);
-#if !defined(__WINDOWS__)
-    childTid = 0;
-#endif
+    pthread_cancel(props->childTid);
     active = false;
   }
-}
-
-tThreadId Thread::ThreadId(void)
-{
-#ifdef __APPLE__
-    return (int)pthread_self();
-#else
-#ifdef __WINDOWS__
-  return GetCurrentThreadId();
-#else
-  return syscall(__NR_gettid);
-#endif
-#endif
-}
-
-void Thread::SetMainThreadId(void)
-{
-  if (mainThreadId == 0)
-     mainThreadId = ThreadId();
 }
 
 // --- MutexLock ------------------------------------------------------------

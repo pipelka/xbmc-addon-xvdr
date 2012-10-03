@@ -31,10 +31,6 @@
 
 #include "iso639.h"
 
-extern "C" {
-#include "libTcpSocket/os-dependent_socket.h"
-}
-
 using namespace XVDR;
 
 #define SEEK_POSSIBLE 0x10 // flag used to check if protocol allows seeks
@@ -157,7 +153,7 @@ ResponsePacket* Connection::ReadResult(RequestPacket* vrp)
 
   m_mutex.Unlock();
 
-  if(!Session::SendMessage(vrp))
+  if(!Session::TransmitMessage(vrp))
   {
 	MutexLock lock(&m_mutex);
     m_queue.erase(vrp->getSerial());
@@ -585,7 +581,7 @@ bool Connection::AddTimer(const Timer& timer)
   return (returnCode == XVDR_RET_OK);
 }
 
-bool Connection::DeleteTimer(uint32_t timerindex, bool force)
+int Connection::DeleteTimer(uint32_t timerindex, bool force)
 {
   RequestPacket vrp(XVDR_TIMER_DELETE);
   vrp.add_U32(timerindex);
@@ -601,7 +597,7 @@ bool Connection::DeleteTimer(uint32_t timerindex, bool force)
   uint32_t returnCode = vresp->extract_U32();
   delete vresp;
 
-  return (returnCode == XVDR_RET_OK);
+  return returnCode;
 }
 
 bool Connection::UpdateTimer(const Timer& timer)
@@ -754,14 +750,12 @@ void Connection::Action()
   uint32_t lastPing = 0;
   ResponsePacket* vresp;
 
-  SetPriority(19);
-
   while (Running())
   {
     // try to reconnect
     if(ConnectionLost() && !TryReconnect())
     {
-      SleepMs(1000);
+      CondWait::SleepMs(500);
       continue;
    }
 
