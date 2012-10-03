@@ -26,6 +26,7 @@
 #include "XBMCSettings.h"
 
 #include "xvdr/demux.h"
+#include "xvdr/command.h"
 #include "xvdr/connection.h"
 
 #include "xbmc_pvr_dll.h"
@@ -400,7 +401,14 @@ PVR_ERROR DeleteTimer(const PVR_TIMER &timer, bool bForce)
   if (!mConnection)
     return PVR_ERROR_SERVER_ERROR;
 
-  return mConnection->DeleteTimer(timer.iClientIndex, bForce) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
+  int rc = mConnection->DeleteTimer(timer.iClientIndex, bForce);
+
+  if(rc == XVDR_RET_OK)
+	return PVR_ERROR_NO_ERROR;
+  else if(rc == XVDR_RET_RECRUNNING)
+    return PVR_ERROR_RECORDING_RUNNING;
+
+  return PVR_ERROR_SERVER_ERROR;
 }
 
 PVR_ERROR UpdateTimer(const PVR_TIMER &timer)

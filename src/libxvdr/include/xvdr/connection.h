@@ -73,7 +73,7 @@ public:
   int         GetTimersCount();
   bool        AddTimer(const Timer& timerinfo);
   bool        GetTimerInfo(unsigned int timernumber, Timer& tag);
-  bool        DeleteTimer(uint32_t timerindex, bool force = false);
+  int         DeleteTimer(uint32_t timerindex, bool force = false);
   bool        UpdateTimer(const Timer& timerinfo);
 
   int         GetRecordingsCount();
