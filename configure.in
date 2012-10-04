@@ -36,7 +36,13 @@ fi
 
 AC_SUBST(VERSIONEXT)
 
+ISMINGW32=false
+
 case $host in
+  *-*-cygwin* | *-*-mingw32*)
+    LDFLAGS+="-no-undefined -no-cygwin"
+    ISMINGW32=true
+    ;;
   arm*-*-linux-gnu*)
     AC_SUBST(ARCH_DEFINES, "-D_ARMEL")
     ;;
@@ -47,6 +53,8 @@ case $host in
     AC_SUBST(ARCH_DEFINES, "-D_POWERPC64")
     ;;
 esac
+
+AM_CONDITIONAL([MINGW32], $ISMINGW32)
 
 # Finally create all the generated files
 AC_OUTPUT([

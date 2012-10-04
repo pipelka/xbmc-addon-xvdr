@@ -34,9 +34,9 @@ public:
 
   ~cXBMCCallbacks();
 
-  void Log(LEVEL level, const std::string& text, ...);
+  void Log(XVDR_LOGLEVEL level, const std::string& text, ...);
 
-  void Notification(LEVEL level, const std::string& text, ...);
+  void Notification(XVDR_LOGLEVEL level, const std::string& text, ...);
 
   void Recording(const std::string& line1, const std::string& line2, bool on);
 

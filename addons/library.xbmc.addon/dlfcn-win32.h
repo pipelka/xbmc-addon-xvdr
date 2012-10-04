@@ -1,4 +1,3 @@
-#pragma once
 /*
  * dlfcn-win32
  * Copyright (c) 2007 Ramiro Polla
@@ -38,9 +37,17 @@
 #define RTLD_DEFAULT    0
 #define RTLD_NEXT       0
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void *dlopen ( const char *file, int mode );
 int   dlclose( void *handle );
 void *dlsym  ( void *handle, const char *name );
 char *dlerror( void );
 
-#endif /* DLFCN-WIN32_H */
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* DLFCN_H */

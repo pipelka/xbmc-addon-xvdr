@@ -47,22 +47,22 @@ void cXBMCCallbacks::SetHandle(ADDON_HANDLE handle)
   m_handle = handle;
 }
 
-void cXBMCCallbacks::Log(LEVEL level, const std::string& text, ...)
+void cXBMCCallbacks::Log(XVDR_LOGLEVEL level, const std::string& text, ...)
 {
   addon_log_t lt;
   switch(level)
   {
-    case DEBUG:
+    case XVDR_DEBUG:
       lt = LOG_DEBUG;
       break;
     default:
-    case INFO:
+    case XVDR_INFO:
       lt = LOG_INFO;
       break;
-    case NOTICE:
+    case XVDR_NOTICE:
       lt = LOG_NOTICE;
       break;
-    case ERROR:
+    case XVDR_ERROR:
       lt = LOG_ERROR;
       break;
   }
@@ -76,19 +76,19 @@ void cXBMCCallbacks::Log(LEVEL level, const std::string& text, ...)
   XBMC->Log(lt, m_msg);
 }
 
-void cXBMCCallbacks::Notification(LEVEL level, const std::string& text, ...)
+void cXBMCCallbacks::Notification(XVDR_LOGLEVEL level, const std::string& text, ...)
 {
   queue_msg qm;
   switch(level)
   {
     default:
-    case INFO:
+    case XVDR_INFO:
       qm = QUEUE_INFO;
       break;
-    case ERROR:
+    case XVDR_ERROR:
       qm = QUEUE_ERROR;
       break;
-    case WARNING:
+    case XVDR_WARNING:
       qm = QUEUE_WARNING;
       break;
   }

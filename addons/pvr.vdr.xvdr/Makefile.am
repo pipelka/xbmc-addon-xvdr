@@ -1,15 +1,21 @@
+if MINGW32
+ADDONNAME = XBMC_VDR_xvdr_WIN32.pvr
+else
+ADDONNAME = XBMC_VDR_xvdr.pvr
+endif
+
 addondir = $(prefix)/addons/pvr.vdr.xvdr
 
 addon_DATA = \
 	addon.xml \
-	XBMC_VDR_xvdr.pvr \
+	$(ADDONNAME) \
 	icon.png
 
-XBMC_VDR_xvdr.pvr:
+$(ADDONNAME):
 	make -C ../../src
 
-install-data-hook: XBMC_VDR_xvdr.pvr
-	$(STRIP) -x -s XBMC_VDR_xvdr.pvr
+install-data-hook: $(ADDONNAME)
+	$(STRIP) -x -s $(ADDONNAME)
 	-cp -Rf $(srcdir)/resources $(DESTDIR)$(addondir)
 	chmod -R +w $(DESTDIR)$(addondir)/resources
 

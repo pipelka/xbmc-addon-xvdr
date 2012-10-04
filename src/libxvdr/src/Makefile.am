@@ -26,8 +26,15 @@ noinst_LTLIBRARIES = libxvdrstatic.la
 libxvdrstatic_la_SOURCES = \
 	$(SOURCEFILES)
 
+if MINGW32
 libxvdrstatic_la_LIBADD = \
-	-lpthread \
+	-L$(srcdir)/pthreads-win32 -lpthreadGC2 -lws2_32
+else
+libxvdrstatic_la_LIBADD = \
+	-lpthread
+endif
+
+libxvdrstatic_la_LIBADD += \
 	$(ZLIB_LIBS)
 
 
@@ -36,8 +43,15 @@ lib_LTLIBRARIES = libxvdr.la
 libxvdr_la_SOURCES = \
 	$(SOURCEFILES)
 
+if MINGW32
 libxvdr_la_LIBADD = \
-	-lpthread \
+	-L$(srcdir)/pthreads-win32 -lpthreadGC2 -lws2_32
+else
+libxvdr_la_LIBADD = \
+	-lpthread
+endif
+
+libxvdr_la_LIBADD += \
 	$(ZLIB_LIBS)
 
 libxvdr_la_LDFLAGS = \

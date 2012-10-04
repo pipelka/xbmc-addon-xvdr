@@ -100,7 +100,7 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
   TimeMs RetryTimeout;
   bool bConnected = false;
 
-  while (!(bConnected = mConnection->Open(s.Hostname())) && RetryTimeout.Elapsed() < (uint)s.ConnectTimeout() * 1000)
+  while (!(bConnected = mConnection->Open(s.Hostname())) && RetryTimeout.Elapsed() < (uint32_t)s.ConnectTimeout() * 1000)
 	XVDR::CondWait::SleepMs(100);
 
   if (!bConnected){

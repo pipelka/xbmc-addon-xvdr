@@ -4,11 +4,20 @@
 #include <string>
 #include "xvdr/dataset.h"
 
-#define XVDR_INFO    XVDR::ClientInterface::INFO
+/*#define XVDR_INFO    XVDR::ClientInterface::INFO
 #define XVDR_NOTICE  XVDR::ClientInterface::NOTICE
 #define XVDR_WARNING XVDR::ClientInterface::WARNING
 #define XVDR_ERROR   XVDR::ClientInterface::ERROR
-#define XVDR_DEBUG   XVDR::ClientInterface::DEBUG
+#define XVDR_DEBUG   XVDR::ClientInterface::DEBUG*/
+
+typedef enum
+{
+  XVDR_INFO,
+  XVDR_NOTICE,
+  XVDR_WARNING,
+  XVDR_ERROR,
+  XVDR_DEBUG
+} XVDR_LOGLEVEL;
 
 namespace XVDR {
 
@@ -18,14 +27,14 @@ class ClientInterface
 {
 public:
 
-  typedef enum
+  /*typedef enum
   {
     INFO,
     NOTICE,
     WARNING,
     ERROR,
     DEBUG
-  } LEVEL;
+  } LEVEL;*/
 
   ClientInterface();
 
@@ -33,9 +42,9 @@ public:
 
   // log and notification
 
-  virtual void Log(LEVEL level, const std::string& text, ...) = 0;
+  virtual void Log(XVDR_LOGLEVEL level, const std::string& text, ...) = 0;
 
-  virtual void Notification(LEVEL level, const std::string& text, ...) = 0;
+  virtual void Notification(XVDR_LOGLEVEL level, const std::string& text, ...) = 0;
 
   virtual void Recording(const std::string& line1, const std::string& line2, bool on) = 0;
 
