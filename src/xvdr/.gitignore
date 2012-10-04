@@ -5,3 +5,4 @@
 .libs
 XBMC_VDR_xvdr.pvr
 *.la
+XBMC_VDR_xvdr_WIN32.pvr

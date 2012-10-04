@@ -5,14 +5,6 @@
 # how to reach the author.
 #
 
-if MINGW32
-ADDONNAME = XBMC_VDR_xvdr_WIN32.pvr
-SOEXT = dll
-else
-ADDONNAME = XBMC_VDR_xvdr.pvr
-SOEXT = so
-endif
-
 LIBS   =
 LIBDIR = ../../addons/pvr.vdr.xvdr
 LIB    = ../../addons/pvr.vdr.xvdr/$(ADDONNAME)
@@ -64,7 +56,6 @@ EXTRA_DIST = \
 
 $(ADDONNAME): libxvdraddon.la
 	cp -f .libs/libxvdraddon.$(SOEXT) $(ADDONNAME)
-#	$(STRIP) -x $(ADDONNAME)
 
 $(LIB): $(ADDONNAME)
 	cp -f $(ADDONNAME) $(LIB)

@@ -16,7 +16,7 @@ install-include:
 
 dist-zip: all
 	cp -r addons/pvr.vdr.xvdr .
-	$(STRIP) -s -x pvr.vdr.xvdr/XBMC_VDR_xvdr.pvr
+	$(STRIP) -s -x pvr.vdr.xvdr/$(ADDONNAME)
 	zip -9 -r ./pvr.vdr.xvdr-$(VERSION).zip pvr.vdr.xvdr --exclude \*.am \*.in \*Makefile \*.gitignore
 	rm -Rf pvr.vdr.xvdr
 
@@ -24,7 +24,7 @@ dist-zip-daily: all
 	cp -r addons/pvr.vdr.xvdr .
 	cat pvr.vdr.xvdr/addon.xml | sed "s/$(VERSION)/$(VERSION).$(DATE)/g" > pvr.vdr.xvdr/addon.xml.new
 	mv pvr.vdr.xvdr/addon.xml.new pvr.vdr.xvdr/addon.xml
-	$(STRIP) -s -x pvr.vdr.xvdr/XBMC_VDR_xvdr.pvr
+	$(STRIP) -s -x pvr.vdr.xvdr/$(ADDONNAME)
 	zip -9 -r ./pvr.vdr.xvdr-$(VERSION).$(DATE).zip pvr.vdr.xvdr --exclude \*.am \*.in \*Makefile \*.gitignore
 	rm -Rf pvr.vdr.xvdr
 
@@ -54,7 +54,7 @@ release-repo-daily: repo-daily
 	cp -r addon-repository/* ~/Dropbox/Public/xbmc-addon-xvdr
 
 repo-zip: all
-	cd addons && zip -9 -r ../repository.xvdr.zip repository.xvdr --exclude \*.am \*.in \*Makefile \*.gitignore
-
-repo-zip64: all
-	cd addons && zip -9 -r ../repository.xvdr64.zip repository.xvdr64 --exclude \*.am \*.in \*Makefile \*.gitignore
+	cd addons && \
+	zip -9 -r ../repository.xvdr.linux32.zip repository.xvdr.linux32 --exclude \*.am \*.in \*Makefile \*.gitignore && \
+	zip -9 -r ../repository.xvdr.linux64.zip repository.xvdr.linux64 --exclude \*.am \*.in \*Makefile \*.gitignore && \
+	zip -9 -r ../repository.xvdr.win32.zip repository.xvdr.win32 --exclude \*.am \*.in \*Makefile \*.gitignore

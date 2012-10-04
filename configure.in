@@ -37,11 +37,15 @@ fi
 AC_SUBST(VERSIONEXT)
 
 ISMINGW32=false
+ADDONNAME=XBMC_VDR_xvdr.pvr
+SOEXT=so
 
 case $host in
   *-*-cygwin* | *-*-mingw32*)
     LDFLAGS+="-no-undefined -no-cygwin"
     ISMINGW32=true
+    ADDONNAME=XBMC_VDR_xvdr_WIN32.pvr
+    SOEXT=dll
     ;;
   arm*-*-linux-gnu*)
     AC_SUBST(ARCH_DEFINES, "-D_ARMEL")
@@ -55,6 +59,8 @@ case $host in
 esac
 
 AM_CONDITIONAL([MINGW32], $ISMINGW32)
+AC_SUBST(ADDONNAME)
+AC_SUBST(SOEXT)
 
 # Finally create all the generated files
 AC_OUTPUT([
@@ -62,8 +68,6 @@ Makefile
 addons/Makefile
 addons/pvr.vdr.xvdr/Makefile
 addons/pvr.vdr.xvdr/addon.xml
-addons/repository.xvdr/Makefile
-addons/repository.xvdr64/Makefile
 data/addons.xml
 data/Makefile
 src/Makefile

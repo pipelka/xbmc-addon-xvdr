@@ -1,14 +1,18 @@
 SUBDIRS = \
-	pvr.vdr.xvdr \
-	repository.xvdr \
-	repository.xvdr64
+	pvr.vdr.xvdr
 
 DIST_SUBDIRS = \
 	$(SUBDIRS)
 	
 EXTRA_DIST = \
-	library.xbmc.addon/dlfcn-win32.cpp \
+	library.xbmc.addon/dlfcn-win32.c \
 	library.xbmc.addon/dlfcn-win32.h \
 	library.xbmc.addon/libXBMC_addon.h \
 	library.xbmc.pvr/libXBMC_pvr.h \
-	library.xbmc.gui/libXBMC_gui.h
+	library.xbmc.gui/libXBMC_gui.h \
+	repository.xvdr.linux32/addon.xml \
+	repository.xvdr.linux32/icon.png \
+	repository.xvdr.linux64/addon.xml \
+	repository.xvdr.linux64/icon.png \
+	repository.xvdr.win32/addon.xml \
+	repository.xvdr.win32/icon.png
