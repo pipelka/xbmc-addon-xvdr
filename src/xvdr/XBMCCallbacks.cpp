@@ -410,8 +410,8 @@ PVR_STREAM_PROPERTIES::PVR_STREAM& operator<< (PVR_STREAM_PROPERTIES::PVR_STREAM
 PVR_STREAM_PROPERTIES& operator<< (PVR_STREAM_PROPERTIES& lhs, const StreamProperties& rhs) {
 	lhs.iStreamCount = rhs.size();
 
-	int index = 0;
-	for(StreamProperties::const_iterator i = rhs.begin(); i != rhs.end(); i++, index++) {
+	for(StreamProperties::const_iterator i = rhs.begin(); i != rhs.end(); i++) {
+	  int index = (*i).second[stream_index];
 		lhs.stream[index] << (*i).second;
 	}
 
