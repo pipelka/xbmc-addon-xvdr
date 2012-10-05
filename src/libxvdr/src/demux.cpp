@@ -39,6 +39,8 @@ Demux::Demux(ClientInterface* client) : Connection(client), m_priority(50), m_qu
 
 Demux::~Demux()
 {
+  // wait for pending requests
+  MutexLock lock(&m_lock);
 }
 
 bool Demux::OpenChannel(const std::string& hostname, uint32_t channeluid)

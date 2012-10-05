@@ -511,7 +511,8 @@ PVR_ERROR GetStreamProperties(PVR_STREAM_PROPERTIES* pProperties)
   if (!mDemuxer)
     return PVR_ERROR_SERVER_ERROR;
 
-  *pProperties << mDemuxer->GetStreamProperties();;
+  *pProperties << mDemuxer->GetStreamProperties();
+
   return PVR_ERROR_NO_ERROR;
 }
 
@@ -545,10 +546,13 @@ int GetCurrentClientChannel(void)
 
 bool SwitchChannel(const PVR_CHANNEL &channel)
 {
-  if (mDemuxer == NULL)
-    return false;
-
   mCallbacks->Lock();
+
+  if (mDemuxer == NULL)
+  {
+    mCallbacks->Unlock();
+    return false;
+  }
 
   bool rc = false;
   mDemuxer->SetTimeout(cXBMCSettings::GetInstance().ConnectTimeout() * 1000);
@@ -566,10 +570,17 @@ bool SwitchChannel(const PVR_CHANNEL &channel)
 
 PVR_ERROR SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
 {
-  if (!mDemuxer)
+  mCallbacks->Lock();
+
+  if (mDemuxer == NULL)
+  {
+    mCallbacks->Unlock();
     return PVR_ERROR_SERVER_ERROR;
+  }
 
   signalStatus << mDemuxer->GetSignalStatus();
+
+  mCallbacks->Unlock();
   return PVR_ERROR_NO_ERROR;
 }
 
