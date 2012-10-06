@@ -5,6 +5,11 @@ addon_DATA = \
 	$(ADDONNAME) \
 	icon.png
 
+if MINGW32
+addon_DATA += \
+	pthreadGC2.dll
+endif
+
 $(ADDONNAME):
 	make -C ../../src
 

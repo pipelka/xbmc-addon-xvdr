@@ -25,7 +25,11 @@ dist-zip-daily: all
 	cat pvr.vdr.xvdr/addon.xml | sed "s/$(VERSION)/$(VERSION).$(DATE)/g" > pvr.vdr.xvdr/addon.xml.new
 	mv pvr.vdr.xvdr/addon.xml.new pvr.vdr.xvdr/addon.xml
 	$(STRIP) -s -x pvr.vdr.xvdr/$(ADDONNAME)
+if MINGW32
 	zip -9 -r ./pvr.vdr.xvdr-$(VERSION).$(DATE).zip pvr.vdr.xvdr --exclude \*.am \*.in \*Makefile \*.gitignore
+else
+	zip -9 -r ./pvr.vdr.xvdr-$(VERSION).$(DATE).zip pvr.vdr.xvdr --exclude \*.am \*.in \*Makefile \*.gitignore \*.dll
+endif
 	rm -Rf pvr.vdr.xvdr
 
 dist-git: all
