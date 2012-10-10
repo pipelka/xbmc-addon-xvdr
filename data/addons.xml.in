@@ -6,6 +6,8 @@
     </requires>
     <extension
       point="xbmc.pvrclient"
+      library_wingl="XBMC_VDR_xvdr_WIN32.pvr"
+      library_windx="XBMC_VDR_xvdr_WIN32.pvr"
       library_linux="XBMC_VDR_xvdr.pvr"/>
     <extension point="xbmc.addon.metadata">
       <summary>PVR client to connect VDR to XBMC</summary>
