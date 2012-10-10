@@ -39,10 +39,26 @@
 
 using namespace XVDR;
 
+struct Session::streamPacketHeader {
+      uint32_t opCodeID;
+      uint32_t streamID;
+      uint32_t duration;
+      uint8_t pts[sizeof(int64_t)];
+      uint8_t dts[sizeof(int64_t)];
+      uint32_t userDataLength;
+};
+
+struct Session::responsePacketHeader {
+      uint32_t requestID;
+      uint32_t userDataLength;
+};
+
 Session::Session()
   : m_timeout(3000)
   , m_fd(INVALID_SOCKET)
   , m_connectionLost(false)
+  , m_streamPacketHeader(new struct streamPacketHeader)
+  , m_responsePacketHeader(new struct responsePacketHeader)
 {
   m_port = 34891;
 }
@@ -50,6 +66,8 @@ Session::Session()
 Session::~Session()
 {
   Close();
+  delete m_streamPacketHeader;
+  delete m_responsePacketHeader;
 }
 
 void Session::Abort()
@@ -187,14 +205,14 @@ ResponsePacket* Session::ReadMessage()
 
   if (channelID == XVDR_CHANNEL_STREAM)
   {
-    if (!readData((uint8_t*)&m_streamPacketHeader, sizeof(m_streamPacketHeader))) return NULL;
+    if (!readData((uint8_t*)m_streamPacketHeader, sizeof(struct streamPacketHeader))) return NULL;
 
-    opCodeID = be32toh(m_streamPacketHeader.opCodeID);
-    streamID = be32toh(m_streamPacketHeader.streamID);
-    duration = be32toh(m_streamPacketHeader.duration);
-    pts = be64toh(*(int64_t*)m_streamPacketHeader.pts);
-    dts = be64toh(*(int64_t*)m_streamPacketHeader.dts);
-    userDataLength = be32toh(m_streamPacketHeader.userDataLength);
+    opCodeID = be32toh(m_streamPacketHeader->opCodeID);
+    streamID = be32toh(m_streamPacketHeader->streamID);
+    duration = be32toh(m_streamPacketHeader->duration);
+    pts = be64toh(*(int64_t*)m_streamPacketHeader->pts);
+    dts = be64toh(*(int64_t*)m_streamPacketHeader->dts);
+    userDataLength = be32toh(m_streamPacketHeader->userDataLength);
 
     if (userDataLength > 0) {
       userData = (uint8_t*)malloc(userDataLength);
@@ -211,10 +229,10 @@ ResponsePacket* Session::ReadMessage()
   }
   else
   {
-    if (!readData((uint8_t*)&m_responsePacketHeader, sizeof(m_responsePacketHeader))) return NULL;
+    if (!readData((uint8_t*)m_responsePacketHeader, sizeof(struct responsePacketHeader))) return NULL;
 
-    requestID = be32toh(m_responsePacketHeader.requestID);
-    userDataLength = be32toh(m_responsePacketHeader.userDataLength);
+    requestID = be32toh(m_responsePacketHeader->requestID);
+    userDataLength = be32toh(m_responsePacketHeader->userDataLength);
 
     if (userDataLength > 5000000) return NULL; // how big can these packets get?
     userData = NULL;
