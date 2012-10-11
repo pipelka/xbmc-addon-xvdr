@@ -14,5 +14,7 @@ EXTRA_DIST = \
 	repository.xvdr.linux32/icon.png \
 	repository.xvdr.linux64/addon.xml \
 	repository.xvdr.linux64/icon.png \
+	repository.xvdr.rpi/addon.xml \
+	repository.xvdr.rpi/icon.png \
 	repository.xvdr.win32/addon.xml \
 	repository.xvdr.win32/icon.png
