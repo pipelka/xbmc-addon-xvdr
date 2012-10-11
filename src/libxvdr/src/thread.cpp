@@ -266,7 +266,10 @@ void Thread::Cancel(int WaitSeconds)
         CondWait::SleepMs(10);
       }
     }
+    // ANDROID doesnt know how to cancel streams
+#ifndef ANDROID
     pthread_cancel(props->childTid);
+#endif
     active = false;
   }
 }

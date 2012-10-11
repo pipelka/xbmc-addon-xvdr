@@ -33,10 +33,6 @@ uint16_t be16toh(uint16_t u);
 // LINUX / OTHER
 #else
 
-#ifndef SOL_TCP
-#define SOL_TCP IPPROTO_TCP
-#endif
-
 #define INVALID_SOCKET -1
 #define SEWOULDBLOCK EAGAIN
 
