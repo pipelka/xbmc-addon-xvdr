@@ -22,8 +22,7 @@
 
 #include <limits.h>
 #include "XBMCChannelScan.h"
-#include "xvdr/responsepacket.h"
-#include "xvdr/requestpacket.h"
+#include "xvdr/msgpacket.h"
 #include "xvdr/command.h"
 
 #include <sstream>
@@ -122,29 +121,29 @@ void cXBMCChannelScan::StartScan()
       break;
   }
 
-  ResponsePacket* vresp = NULL;
+  MsgPacket* vresp = NULL;
   uint32_t retCode = XVDR_RET_ERROR;
 
-  RequestPacket vrp(XVDR_SCAN_START);
-  vrp.add_U32(source);
-  vrp.add_U8(m_radioButtonTV->IsSelected());
-  vrp.add_U8(m_radioButtonRadio->IsSelected());
-  vrp.add_U8(m_radioButtonFTA->IsSelected());
-  vrp.add_U8(m_radioButtonScrambled->IsSelected());
-  vrp.add_U8(m_radioButtonHD->IsSelected());
-  vrp.add_U32(m_spinCountries->GetValue());
-  vrp.add_U32(m_spinDVBCInversion->GetValue());
-  vrp.add_U32(m_spinDVBCSymbolrates->GetValue());
-  vrp.add_U32(m_spinDVBCqam->GetValue());
-  vrp.add_U32(m_spinDVBTInversion->GetValue());
-  vrp.add_U32(m_spinSatellites->GetValue());
-  vrp.add_U32(m_spinATSCType->GetValue());
+  MsgPacket vrp(XVDR_SCAN_START);
+  vrp.put_U32(source);
+  vrp.put_U8(m_radioButtonTV->IsSelected());
+  vrp.put_U8(m_radioButtonRadio->IsSelected());
+  vrp.put_U8(m_radioButtonFTA->IsSelected());
+  vrp.put_U8(m_radioButtonScrambled->IsSelected());
+  vrp.put_U8(m_radioButtonHD->IsSelected());
+  vrp.put_U32(m_spinCountries->GetValue());
+  vrp.put_U32(m_spinDVBCInversion->GetValue());
+  vrp.put_U32(m_spinDVBCSymbolrates->GetValue());
+  vrp.put_U32(m_spinDVBCqam->GetValue());
+  vrp.put_U32(m_spinDVBTInversion->GetValue());
+  vrp.put_U32(m_spinSatellites->GetValue());
+  vrp.put_U32(m_spinATSCType->GetValue());
 
   vresp = ReadResult(&vrp);
   if (!vresp)
     goto SCANError;
 
-  retCode = vresp->extract_U32();
+  retCode = vresp->get_U32();
   if (retCode != XVDR_RET_OK)
     goto SCANError;
 
@@ -160,12 +159,12 @@ SCANError:
 
 void cXBMCChannelScan::StopScan()
 {
-  RequestPacket vrp(XVDR_SCAN_STOP);
-  ResponsePacket* vresp = ReadResult(&vrp);
+  MsgPacket vrp(XVDR_SCAN_STOP);
+  MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
     return;
 
-  uint32_t retCode = vresp->extract_U32();
+  uint32_t retCode = vresp->get_U32();
   if (retCode != XVDR_RET_OK)
   {
     XBMC->Log(LOG_ERROR, "%s - Return error after stop (%i)", __FUNCTION__, retCode);
@@ -412,20 +411,20 @@ bool cXBMCChannelScan::ReadCountries()
   std::string dvdlang = XBMC->GetDVDMenuLanguage();
   //dvdlang = dvdlang.ToUpper();
 
-  RequestPacket vrp(XVDR_SCAN_GETCOUNTRIES);
-  ResponsePacket* vresp = ReadResult(&vrp);
+  MsgPacket vrp(XVDR_SCAN_GETCOUNTRIES);
+  MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
     return false;
 
   int startIndex = -1;
-  uint32_t retCode = vresp->extract_U32();
+  uint32_t retCode = vresp->get_U32();
   if (retCode == XVDR_RET_OK)
   {
-    while (!vresp->end())
+    while (!vresp->eop())
     {
-      uint32_t    index     = vresp->extract_U32();
-      const char *isoName   = vresp->extract_String();
-      const char *longName  = vresp->extract_String();
+      uint32_t    index     = vresp->get_U32();
+      const char *isoName   = vresp->get_String();
+      const char *longName  = vresp->get_String();
       m_spinCountries->AddLabel(longName, index);
       if (dvdlang == isoName)
         startIndex = index;
@@ -446,19 +445,19 @@ bool cXBMCChannelScan::ReadSatellites()
   m_spinSatellites = GUI->Control_getSpin(m_window, CONTROL_SPIN_SATELLITES);
   m_spinSatellites->Clear();
 
-  RequestPacket vrp(XVDR_SCAN_GETSATELLITES);
-  ResponsePacket* vresp = ReadResult(&vrp);
+  MsgPacket vrp(XVDR_SCAN_GETSATELLITES);
+  MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
     return false;
 
-  uint32_t retCode = vresp->extract_U32();
+  uint32_t retCode = vresp->get_U32();
   if (retCode == XVDR_RET_OK)
   {
-    while (!vresp->end())
+    while (!vresp->eop())
     {
-      uint32_t    index     = vresp->extract_U32();
-      const char *shortName = vresp->extract_String();
-      const char *longName  = vresp->extract_String();
+      uint32_t    index     = vresp->get_U32();
+      const char *shortName = vresp->get_String();
+      const char *longName  = vresp->get_String();
       m_spinSatellites->AddLabel(longName, index);
     }
     m_spinSatellites->SetValue(6);      /* default to Astra 19.2         */
@@ -487,38 +486,38 @@ void cXBMCChannelScan::SetControlsVisible(scantype_t type)
   m_radioButtonHD->SetVisible(type == DVB_TERR || type == DVB_CABLE || type == DVB_SAT || type == DVB_ATSC);
 }
 
-void cXBMCChannelScan::OnResponsePacket(ResponsePacket* resp)
+void cXBMCChannelScan::OnResponsePacket(MsgPacket* resp)
 {
-  uint32_t requestID = resp->getRequestID();
+  uint32_t requestID = resp->getMsgID();
 
   if (requestID == XVDR_SCANNER_PERCENTAGE)
   {
-    uint32_t percent = resp->extract_U32();
+    uint32_t percent = resp->get_U32();
     if (percent >= 0 && percent <= 100)
       SetProgress(percent);
   }
   else if (requestID == XVDR_SCANNER_SIGNAL)
   {
-    uint32_t strength = resp->extract_U32();
-    uint32_t locked   = resp->extract_U32();
+    uint32_t strength = resp->get_U32();
+    uint32_t locked   = resp->get_U32();
     SetSignal(strength, locked);
   }
   else if (requestID == XVDR_SCANNER_DEVICE)
   {
-    const char* str = resp->extract_String();
+    const char* str = resp->get_String();
     m_window->SetControlLabel(LABEL_DEVICE, str);
   }
   else if (requestID == XVDR_SCANNER_TRANSPONDER)
   {
-    const char* str = resp->extract_String();
+    const char* str = resp->get_String();
     m_window->SetControlLabel(LABEL_TRANSPONDER, str);
   }
   else if (requestID == XVDR_SCANNER_NEWCHANNEL)
   {
-    uint32_t isRadio      = resp->extract_U32();
-    uint32_t isEncrypted  = resp->extract_U32();
-    uint32_t isHD         = resp->extract_U32();
-    const char* str       = resp->extract_String();
+    uint32_t isRadio      = resp->get_U32();
+    uint32_t isEncrypted  = resp->get_U32();
+    uint32_t isHD         = resp->get_U32();
+    const char* str       = resp->get_String();
 
     CAddonListItem* item = GUI->ListItem_create(str, NULL, NULL, NULL, NULL);
     if (isEncrypted)
@@ -546,7 +545,7 @@ void cXBMCChannelScan::OnResponsePacket(ResponsePacket* resp)
   }
   else if (requestID == XVDR_SCANNER_STATUS)
   {
-    uint32_t status = resp->extract_U32();
+    uint32_t status = resp->get_U32();
     if (status == 0)
     {
       if (m_Canceled)

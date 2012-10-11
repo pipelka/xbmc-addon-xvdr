@@ -30,10 +30,10 @@
 
 #include "xvdr/dataset.h"
 
+class MsgPacket;
+
 namespace XVDR {
 
-class ResponsePacket;
-class RequestPacket;
 class ClientInterface;
 
 class Connection : public Session, public Thread
@@ -81,7 +81,7 @@ public:
   bool        RenameRecording(const std::string& recid, const std::string& newname);
   bool        DeleteRecording(const std::string& recid);
 
-  ResponsePacket*  ReadResult(RequestPacket* vrp);
+  MsgPacket*  ReadResult(MsgPacket* vrp);
 
   // Recordings
 
@@ -96,14 +96,14 @@ public:
 protected:
 
   virtual void Action(void);
-  virtual void OnResponsePacket(ResponsePacket *pkt);
+  virtual void OnResponsePacket(MsgPacket *pkt);
   virtual bool TryReconnect();
 
   void SignalConnectionLost();
   void OnDisconnect();
   void OnReconnect();
 
-  void ReadTimerPacket(ResponsePacket* resp, Timer& tag);
+  void ReadTimerPacket(MsgPacket* resp, Timer& tag);
 
   bool m_statusinterface;
   ClientInterface* m_client;
@@ -115,7 +115,7 @@ private:
   struct SMessage
   {
     CondWait* event;
-    ResponsePacket* pkt;
+    MsgPacket* pkt;
   };
   typedef std::map<int, SMessage> SMessages;
 

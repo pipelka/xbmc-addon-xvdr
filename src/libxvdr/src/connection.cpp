@@ -25,8 +25,7 @@
 
 #include "xvdr/connection.h"
 #include "xvdr/clientinterface.h"
-#include "xvdr/responsepacket.h"
-#include "xvdr/requestpacket.h"
+#include "xvdr/msgpacket.h"
 #include "xvdr/command.h"
 
 #include "iso639.h"
@@ -79,26 +78,26 @@ bool Connection::Login()
   std::string code = m_client->GetLanguageCode();
   const char* lang = ISO639_FindLanguage(code);
 
-  RequestPacket vrp(XVDR_LOGIN);
-  vrp.add_U32(XVDRPROTOCOLVERSION);
-  vrp.add_U8(m_compressionlevel);
-  vrp.add_String(m_name.empty() ? "XBMC Media Center" : m_name.c_str());
-  vrp.add_String((lang != NULL) ? lang : "");
-  vrp.add_U8(m_audiotype);
+  MsgPacket vrp(XVDR_LOGIN);
+  vrp.put_U32(XVDRPROTOCOLVERSION);
+  vrp.put_U8(m_compressionlevel);
+  vrp.put_String(m_name.empty() ? "XBMC Media Center" : m_name.c_str());
+  vrp.put_String((lang != NULL) ? lang : "");
+  vrp.put_U8(m_audiotype);
 
   // read welcome
-  ResponsePacket* vresp = Session::ReadResult(&vrp);
+  MsgPacket* vresp = Session::ReadResult(&vrp);
   if (!vresp)
   {
 	m_client->Log(XVDR_ERROR, "failed to read greeting from server");
 	return false;
   }
 
-  m_protocol                = vresp->extract_U32();
-  uint32_t    vdrTime       = vresp->extract_U32();
-  int32_t     vdrTimeOffset = vresp->extract_S32();
-  m_server                  = vresp->extract_String();
-  m_version                 = vresp->extract_String();
+  m_protocol                = vresp->get_U32();
+  uint32_t    vdrTime       = vresp->get_U32();
+  int32_t     vdrTimeOffset = vresp->get_S32();
+  m_server                  = vresp->get_String();
+  m_version                 = vresp->get_String();
 
   if (m_name.empty())
 	m_client->Log(XVDR_INFO, "Logged in at '%u+%i' to '%s' Version: '%s' with protocol version '%u'", vdrTime, vdrTimeOffset, m_server.c_str(), m_version.c_str(), m_protocol);
@@ -140,14 +139,14 @@ void Connection::OnReconnect()
   m_client->TriggerRecordingUpdate();
 }
 
-ResponsePacket* Connection::ReadResult(RequestPacket* vrp)
+MsgPacket* Connection::ReadResult(MsgPacket* vrp)
 {
   if(m_connectionLost)
 	return Session::ReadResult(vrp);
 
   m_mutex.Lock();
 
-  SMessage &message(m_queue[vrp->getSerial()]);
+  SMessage &message(m_queue[vrp->getUID()]);
   message.event = new CondWait();
   message.pkt   = NULL;
 
@@ -156,7 +155,7 @@ ResponsePacket* Connection::ReadResult(RequestPacket* vrp)
   if(!Session::TransmitMessage(vrp))
   {
 	MutexLock lock(&m_mutex);
-    m_queue.erase(vrp->getSerial());
+    m_queue.erase(vrp->getUID());
     return NULL;
   }
 
@@ -164,10 +163,10 @@ ResponsePacket* Connection::ReadResult(RequestPacket* vrp)
 
   m_mutex.Lock();
 
-  ResponsePacket* vresp = message.pkt;
+  MsgPacket* vresp = message.pkt;
   delete message.event;
 
-  m_queue.erase(vrp->getSerial());
+  m_queue.erase(vrp->getUID());
 
   m_mutex.Unlock();
 
@@ -176,17 +175,17 @@ ResponsePacket* Connection::ReadResult(RequestPacket* vrp)
 
 bool Connection::GetDriveSpace(long long *total, long long *used)
 {
-  RequestPacket vrp(XVDR_RECORDINGS_DISKSIZE);
+  MsgPacket vrp(XVDR_RECORDINGS_DISKSIZE);
 
-  ResponsePacket* vresp = ReadResult(&vrp);
+  MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
 	m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return false;
   }
 
-  uint32_t totalspace    = vresp->extract_U32();
-  uint32_t freespace     = vresp->extract_U32();
+  uint32_t totalspace    = vresp->get_U32();
+  uint32_t freespace     = vresp->get_U32();
 
   *total = totalspace;
   *used  = (totalspace - freespace);
@@ -201,33 +200,33 @@ bool Connection::GetDriveSpace(long long *total, long long *used)
 
 bool Connection::SupportChannelScan()
 {
-  RequestPacket vrp(XVDR_SCAN_SUPPORTED);
+  MsgPacket vrp(XVDR_SCAN_SUPPORTED);
 
-  ResponsePacket* vresp = ReadResult(&vrp);
+  MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
 	m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return false;
   }
 
-  uint32_t ret = vresp->extract_U32();
+  uint32_t ret = vresp->get_U32();
   delete vresp;
   return ret == XVDR_RET_OK ? true : false;
 }
 
 bool Connection::EnableStatusInterface(bool onOff)
 {
-  RequestPacket vrp(XVDR_ENABLESTATUSINTERFACE);
-  vrp.add_U8(onOff);
+  MsgPacket vrp(XVDR_ENABLESTATUSINTERFACE);
+  vrp.put_U8(onOff);
 
-  ResponsePacket* vresp = ReadResult(&vrp);
+  MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
 	m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return false;
   }
 
-  uint32_t ret = vresp->extract_U32();
+  uint32_t ret = vresp->get_U32();
   delete vresp;
   if(ret == XVDR_RET_OK)
   {
@@ -240,10 +239,10 @@ bool Connection::EnableStatusInterface(bool onOff)
 
 bool Connection::SetUpdateChannels(uint8_t method)
 {
-  RequestPacket vrp(XVDR_UPDATECHANNELS);
-  vrp.add_U8(method);
+  MsgPacket vrp(XVDR_UPDATECHANNELS);
+  vrp.put_U8(method);
 
-  ResponsePacket* vresp = ReadResult(&vrp);
+  MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
 	m_client->Log(XVDR_INFO, "Setting channel update method not supported by server. Consider updating the XVDR server.");
@@ -252,7 +251,7 @@ bool Connection::SetUpdateChannels(uint8_t method)
 
   m_client->Log(XVDR_INFO, "Channel update method set to %i", method);
 
-  uint32_t ret = vresp->extract_U32();
+  uint32_t ret = vresp->get_U32();
   delete vresp;
   if (ret == XVDR_RET_OK)
   {
@@ -267,15 +266,15 @@ bool Connection::ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& 
 {
   std::size_t count = caids.size();
 
-  RequestPacket vrp(XVDR_CHANNELFILTER);
-  vrp.add_U32(fta);
-  vrp.add_U32(nativelangonly);
-  vrp.add_U32(count);
+  MsgPacket vrp(XVDR_CHANNELFILTER);
+  vrp.put_U32(fta);
+  vrp.put_U32(nativelangonly);
+  vrp.put_U32(count);
 
   for(int i = 0; i < count; i++)
-    vrp.add_U32(caids[i]);
+    vrp.put_U32(caids[i]);
 
-  ResponsePacket* vresp = ReadResult(&vrp);
+  MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
 	m_client->Log(XVDR_INFO, "Channel filter method not supported by server. Consider updating the XVDR server.");
@@ -284,7 +283,7 @@ bool Connection::ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& 
 
   m_client->Log(XVDR_INFO, "Channel filter set");
 
-  uint32_t ret = vresp->extract_U32();
+  uint32_t ret = vresp->get_U32();
   delete vresp;
 
   if (ret == XVDR_RET_OK)
@@ -300,16 +299,16 @@ bool Connection::ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& 
 
 int Connection::GetChannelsCount()
 {
-  RequestPacket vrp(XVDR_CHANNELS_GETCOUNT);
+  MsgPacket vrp(XVDR_CHANNELS_GETCOUNT);
 
-  ResponsePacket* vresp = ReadResult(&vrp);
+  MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
 	m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return -1;
   }
 
-  uint32_t count = vresp->extract_U32();
+  uint32_t count = vresp->get_U32();
 
   delete vresp;
   return count;
@@ -317,26 +316,26 @@ int Connection::GetChannelsCount()
 
 bool Connection::GetChannelsList(bool radio)
 {
-  RequestPacket vrp(XVDR_CHANNELS_GETCHANNELS);
-  vrp.add_U32(radio);
+  MsgPacket vrp(XVDR_CHANNELS_GETCHANNELS);
+  vrp.put_U32(radio);
 
-  ResponsePacket* vresp = ReadResult(&vrp);
+  MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
 	m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return false;
   }
 
-  while (!vresp->end())
+  while (!vresp->eop())
   {
 	Channel tag;
 
-    tag[channel_number] = vresp->extract_U32();
-    tag[channel_name] = vresp->extract_String();
-    tag[channel_uid] = vresp->extract_U32();
-                            vresp->extract_U32(); // still here for compatibility
-    tag[channel_encryptionsystem] = vresp->extract_U32();
-                            vresp->extract_U32(); // uint32_t vtype - currently unused
+    tag[channel_number] = vresp->get_U32();
+    tag[channel_name] = vresp->get_String();
+    tag[channel_uid] = vresp->get_U32();
+                            vresp->get_U32(); // still here for compatibility
+    tag[channel_encryptionsystem] = vresp->get_U32();
+                            vresp->get_U32(); // uint32_t vtype - currently unused
     tag[channel_isradio] = radio;
     tag[channel_inputformat] = "";
     tag[channel_streamurl] = "";
@@ -352,39 +351,36 @@ bool Connection::GetChannelsList(bool radio)
 
 bool Connection::GetEPGForChannel(uint32_t channeluid, time_t start, time_t end)
 {
-  RequestPacket vrp(XVDR_EPG_GETFORCHANNEL);
-  vrp.add_U32(channeluid);
-  vrp.add_U32(start);
-  vrp.add_U32(end - start);
+  MsgPacket vrp(XVDR_EPG_GETFORCHANNEL);
+  vrp.put_U32(channeluid);
+  vrp.put_U32(start);
+  vrp.put_U32(end - start);
 
-  ResponsePacket* vresp = ReadResult(&vrp);
+  MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
 	m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return false;
   }
 
-  if (!vresp->serverError())
+  while (!vresp->eop())
   {
-    while (!vresp->end())
-    {
-      Epg tag;
+    Epg tag;
 
-      tag[epg_uid] = channeluid;
-      tag[epg_broadcastid] = vresp->extract_U32();
-      uint32_t starttime = vresp->extract_U32();
-      tag[epg_starttime] = starttime;
-      tag[epg_endtime] = starttime + vresp->extract_U32();
-      uint32_t content        = vresp->extract_U32();
-      tag[epg_genretype] = content & 0xF0;
-      tag[epg_genresubtype] = content & 0x0F;
-      tag[epg_parentalrating] = vresp->extract_U32();
-      tag[epg_title] = vresp->extract_String();
-      tag[epg_plotoutline] = vresp->extract_String();
-      tag[epg_plot] = vresp->extract_String();
+    tag[epg_uid] = channeluid;
+    tag[epg_broadcastid] = vresp->get_U32();
+    uint32_t starttime = vresp->get_U32();
+    tag[epg_starttime] = starttime;
+    tag[epg_endtime] = starttime + vresp->get_U32();
+    uint32_t content        = vresp->get_U32();
+    tag[epg_genretype] = content & 0xF0;
+    tag[epg_genresubtype] = content & 0x0F;
+    tag[epg_parentalrating] = vresp->get_U32();
+    tag[epg_title] = vresp->get_String();
+    tag[epg_plotoutline] = vresp->get_String();
+    tag[epg_plot] = vresp->get_String();
 
-      m_client->TransferEpgEntry(tag);
-    }
+    m_client->TransferEpgEntry(tag);
   }
 
   delete vresp;
@@ -400,41 +396,41 @@ int Connection::GetTimersCount()
   if(ConnectionLost())
     return m_timercount;
 
-  RequestPacket vrp(XVDR_TIMER_GETCOUNT);
+  MsgPacket vrp(XVDR_TIMER_GETCOUNT);
 
-  ResponsePacket* vresp = ReadResult(&vrp);
+  MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
 	m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return m_timercount;
   }
 
-  m_timercount = vresp->extract_U32();
+  m_timercount = vresp->get_U32();
 
   delete vresp;
   return m_timercount;
 }
 
-void Connection::ReadTimerPacket(ResponsePacket* resp, Timer& tag) {
-  tag[timer_index] = resp->extract_U32();
+void Connection::ReadTimerPacket(MsgPacket* resp, Timer& tag) {
+  tag[timer_index] = resp->get_U32();
 
-  int iActive           = resp->extract_U32();
-  int iRecording        = resp->extract_U32();
-  int iPending          = resp->extract_U32();
+  int iActive           = resp->get_U32();
+  int iRecording        = resp->get_U32();
+  int iPending          = resp->get_U32();
 
   tag[timer_state] = iRecording;
-  tag[timer_priority] = resp->extract_U32();
-  tag[timer_lifetime] = resp->extract_U32();
-                          resp->extract_U32(); // channel number - unused
-  tag[timer_channeluid] =  resp->extract_U32();
-  tag[timer_starttime] = resp->extract_U32();
-  tag[timer_endtime] = resp->extract_U32();
-  tag[timer_firstday] = resp->extract_U32();
-  int weekdays = resp->extract_U32();
+  tag[timer_priority] = resp->get_U32();
+  tag[timer_lifetime] = resp->get_U32();
+                          resp->get_U32(); // channel number - unused
+  tag[timer_channeluid] =  resp->get_U32();
+  tag[timer_starttime] = resp->get_U32();
+  tag[timer_endtime] = resp->get_U32();
+  tag[timer_firstday] = resp->get_U32();
+  int weekdays = resp->get_U32();
   tag[timer_weekdays] = weekdays;
   tag[timer_isrepeating] = ((weekdays == 0) ? false : true);
 
-  const char* title = resp->extract_String();
+  const char* title = resp->get_String();
   tag[timer_marginstart] = 0;
   tag[timer_marginend] = 0;
 
@@ -460,10 +456,10 @@ void Connection::ReadTimerPacket(ResponsePacket* resp, Timer& tag) {
 
 bool Connection::GetTimerInfo(unsigned int timernumber, Timer& tag)
 {
-  RequestPacket vrp(XVDR_TIMER_GET);
-  vrp.add_U32(timernumber);
+  MsgPacket vrp(XVDR_TIMER_GET);
+  vrp.put_U32(timernumber);
 
-  ResponsePacket* vresp = ReadResult(&vrp);
+  MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
 	m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
@@ -471,7 +467,7 @@ bool Connection::GetTimerInfo(unsigned int timernumber, Timer& tag)
     return false;
   }
 
-  uint32_t returnCode = vresp->extract_U32();
+  uint32_t returnCode = vresp->get_U32();
   if (returnCode != XVDR_RET_OK)
   {
     delete vresp;
@@ -489,9 +485,9 @@ bool Connection::GetTimerInfo(unsigned int timernumber, Timer& tag)
 
 bool Connection::GetTimersList()
 {
-  RequestPacket vrp(XVDR_TIMER_GETLIST);
+  MsgPacket vrp(XVDR_TIMER_GETLIST);
 
-  ResponsePacket* vresp = ReadResult(&vrp);
+  MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
     delete vresp;
@@ -499,10 +495,10 @@ bool Connection::GetTimersList()
     return false;
   }
 
-  uint32_t numTimers = vresp->extract_U32();
+  uint32_t numTimers = vresp->get_U32();
   if (numTimers > 0)
   {
-    while (!vresp->end())
+    while (!vresp->eop())
     {
       Timer timer;
       ReadTimerPacket(vresp, timer);
@@ -556,26 +552,26 @@ bool Connection::AddTimer(const Timer& timer)
   uint32_t starttime = (uint32_t)timer[timer_starttime] - (uint32_t)timer[timer_marginstart] * 60;
   uint32_t endtime = (uint32_t)timer[timer_endtime] + (uint32_t)timer[timer_marginend] * 60;
 
-  RequestPacket vrp(XVDR_TIMER_ADD);
-  vrp.add_U32(1);
-  vrp.add_U32(timer[timer_priority]);
-  vrp.add_U32(timer[timer_lifetime]);
-  vrp.add_U32(timer[timer_channeluid]);
-  vrp.add_U32(starttime);
-  vrp.add_U32(endtime);
-  vrp.add_U32(timer[timer_isrepeating] ? timer[timer_firstday] : 0);
-  vrp.add_U32(timer[timer_weekdays]);
-  vrp.add_String(path.c_str());
-  vrp.add_String("");
+  MsgPacket vrp(XVDR_TIMER_ADD);
+  vrp.put_U32(1);
+  vrp.put_U32(timer[timer_priority]);
+  vrp.put_U32(timer[timer_lifetime]);
+  vrp.put_U32(timer[timer_channeluid]);
+  vrp.put_U32(starttime);
+  vrp.put_U32(endtime);
+  vrp.put_U32(timer[timer_isrepeating] ? timer[timer_firstday] : 0);
+  vrp.put_U32(timer[timer_weekdays]);
+  vrp.put_String(path.c_str());
+  vrp.put_String("");
 
-  ResponsePacket* vresp = ReadResult(&vrp);
-  if (vresp == NULL || vresp->noResponse())
+  MsgPacket* vresp = ReadResult(&vrp);
+  if (vresp == NULL || vresp->eop())
   {
     delete vresp;
     m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return false;
   }
-  uint32_t returnCode = vresp->extract_U32();
+  uint32_t returnCode = vresp->get_U32();
   delete vresp;
 
   return (returnCode == XVDR_RET_OK);
@@ -583,18 +579,18 @@ bool Connection::AddTimer(const Timer& timer)
 
 int Connection::DeleteTimer(uint32_t timerindex, bool force)
 {
-  RequestPacket vrp(XVDR_TIMER_DELETE);
-  vrp.add_U32(timerindex);
-  vrp.add_U32(force);
+  MsgPacket vrp(XVDR_TIMER_DELETE);
+  vrp.put_U32(timerindex);
+  vrp.put_U32(force);
 
-  ResponsePacket* vresp = ReadResult(&vrp);
-  if (vresp == NULL || vresp->noResponse())
+  MsgPacket* vresp = ReadResult(&vrp);
+  if (vresp == NULL || vresp->eop())
   {
     delete vresp;
     return false;
   }
 
-  uint32_t returnCode = vresp->extract_U32();
+  uint32_t returnCode = vresp->get_U32();
   delete vresp;
 
   return returnCode;
@@ -622,27 +618,27 @@ bool Connection::UpdateTimer(const Timer& timer)
   for(std::string::iterator i = title.begin(); i != title.end(); i++)
 	  if(*i == '/') *i = '~';
 
-  RequestPacket vrp(XVDR_TIMER_UPDATE);
-  vrp.add_U32(timer[timer_index]);
-  vrp.add_U32(2);
-  vrp.add_U32(timer[timer_priority]);
-  vrp.add_U32(timer[timer_lifetime]);
-  vrp.add_U32(timer[timer_channeluid]);
-  vrp.add_U32(starttime);
-  vrp.add_U32(endtime);
-  vrp.add_U32(timer[timer_isrepeating] ? timer[timer_firstday] : 0);
-  vrp.add_U32(timer[timer_weekdays]);
-  vrp.add_String(title.c_str());
-  vrp.add_String("");
+  MsgPacket vrp(XVDR_TIMER_UPDATE);
+  vrp.put_U32(timer[timer_index]);
+  vrp.put_U32(2);
+  vrp.put_U32(timer[timer_priority]);
+  vrp.put_U32(timer[timer_lifetime]);
+  vrp.put_U32(timer[timer_channeluid]);
+  vrp.put_U32(starttime);
+  vrp.put_U32(endtime);
+  vrp.put_U32(timer[timer_isrepeating] ? timer[timer_firstday] : 0);
+  vrp.put_U32(timer[timer_weekdays]);
+  vrp.put_String(title.c_str());
+  vrp.put_String("");
 
-  ResponsePacket* vresp = ReadResult(&vrp);
-  if (vresp == NULL || vresp->noResponse())
+  MsgPacket* vresp = ReadResult(&vrp);
+  if (vresp == NULL || vresp->eop())
   {
     delete vresp;
     return false;
   }
 
-  uint32_t returnCode = vresp->extract_U32();
+  uint32_t returnCode = vresp->get_U32();
   delete vresp;
 
   return (returnCode == XVDR_RET_OK);
@@ -650,16 +646,16 @@ bool Connection::UpdateTimer(const Timer& timer)
 
 int Connection::GetRecordingsCount()
 {
-  RequestPacket vrp(XVDR_RECORDINGS_GETCOUNT);
+  MsgPacket vrp(XVDR_RECORDINGS_GETCOUNT);
 
-  ResponsePacket* vresp = ReadResult(&vrp);
+  MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
 	m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return -1;
   }
 
-  uint32_t count = vresp->extract_U32();
+  uint32_t count = vresp->get_U32();
 
   delete vresp;
   return count;
@@ -667,28 +663,28 @@ int Connection::GetRecordingsCount()
 
 bool Connection::GetRecordingsList()
 {
-  RequestPacket vrp(XVDR_RECORDINGS_GETLIST);
+  MsgPacket vrp(XVDR_RECORDINGS_GETLIST);
 
-  ResponsePacket* vresp = ReadResult(&vrp);
+  MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
 	m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return false;
   }
 
-  while (!vresp->end())
+  while (!vresp->eop())
   {
 	RecordingEntry rec;
-	rec[recording_time] = vresp->extract_U32();
-	rec[recording_duration] = vresp->extract_U32();
-	rec[recording_priority] = vresp->extract_U32();
-	rec[recording_lifetime] = vresp->extract_U32();
-	rec[recording_channelname] = vresp->extract_String();
-	rec[recording_title] = vresp->extract_String();
-	rec[recording_plotoutline] = vresp->extract_String();
-	rec[recording_plot] = vresp->extract_String();
-	rec[recording_directory] = vresp->extract_String();
-	rec[recording_id] = vresp->extract_String();
+	rec[recording_time] = vresp->get_U32();
+	rec[recording_duration] = vresp->get_U32();
+	rec[recording_priority] = vresp->get_U32();
+	rec[recording_lifetime] = vresp->get_U32();
+	rec[recording_channelname] = vresp->get_String();
+	rec[recording_title] = vresp->get_String();
+	rec[recording_plotoutline] = vresp->get_String();
+	rec[recording_plot] = vresp->get_String();
+	rec[recording_directory] = vresp->get_String();
+	rec[recording_id] = vresp->get_String();
 	rec[recording_streamurl] = "";
 	rec[recording_genretype] = 0;
 	rec[recording_genresubtype] = 0;
@@ -706,18 +702,18 @@ bool Connection::RenameRecording(const std::string& recid, const std::string& ne
 {
   m_client->Log(XVDR_DEBUG, "%s - uid: %s", __FUNCTION__, recid.c_str());
 
-  RequestPacket vrp(XVDR_RECORDINGS_RENAME);
-  vrp.add_String(recid.c_str());
-  vrp.add_String(newname.c_str());
+  MsgPacket vrp(XVDR_RECORDINGS_RENAME);
+  vrp.put_String(recid.c_str());
+  vrp.put_String(newname.c_str());
 
-  ResponsePacket* vresp = ReadResult(&vrp);
-  if (vresp == NULL || vresp->noResponse())
+  MsgPacket* vresp = ReadResult(&vrp);
+  if (vresp == NULL || vresp->eop())
   {
     delete vresp;
     return false;
   }
 
-  uint32_t returnCode = vresp->extract_U32();
+  uint32_t returnCode = vresp->get_U32();
   delete vresp;
 
   return (returnCode == XVDR_RET_OK);
@@ -725,30 +721,30 @@ bool Connection::RenameRecording(const std::string& recid, const std::string& ne
 
 bool Connection::DeleteRecording(const std::string& recid)
 {
-  RequestPacket vrp(XVDR_RECORDINGS_DELETE);
-  vrp.add_String(recid.c_str());
+  MsgPacket vrp(XVDR_RECORDINGS_DELETE);
+  vrp.put_String(recid.c_str());
 
-  ResponsePacket* vresp = ReadResult(&vrp);
-  if (vresp == NULL || vresp->noResponse())
+  MsgPacket* vresp = ReadResult(&vrp);
+  if (vresp == NULL || vresp->eop())
   {
     delete vresp;
     return false;
   }
 
-  uint32_t returnCode = vresp->extract_U32();
+  uint32_t returnCode = vresp->get_U32();
   delete vresp;
 
   return (returnCode == XVDR_RET_OK);
 }
 
-void Connection::OnResponsePacket(ResponsePacket* pkt)
+void Connection::OnResponsePacket(MsgPacket* pkt)
 {
 }
 
 void Connection::Action()
 {
   uint32_t lastPing = 0;
-  ResponsePacket* vresp;
+  MsgPacket* vresp;
 
   while (Running())
   {
@@ -785,10 +781,10 @@ void Connection::Action()
 
     // CHANNEL_REQUEST_RESPONSE
 
-    if (vresp->getChannelID() == XVDR_CHANNEL_REQUEST_RESPONSE)
+    if (vresp->getType() == XVDR_CHANNEL_REQUEST_RESPONSE)
     {
       MutexLock lock(&m_mutex);
-      SMessages::iterator it = m_queue.find(vresp->getRequestID());
+      SMessages::iterator it = m_queue.find(vresp->getUID());
       if (it != m_queue.end())
       {
         it->second.pkt = vresp;
@@ -799,12 +795,12 @@ void Connection::Action()
 
     // CHANNEL_STATUS
 
-    else if (vresp->getChannelID() == XVDR_CHANNEL_STATUS)
+    else if (vresp->getType() == XVDR_CHANNEL_STATUS)
     {
-      if (vresp->getRequestID() == XVDR_STATUS_MESSAGE)
+      if (vresp->getMsgID() == XVDR_STATUS_MESSAGE)
       {
-        uint32_t type = vresp->extract_U32();
-        const char* msgstr = vresp->extract_String();
+        uint32_t type = vresp->get_U32();
+        const char* msgstr = vresp->get_String();
 
         if (type == 2)
           m_client->Notification(XVDR_ERROR, msgstr);
@@ -814,27 +810,27 @@ void Connection::Action()
           m_client->Notification(XVDR_INFO, msgstr);
 
       }
-      else if (vresp->getRequestID() == XVDR_STATUS_RECORDING)
+      else if (vresp->getMsgID() == XVDR_STATUS_RECORDING)
       {
-                           vresp->extract_U32(); // device currently unused
-        uint32_t on      = vresp->extract_U32();
-        const char* str1 = vresp->extract_String();
-        const char* str2 = vresp->extract_String();
+                           vresp->get_U32(); // device currently unused
+        uint32_t on      = vresp->get_U32();
+        const char* str1 = vresp->get_String();
+        const char* str2 = vresp->get_String();
 
         m_client->Recording(str1, str2, on);
         m_client->TriggerTimerUpdate();
       }
-      else if (vresp->getRequestID() == XVDR_STATUS_TIMERCHANGE)
+      else if (vresp->getMsgID() == XVDR_STATUS_TIMERCHANGE)
       {
     	m_client->Log(XVDR_DEBUG, "Server requested timer update");
         m_client->TriggerTimerUpdate();
       }
-      else if (vresp->getRequestID() == XVDR_STATUS_CHANNELCHANGE)
+      else if (vresp->getMsgID() == XVDR_STATUS_CHANNELCHANGE)
       {
     	m_client->Log(XVDR_DEBUG, "Server requested channel update");
         m_client->TriggerChannelUpdate();
       }
-      else if (vresp->getRequestID() == XVDR_STATUS_RECORDINGSCHANGE)
+      else if (vresp->getMsgID() == XVDR_STATUS_RECORDINGSCHANGE)
       {
     	m_client->Log(XVDR_DEBUG, "Server requested recordings update");
     	m_client->TriggerRecordingUpdate();
@@ -854,17 +850,17 @@ void Connection::Action()
 
 int Connection::GetChannelGroupCount(bool automatic)
 {
-  RequestPacket vrp(XVDR_CHANNELGROUP_GETCOUNT);
-  vrp.add_U32(automatic);
+  MsgPacket vrp(XVDR_CHANNELGROUP_GETCOUNT);
+  vrp.put_U32(automatic);
 
-  ResponsePacket* vresp = ReadResult(&vrp);
-  if (vresp == NULL || vresp->noResponse())
+  MsgPacket* vresp = ReadResult(&vrp);
+  if (vresp == NULL || vresp->eop())
   {
     delete vresp;
     return 0;
   }
 
-  uint32_t count = vresp->extract_U32();
+  uint32_t count = vresp->get_U32();
 
   delete vresp;
   return count;
@@ -872,22 +868,22 @@ int Connection::GetChannelGroupCount(bool automatic)
 
 bool Connection::GetChannelGroupList(bool bRadio)
 {
-  RequestPacket vrp(XVDR_CHANNELGROUP_LIST);
-  vrp.add_U8(bRadio);
+  MsgPacket vrp(XVDR_CHANNELGROUP_LIST);
+  vrp.put_U8(bRadio);
 
-  ResponsePacket* vresp = ReadResult(&vrp);
-  if (vresp == NULL || vresp->noResponse())
+  MsgPacket* vresp = ReadResult(&vrp);
+  if (vresp == NULL || vresp->eop())
   {
     delete vresp;
     return false;
   }
 
-  while (!vresp->end())
+  while (!vresp->eop())
   {
     ChannelGroup group;
 
-    group[channelgroup_name] = vresp->extract_String();
-    group[channelgroup_isradio] = vresp->extract_U8();
+    group[channelgroup_name] = vresp->get_String();
+    group[channelgroup_isradio] = vresp->get_U8();
     m_client->TransferChannelGroup(group);
   }
 
@@ -897,23 +893,23 @@ bool Connection::GetChannelGroupList(bool bRadio)
 
 bool Connection::GetChannelGroupMembers(const std::string& groupname, bool radio)
 {
-  RequestPacket vrp(XVDR_CHANNELGROUP_MEMBERS);
-  vrp.add_String(groupname.c_str());
-  vrp.add_U8(radio);
+  MsgPacket vrp(XVDR_CHANNELGROUP_MEMBERS);
+  vrp.put_String(groupname.c_str());
+  vrp.put_U8(radio);
 
-  ResponsePacket* vresp = ReadResult(&vrp);
-  if (vresp == NULL || vresp->noResponse())
+  MsgPacket* vresp = ReadResult(&vrp);
+  if (vresp == NULL || vresp->eop())
   {
     delete vresp;
     return false;
   }
 
-  while (!vresp->end())
+  while (!vresp->eop())
   {
     ChannelGroupMember member;
     member[channelgroupmember_name] = groupname;
-    member[channelgroupmember_uid] = vresp->extract_U32();
-    member[channelgroupmember_number] = vresp->extract_U32();
+    member[channelgroupmember_uid] = vresp->get_U32();
+    member[channelgroupmember_number] = vresp->get_U32();
 
     m_client->TransferChannelGroupMember(member);
   }
@@ -924,18 +920,18 @@ bool Connection::GetChannelGroupMembers(const std::string& groupname, bool radio
 
 bool Connection::OpenRecording(const std::string& recid)
 {
-  RequestPacket vrp(XVDR_RECSTREAM_OPEN);
-  vrp.add_String(recid.c_str());
+  MsgPacket vrp(XVDR_RECSTREAM_OPEN);
+  vrp.put_String(recid.c_str());
 
-  ResponsePacket* vresp = ReadResult(&vrp);
+  MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
     return false;
 
-  uint32_t returnCode = vresp->extract_U32();
+  uint32_t returnCode = vresp->get_U32();
   if (returnCode == XVDR_RET_OK)
   {
-    m_currentPlayingRecordFrames    = vresp->extract_U32();
-    m_currentPlayingRecordBytes     = vresp->extract_U64();
+    m_currentPlayingRecordFrames    = vresp->get_U32();
+    m_currentPlayingRecordBytes     = vresp->get_U64();
     m_currentPlayingRecordPosition  = 0;
     m_recid = recid;
   }
@@ -955,12 +951,12 @@ bool Connection::CloseRecording()
 
   m_recid.clear();
 
-  RequestPacket vrp(XVDR_RECSTREAM_CLOSE);
-  ResponsePacket* vresp = ReadResult(&vrp);
+  MsgPacket vrp(XVDR_RECSTREAM_CLOSE);
+  MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
     return false;
 
-  uint32_t returnCode = vresp->extract_U32();
+  uint32_t returnCode = vresp->get_U32();
   return (returnCode == XVDR_RET_OK);
 }
 
@@ -972,13 +968,13 @@ int Connection::ReadRecording(unsigned char* buf, uint32_t buf_size)
   if (m_currentPlayingRecordPosition >= m_currentPlayingRecordBytes)
     return 0;
 
-  ResponsePacket* vresp = NULL;
+  MsgPacket* vresp = NULL;
 
-  RequestPacket vrp1(XVDR_RECSTREAM_UPDATE);
+  MsgPacket vrp1(XVDR_RECSTREAM_UPDATE);
   if ((vresp = ReadResult(&vrp1)) != NULL)
   {
-    uint32_t frames = vresp->extract_U32();
-    uint64_t bytes  = vresp->extract_U64();
+    uint32_t frames = vresp->get_U32();
+    uint64_t bytes  = vresp->get_U64();
 
     if(frames != m_currentPlayingRecordFrames || bytes != m_currentPlayingRecordBytes)
     {
@@ -989,32 +985,31 @@ int Connection::ReadRecording(unsigned char* buf, uint32_t buf_size)
     delete vresp;
   }
 
-  RequestPacket vrp2(XVDR_RECSTREAM_GETBLOCK);
-  vrp2.add_U64(m_currentPlayingRecordPosition);
-  vrp2.add_U32(buf_size);
+  MsgPacket vrp2(XVDR_RECSTREAM_GETBLOCK);
+  vrp2.put_U64(m_currentPlayingRecordPosition);
+  vrp2.put_U32(buf_size);
 
   vresp = ReadResult(&vrp2);
   if (!vresp)
     return -1;
 
-  uint32_t length = vresp->getUserDataLength();
+  uint32_t length = vresp->getPayloadLength();
 
   if(length == 0) {
 	  return -1;
   }
 
-  uint8_t *data   = vresp->getUserData();
+  uint8_t *data = vresp->getPayload();
   if (length > buf_size)
   {
 	m_client->Log(XVDR_ERROR, "%s: PANIC - Received more bytes as requested", __FUNCTION__);
-    free(data);
     delete vresp;
     return 0;
   }
 
   memcpy(buf, data, length);
   m_currentPlayingRecordPosition += length;
-  free(data);
+
   delete vresp;
   return length;
 }

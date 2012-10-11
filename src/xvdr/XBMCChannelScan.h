@@ -22,7 +22,7 @@
  */
 
 #include "xvdr/connection.h"
-#include "xvdr/responsepacket.h"
+#include "xvdr/msgpacket.h"
 #include "xvdr/thread.h"
 #include "XBMCAddon.h"
 #include <string>
@@ -60,7 +60,7 @@ public:
 
 protected:
 
-  void OnResponsePacket(XVDR::ResponsePacket* resp);
+  void OnResponsePacket(MsgPacket* resp);
 
 private:
 

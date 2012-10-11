@@ -22,8 +22,7 @@
 
 #include "xvdr/clientinterface.h"
 #include "xvdr/session.h"
-#include "xvdr/responsepacket.h"
-#include "xvdr/requestpacket.h"
+#include "xvdr/msgpacket.h"
 #include "xvdr/thread.h"
 #include "xvdr/command.h"
 
@@ -39,26 +38,10 @@
 
 using namespace XVDR;
 
-struct Session::streamPacketHeader {
-      uint32_t opCodeID;
-      uint32_t streamID;
-      uint32_t duration;
-      uint8_t pts[sizeof(int64_t)];
-      uint8_t dts[sizeof(int64_t)];
-      uint32_t userDataLength;
-};
-
-struct Session::responsePacketHeader {
-      uint32_t requestID;
-      uint32_t userDataLength;
-};
-
 Session::Session()
   : m_timeout(3000)
   , m_fd(INVALID_SOCKET)
   , m_connectionLost(false)
-  , m_streamPacketHeader(new struct streamPacketHeader)
-  , m_responsePacketHeader(new struct responsePacketHeader)
 {
   m_port = 34891;
 }
@@ -66,8 +49,6 @@ Session::Session()
 Session::~Session()
 {
   Close();
-  delete m_streamPacketHeader;
-  delete m_responsePacketHeader;
 }
 
 void Session::Abort()
@@ -177,116 +158,17 @@ bool Session::IsOpen()
   return m_fd != INVALID_SOCKET;
 }
 
-ResponsePacket* Session::ReadMessage()
+MsgPacket* Session::ReadMessage()
 {
-  uint32_t channelID = 0;
-  uint32_t requestID;
-  uint32_t userDataLength = 0;
-  uint8_t* userData = NULL;
-  uint32_t streamID;
-  uint32_t duration;
-  uint32_t opCodeID;
-  int64_t  dts = 0;
-  int64_t  pts = 0;
-
-  ResponsePacket* vresp = NULL;
-
-  if(!readData((uint8_t*)&channelID, sizeof(uint32_t)))
-    return NULL;
-
-  // Data was read
-
-  bool compressed = (channelID & htobe32(0x80000000));
-
-  if(compressed)
-    channelID ^= htobe32(0x80000000);
-
-  channelID = be32toh(channelID);
-
-  if (channelID == XVDR_CHANNEL_STREAM)
-  {
-    if (!readData((uint8_t*)m_streamPacketHeader, sizeof(struct streamPacketHeader))) return NULL;
-
-    opCodeID = be32toh(m_streamPacketHeader->opCodeID);
-    streamID = be32toh(m_streamPacketHeader->streamID);
-    duration = be32toh(m_streamPacketHeader->duration);
-    pts = be64toh(*(int64_t*)m_streamPacketHeader->pts);
-    dts = be64toh(*(int64_t*)m_streamPacketHeader->dts);
-    userDataLength = be32toh(m_streamPacketHeader->userDataLength);
-
-    if (userDataLength > 0) {
-      userData = (uint8_t*)malloc(userDataLength);
-      if (!userData) return NULL;
-      if (!readData(userData, userDataLength))
-      {
-        free(userData);
-        return NULL;
-      }
-    }
-
-    vresp = new ResponsePacket();
-    vresp->setStream(opCodeID, streamID, duration, dts, pts, userData, userDataLength);
-  }
-  else
-  {
-    if (!readData((uint8_t*)m_responsePacketHeader, sizeof(struct responsePacketHeader))) return NULL;
-
-    requestID = be32toh(m_responsePacketHeader->requestID);
-    userDataLength = be32toh(m_responsePacketHeader->userDataLength);
-
-    if (userDataLength > 5000000) return NULL; // how big can these packets get?
-    userData = NULL;
-    if (userDataLength > 0)
-    {
-      userData = (uint8_t*)malloc(userDataLength);
-      if (!userData) return NULL;
-      if (!readData(userData, userDataLength)) {
-        free(userData);
-        return NULL;
-      }
-    }
-
-    vresp = new ResponsePacket();
-    if (channelID == XVDR_CHANNEL_STATUS)
-      vresp->setStatus(requestID, userData, userDataLength);
-    else
-      vresp->setResponse(requestID, userData, userDataLength);
-
-    if(compressed)
-      vresp->uncompress();
-  }
-
-  return vresp;
+  return MsgPacket::read(m_fd, m_timeout);
 }
 
-bool Session::TransmitMessage(RequestPacket* vrp)
+bool Session::TransmitMessage(MsgPacket* vrp)
 {
-	int written = 0;
-	int length = vrp->getLen();
-	uint8_t* data = vrp->getPtr();
-
-	while(written < length) {
-		if(pollfd(m_fd, m_timeout, false) == 0) {
-			return false;
-		}
-
-		int rc = send(m_fd, (sendval_t*)(data + written), length - written, MSG_DONTWAIT | MSG_NOSIGNAL);
-
-		if(rc == -1 || rc == 0) {
-			if(sockerror() == SEWOULDBLOCK) {
-				continue;
-			}
-
-			return false;
-		}
-
-		written += rc;
-	}
-
-	return true;
+  return vrp->write(m_fd, m_timeout);
 }
 
-ResponsePacket* Session::ReadResult(RequestPacket* vrp)
+MsgPacket* Session::ReadResult(MsgPacket* vrp)
 {
   if(!TransmitMessage(vrp))
   {
@@ -294,21 +176,12 @@ ResponsePacket* Session::ReadResult(RequestPacket* vrp)
     return NULL;
   }
 
-  ResponsePacket *pkt = NULL;
+  MsgPacket *pkt = ReadMessage();
 
-  while((pkt = ReadMessage()))
-  {
-    /* Discard everything other as response packets until it is received */
-    if (pkt->getChannelID() == XVDR_CHANNEL_REQUEST_RESPONSE && pkt->getRequestID() == vrp->getSerial())
-    {
-      return pkt;
-    }
-    else
-      delete pkt;
-  }
+  if(pkt == NULL)
+    SignalConnectionLost();
 
-  SignalConnectionLost();
-  return NULL;
+  return pkt;
 }
 
 void Session::OnReconnect() {
@@ -367,8 +240,8 @@ bool Session::ConnectionLost() {
 
 bool Session::SendPing()
 {
-  RequestPacket vrp(XVDR_PING);
-  ResponsePacket* vresp = Session::ReadResult(&vrp);
+  MsgPacket vrp(XVDR_PING);
+  MsgPacket* vresp = Session::ReadResult(&vrp);
   delete vresp;
 
   return (vresp != NULL);

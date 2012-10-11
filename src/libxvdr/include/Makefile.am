@@ -6,8 +6,7 @@ libxvdrinclude_HEADERS = \
 	xvdr/connection.h \
 	xvdr/dataset.h \
 	xvdr/demux.h \
-	xvdr/requestpacket.h \
-	xvdr/responsepacket.h \
+	xvdr/msgpacket.h \
 	xvdr/session.h \
 	xvdr/thread.h
 

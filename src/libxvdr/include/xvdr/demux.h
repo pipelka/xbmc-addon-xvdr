@@ -28,10 +28,11 @@
 #include "xvdr/connection.h"
 #include "xvdr/dataset.h"
 
+class MsgPacket;
+
 namespace XVDR {
 
 class ClientInterface;
-class ResponsePacket;
 
 class Demux : public Connection
 {
@@ -58,12 +59,12 @@ protected:
   void OnDisconnect();
   void OnReconnect();
 
-  void OnResponsePacket(ResponsePacket *resp);
+  void OnResponsePacket(MsgPacket *resp);
 
-  void StreamChange(ResponsePacket *resp);
-  void StreamStatus(ResponsePacket *resp);
-  void StreamSignalInfo(ResponsePacket *resp);
-  bool StreamContentInfo(ResponsePacket *resp);
+  void StreamChange(MsgPacket *resp);
+  void StreamStatus(MsgPacket *resp);
+  void StreamSignalInfo(MsgPacket *resp);
+  bool StreamContentInfo(MsgPacket *resp);
 
 private:
 

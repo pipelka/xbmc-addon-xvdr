@@ -11,12 +11,11 @@ SOURCEFILES = \
 	avcodec.h \
 	iso639.cpp \
 	iso639.h \
-	requestpacket.cpp \
 	clientinterface.cpp \
 	connection.cpp \
 	dataset.cpp \
 	demux.cpp \
-	responsepacket.cpp \
+	msgpacket.cpp \
 	session.cpp \
 	thread.cpp
 

@@ -1,4 +1,5 @@
 #include "os-config.h"
+#include <unistd.h>
 
 // WINDOWS
 
@@ -71,3 +72,35 @@ bool setsock_nonblock(int fd, bool nonblock) {
 	return (fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK) != -1);
 #endif
 }
+
+int socketread(int fd, uint8_t* data, int datalen, int timeout_ms) {
+        int read = 0;
+
+        while(read < datalen) {
+                if(pollfd(fd, timeout_ms, true) == 0) {
+                        return ETIMEDOUT;
+                }
+
+                int rc = recv(fd, (char*)(data + read), datalen - read, MSG_DONTWAIT);
+
+                if(rc == -1 && sockerror() == ENOTSOCK) {
+                        rc = ::read(fd, data + read, datalen - read);
+                }
+
+                if(rc == 0) {
+                        return ECONNRESET;
+                }
+                else if(rc == -1) {
+                        if(sockerror() == SEWOULDBLOCK) {
+                                continue;
+                        }
+
+                        return sockerror();
+                }
+
+                read += rc;
+        }
+
+        return 0;
+}
+

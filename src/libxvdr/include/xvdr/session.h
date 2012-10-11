@@ -24,10 +24,10 @@
 #include <stdint.h>
 #include <string>
 
+class MsgPacket;
+
 namespace XVDR {
 
-class ResponsePacket;
-class RequestPacket;
 class Callbacks;
 
 class Session
@@ -44,11 +44,11 @@ public:
 
   virtual void Abort();
 
-  ResponsePacket* ReadMessage();
+  MsgPacket* ReadMessage();
 
-  bool TransmitMessage(RequestPacket* vrp);
+  bool TransmitMessage(MsgPacket* vrp);
 
-  ResponsePacket* ReadResult(RequestPacket* vrp);
+  MsgPacket* ReadResult(MsgPacket* vrp);
 
   bool ConnectionLost();
 
@@ -82,13 +82,13 @@ private:
 
   int m_fd;
 
-  struct streamPacketHeader;
+  /*struct streamPacketHeader;
 
   struct streamPacketHeader* m_streamPacketHeader;
 
   struct responsePacketHeader;
 
-  struct responsePacketHeader* m_responsePacketHeader;
+  struct responsePacketHeader* m_responsePacketHeader;*/
 };
 
 } // namespace XVDR

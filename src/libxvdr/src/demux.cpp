@@ -27,8 +27,7 @@
 
 #include "avcodec.h"
 #include "xvdr/demux.h"
-#include "xvdr/responsepacket.h"
-#include "xvdr/requestpacket.h"
+#include "xvdr/msgpacket.h"
 #include "xvdr/command.h"
 
 using namespace XVDR;
@@ -121,20 +120,20 @@ Packet* Demux::Read()
   return p;
 }
 
-void Demux::OnResponsePacket(ResponsePacket *resp) {
+void Demux::OnResponsePacket(MsgPacket *resp) {
   {
     MutexLock lock(&m_lock);
     if(m_queuelocked)
     	return;
   }
 
-  if (resp->getChannelID() != XVDR_CHANNEL_STREAM)
-	  return;
+  if (resp->getType() != XVDR_CHANNEL_STREAM)
+	return;
 
   Packet* pkt = NULL;
   int iStreamId = -1;
 
-  switch (resp->getOpCodeID())
+  switch (resp->getMsgID())
   {
     case XVDR_STREAM_CHANGE:
       StreamChange(resp);
@@ -159,18 +158,22 @@ void Demux::OnResponsePacket(ResponsePacket *resp) {
 
     case XVDR_STREAM_MUXPKT:
       // figure out the stream for this packet
-      int id = resp->getStreamID();
+      uint16_t id = resp->get_U16();
+      int64_t pts = resp->get_S64();
+      int64_t dts = resp->get_S64();
+      uint32_t length = resp->get_U32();
+      uint8_t* payload = resp->consume(length);
+
       Stream& stream = m_streams[id];
 
       if(stream[stream_physicalid] != id) {
           m_client->Log(XVDR_DEBUG, "stream id %i not found", id);
-    	  break;
+          break;
       }
 
       int index = stream[stream_index];
-      pkt = m_client->AllocatePacket(resp->getUserDataLength());
-   	  m_client->SetPacketData(pkt, resp->getUserData(), index, resp->getDTS(), resp->getPTS());
-   	  free(resp->getUserData());
+      pkt = m_client->AllocatePacket(length);
+      m_client->SetPacketData(pkt, payload, index, dts, pts);
       break;
   }
 
@@ -205,11 +208,11 @@ bool Demux::SwitchChannel(uint32_t channeluid)
   CleanupPacketQueue();
   m_cond.Signal();
 
-  RequestPacket vrp(XVDR_CHANNELSTREAM_OPEN);
-  vrp.add_U32(channeluid);
-  vrp.add_S32(m_priority);
+  MsgPacket vrp(XVDR_CHANNELSTREAM_OPEN);
+  vrp.put_U32(channeluid);
+  vrp.put_S32(m_priority);
 
-  ResponsePacket* vresp = ReadResult(&vrp);
+  MsgPacket* vresp = ReadResult(&vrp);
 
   {
     MutexLock lock(&m_lock);
@@ -220,7 +223,7 @@ bool Demux::SwitchChannel(uint32_t channeluid)
   uint32_t rc = XVDR_RET_ERROR;
 
   if(vresp != NULL)
-	  rc = vresp->extract_U32();
+	  rc = vresp->get_U32();
 
   delete vresp;
 
@@ -267,17 +270,17 @@ SignalStatus Demux::GetSignalStatus()
   return m_signal;
 }
 
-void Demux::StreamChange(ResponsePacket *resp)
+void Demux::StreamChange(MsgPacket *resp)
 {
   MutexLock lock(&m_lock);
   m_streams.clear();
 
   int index = 0;
 
-  while (!resp->end())
+  while (!resp->eop())
   {
-    uint32_t    id   = resp->extract_U32();
-    const char* type = resp->extract_String();
+    uint32_t    id   = resp->get_U32();
+    const char* type = resp->get_String();
 
     Stream stream;
 
@@ -287,37 +290,37 @@ void Demux::StreamChange(ResponsePacket *resp)
 
     if(!strcmp(type, "AC3"))
     {
-      stream[stream_language] = resp->extract_String();
+      stream[stream_language] = resp->get_String();
       stream[stream_codectype] = AVMEDIA_TYPE_AUDIO;
       stream[stream_codecid] = CODEC_ID_AC3;
     }
     else if(!strcmp(type, "MPEG2AUDIO"))
     {
-      stream[stream_language] = resp->extract_String();
+      stream[stream_language] = resp->get_String();
       stream[stream_codectype] = AVMEDIA_TYPE_AUDIO;
       stream[stream_codecid] = CODEC_ID_MP2;
     }
     else if(!strcmp(type, "AAC"))
     {
-      stream[stream_language] = resp->extract_String();
+      stream[stream_language] = resp->get_String();
       stream[stream_codectype] = AVMEDIA_TYPE_AUDIO;
       stream[stream_codecid] = CODEC_ID_AAC;
     }
     else if(!strcmp(type, "LATM"))
     {
-      stream[stream_language] = resp->extract_String();
+      stream[stream_language] = resp->get_String();
       stream[stream_codectype] = AVMEDIA_TYPE_AUDIO;
       stream[stream_codecid] = CODEC_ID_AAC_LATM;
     }
     else if(!strcmp(type, "DTS"))
     {
-      stream[stream_language] = resp->extract_String();
+      stream[stream_language] = resp->get_String();
       stream[stream_codectype] = AVMEDIA_TYPE_AUDIO;
       stream[stream_codecid] = CODEC_ID_DTS;
     }
     else if(!strcmp(type, "EAC3"))
     {
-      stream[stream_language] = resp->extract_String();
+      stream[stream_language] = resp->get_String();
       stream[stream_codectype] = AVMEDIA_TYPE_AUDIO;
       stream[stream_codecid] = CODEC_ID_EAC3;
     }
@@ -325,30 +328,30 @@ void Demux::StreamChange(ResponsePacket *resp)
     {
       stream[stream_codectype] = AVMEDIA_TYPE_VIDEO;
       stream[stream_codecid] = CODEC_ID_MPEG2VIDEO;
-      stream[stream_fpsscale] = resp->extract_U32();
-      stream[stream_fpsrate] = resp->extract_U32();
-      stream[stream_height] = resp->extract_U32();
-      stream[stream_width] = resp->extract_U32();
-      stream[stream_aspect] = resp->extract_Double();
+      stream[stream_fpsscale] = resp->get_U32();
+      stream[stream_fpsrate] = resp->get_U32();
+      stream[stream_height] = resp->get_U32();
+      stream[stream_width] = resp->get_U32();
+      stream[stream_aspect] = (double)resp->get_S64() / 10000.0;
     }
     else if(!strcmp(type, "H264"))
     {
       stream[stream_codectype] = AVMEDIA_TYPE_VIDEO;
       stream[stream_codecid] = CODEC_ID_H264;
-      stream[stream_fpsscale] = resp->extract_U32();
-      stream[stream_fpsrate] = resp->extract_U32();
-      stream[stream_height] = resp->extract_U32();
-      stream[stream_width] = resp->extract_U32();
-      stream[stream_aspect] = resp->extract_Double();
+      stream[stream_fpsscale] = resp->get_U32();
+      stream[stream_fpsrate] = resp->get_U32();
+      stream[stream_height] = resp->get_U32();
+      stream[stream_width] = resp->get_U32();
+      stream[stream_aspect] = (double)resp->get_S64() / 10000.0;
     }
     else if(!strcmp(type, "DVBSUB"))
     {
-      stream[stream_language] = resp->extract_String();
+      stream[stream_language] = resp->get_String();
       stream[stream_codectype] = AVMEDIA_TYPE_SUBTITLE;
       stream[stream_codecid] = CODEC_ID_DVB_SUBTITLE;
 
-      uint32_t composition_id = resp->extract_U32();
-      uint32_t ancillary_id   = resp->extract_U32();
+      uint32_t composition_id = resp->get_U32();
+      uint32_t ancillary_id   = resp->get_U32();
 
       stream[stream_identifier] = (composition_id & 0xffff) | ((ancillary_id & 0xffff) << 16);
     }
@@ -368,9 +371,9 @@ void Demux::StreamChange(ResponsePacket *resp)
   }
 }
 
-void Demux::StreamStatus(ResponsePacket *resp)
+void Demux::StreamStatus(MsgPacket *resp)
 {
-  uint32_t status = resp->extract_U32();
+  uint32_t status = resp->get_U32();
 
   switch(status) {
     case XVDR_STREAM_STATUS_SIGNALLOST:
@@ -385,28 +388,28 @@ void Demux::StreamStatus(ResponsePacket *resp)
   }
 }
 
-void Demux::StreamSignalInfo(ResponsePacket *resp)
+void Demux::StreamSignalInfo(MsgPacket *resp)
 {
-  const char* name = resp->extract_String();
-  const char* status = resp->extract_String();
+  const char* name = resp->get_String();
+  const char* status = resp->get_String();
 
   MutexLock lock(&m_lock);
   m_signal[signal_adaptername] = name;
   m_signal[signal_adapterstatus] = status;
-  m_signal[signal_snr] = resp->extract_U32();
-  m_signal[signal_strength] = resp->extract_U32();
-  m_signal[signal_ber] = resp->extract_U32();
-  m_signal[signal_unc] = resp->extract_U32();
+  m_signal[signal_snr] = resp->get_U32();
+  m_signal[signal_strength] = resp->get_U32();
+  m_signal[signal_ber] = resp->get_U32();
+  m_signal[signal_unc] = resp->get_U32();
 }
 
-bool Demux::StreamContentInfo(ResponsePacket *resp)
+bool Demux::StreamContentInfo(MsgPacket *resp)
 {
   MutexLock lock(&m_lock);
   StreamProperties old = m_streams;
 
-  for (unsigned int i = 0; i < m_streams.size() && !resp->end(); i++)
+  for (unsigned int i = 0; i < m_streams.size() && !resp->eop(); i++)
   {
-    uint32_t id = resp->extract_U32();
+    uint32_t id = resp->get_U32();
 
     if(m_streams.find(id) == m_streams.end())
       continue;
@@ -420,27 +423,27 @@ bool Demux::StreamContentInfo(ResponsePacket *resp)
     switch (stream[stream_codectype])
     {
       case AVMEDIA_TYPE_AUDIO:
-    	stream[stream_language] = resp->extract_String();
-        stream[stream_channels] = resp->extract_U32();
-        stream[stream_samplerate] = resp->extract_U32();
-        stream[stream_blockalign] = resp->extract_U32();
-        stream[stream_bitrate] = resp->extract_U32();
-        stream[stream_bitspersample] = resp->extract_U32();
+    	stream[stream_language] = resp->get_String();
+        stream[stream_channels] = resp->get_U32();
+        stream[stream_samplerate] = resp->get_U32();
+        stream[stream_blockalign] = resp->get_U32();
+        stream[stream_bitrate] = resp->get_U32();
+        stream[stream_bitspersample] = resp->get_U32();
         break;
 
       case AVMEDIA_TYPE_VIDEO:
-        stream[stream_fpsscale] = resp->extract_U32();
-        stream[stream_fpsrate] = resp->extract_U32();
-        stream[stream_height] = resp->extract_U32();
-        stream[stream_width] = resp->extract_U32();
-        stream[stream_aspect] = resp->extract_Double();
+        stream[stream_fpsscale] = resp->get_U32();
+        stream[stream_fpsrate] = resp->get_U32();
+        stream[stream_height] = resp->get_U32();
+        stream[stream_width] = resp->get_U32();
+        stream[stream_aspect] = (double)resp->get_S64() / 10000.0;
         break;
 
       case AVMEDIA_TYPE_SUBTITLE:
-      	stream[stream_language] = resp->extract_String();
+      	stream[stream_language] = resp->get_String();
 
-        composition_id = resp->extract_U32();
-        ancillary_id   = resp->extract_U32();
+        composition_id = resp->get_U32();
+        ancillary_id   = resp->get_U32();
 
         stream[stream_identifier] = (composition_id & 0xffff) | ((ancillary_id & 0xffff) << 16);
         break;
