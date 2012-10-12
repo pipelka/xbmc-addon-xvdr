@@ -56,6 +56,9 @@ case $host in
   powerpc64-*-linux-gnu*)
     AC_SUBST(ARCH_DEFINES, "-D_POWERPC64")
     ;;
+  *-apple-*)
+    SOEXT=dylib
+    ;;
 esac
 
 AM_CONDITIONAL([MINGW32], $ISMINGW32)

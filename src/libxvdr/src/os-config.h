@@ -52,6 +52,17 @@ uint16_t be16toh(uint16_t u);
 #include <pthread.h>
 #endif
 
+#ifdef __APPLE__
+#define MSG_NOSIGNAL 0
+#include <libkern/OSByteOrder.h>
+#define be64toh(x) (unsigned long long) OSSwapBigToHostInt64((uint64_t)x)
+#define be32toh(x) (unsigned long) OSSwapBigToHostInt32((uint32_t)x)
+#define be16toh(x) (unsigned short) OSSwapBigToHostInt16((uint16_t)x)
+#define htobe64(x) (unsigned long long) OSSwapHostToBigInt64((uint64_t)x)
+#define htobe32(x) (unsigned long) OSSwapHostToBigInt32((uint32_t)x)
+#define htobe16(x) (unsigned short) OSSwapHostToBigInt16((uint16_t)x)
+#endif
+
 // ANDROID
 #ifdef ANDROID
 #include <linux/in.h>
