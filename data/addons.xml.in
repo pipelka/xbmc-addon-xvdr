@@ -6,6 +6,7 @@
     </requires>
     <extension
       point="xbmc.pvrclient"
+      library_osx="XBMC_VDR_xvdr_OSX.pvr"
       library_wingl="XBMC_VDR_xvdr_WIN32.pvr"
       library_windx="XBMC_VDR_xvdr_WIN32.pvr"
       library_linux="XBMC_VDR_xvdr.pvr"/>
