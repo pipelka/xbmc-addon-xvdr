@@ -24,7 +24,9 @@ dist-zip-daily: all
 	cp -r addons/pvr.vdr.xvdr .
 	cat pvr.vdr.xvdr/addon.xml | sed "s/$(VERSION)/$(VERSION).$(DATE)/g" > pvr.vdr.xvdr/addon.xml.new
 	mv pvr.vdr.xvdr/addon.xml.new pvr.vdr.xvdr/addon.xml
+if !APPLE
 	$(STRIP) -s -x pvr.vdr.xvdr/$(ADDONNAME)
+endif
 if MINGW32
 	zip -9 -r ./pvr.vdr.xvdr-$(VERSION).$(DATE).zip pvr.vdr.xvdr --exclude \*.am \*.in \*Makefile \*.gitignore
 else
@@ -62,4 +64,5 @@ repo-zip: all
 	zip -9 -r ../repository.xvdr.linux32.zip repository.xvdr.linux32 --exclude \*.am \*.in \*Makefile \*.gitignore && \
 	zip -9 -r ../repository.xvdr.linux64.zip repository.xvdr.linux64 --exclude \*.am \*.in \*Makefile \*.gitignore && \
 	zip -9 -r ../repository.xvdr.rpi.zip repository.xvdr.rpi --exclude \*.am \*.in \*Makefile \*.gitignore && \
+	zip -9 -r ../repository.xvdr.osx.zip repository.xvdr.osx --exclude \*.am \*.in \*Makefile \*.gitignore && \
 	zip -9 -r ../repository.xvdr.win32.zip repository.xvdr.win32 --exclude \*.am \*.in \*Makefile \*.gitignore

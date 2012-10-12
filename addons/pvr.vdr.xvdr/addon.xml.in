@@ -9,6 +9,7 @@
   </requires>
   <extension
     point="xbmc.pvrclient"
+    library_osx="XBMC_VDR_xvdr_OSX.pvr"
     library_linux="XBMC_VDR_xvdr.pvr"
     library_wingl="XBMC_VDR_xvdr_WIN32.pvr"
     library_windx="XBMC_VDR_xvdr_WIN32.pvr"/>
@@ -17,6 +18,6 @@
     <description>VDR frontend; supporting streaming of Live TV &amp; Recordings, EPG, Timers</description>
     <description lang="de">Erlaubt das wiedergeben von Live TV und Aufnahmen mittels VDR auf XBMC. Des weiteren werden EPG, Kanalsuche und Timer unterstützt.</description>
     <disclaimer>This is unstable software! The authors are in no way responsible for failed recordings, incorrect timers, wasted hours, or any other undesirable effects..</disclaimer>
-    <platform>linux windx wingl</platform>
+    <platform>linux windx wingl osx</platform>
   </extension>
 </addon>

@@ -39,12 +39,12 @@ AC_SUBST(VERSIONEXT)
 ISMINGW32=false
 ADDONNAME=XBMC_VDR_xvdr.pvr
 SOEXT=so
+ISAPPLE=false
 
 case $host in
   *-*-cygwin* | *-*-mingw32*)
     LDFLAGS+="-no-undefined -no-cygwin"
     ISMINGW32=true
-    ADDONNAME=XBMC_VDR_xvdr_WIN32.pvr
     SOEXT=dll
     ;;
   arm*-*-linux-gnu*)
@@ -57,11 +57,14 @@ case $host in
     AC_SUBST(ARCH_DEFINES, "-D_POWERPC64")
     ;;
   *-apple-*)
+    ADDONNAME=XBMC_VDR_xvdr_OSX.pvr
     SOEXT=dylib
+    ISAPPLE=true
     ;;
 esac
 
 AM_CONDITIONAL([MINGW32], $ISMINGW32)
+AM_CONDITIONAL([APPLE], $ISAPPLE)
 AC_SUBST(ADDONNAME)
 AC_SUBST(SOEXT)
 
