@@ -79,7 +79,6 @@ data/Makefile
 src/Makefile
 src/libxvdr/Makefile
 src/libxvdr/include/Makefile
-src/libxvdr/include/xvdr/Makefile
 src/libxvdr/src/Makefile
 src/xvdr/Makefile
 ])

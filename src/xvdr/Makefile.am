@@ -51,8 +51,7 @@ INCLUDES = \
 	-DUSE_DEMUX -D__STDC_CONSTANT_MACROS -D_LINUX
 
 EXTRA_DIST = \
-	include \
-	project
+	include
 
 $(ADDONNAME): libxvdraddon.la
 	cp -f .libs/libxvdraddon.$(SOEXT) $(ADDONNAME)
