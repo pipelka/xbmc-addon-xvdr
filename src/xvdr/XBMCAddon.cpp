@@ -461,7 +461,14 @@ PVR_ERROR DeleteRecording(const PVR_RECORDING &recording)
   if (!mConnection)
     return PVR_ERROR_SERVER_ERROR;
 
-  return mConnection->DeleteRecording(recording.strRecordingId) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
+  int rc = mConnection->DeleteRecording(recording.strRecordingId);
+
+  if(rc == XVDR_RET_OK)
+    return PVR_ERROR_NO_ERROR;
+  else if(rc == XVDR_RET_DATALOCKED)
+    return PVR_ERROR_RECORDING_RUNNING;
+  else
+    return PVR_ERROR_SERVER_ERROR;
 }
 
 /*******************************************/

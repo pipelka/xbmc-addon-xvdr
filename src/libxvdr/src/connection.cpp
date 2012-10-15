@@ -421,7 +421,6 @@ void Connection::ReadTimerPacket(MsgPacket* resp, Timer& tag) {
   tag[timer_state] = iRecording;
   tag[timer_priority] = resp->get_U32();
   tag[timer_lifetime] = resp->get_U32();
-                          resp->get_U32(); // channel number - unused
   tag[timer_channeluid] =  resp->get_U32();
   tag[timer_starttime] = resp->get_U32();
   tag[timer_endtime] = resp->get_U32();
@@ -719,7 +718,7 @@ bool Connection::RenameRecording(const std::string& recid, const std::string& ne
   return (returnCode == XVDR_RET_OK);
 }
 
-bool Connection::DeleteRecording(const std::string& recid)
+int Connection::DeleteRecording(const std::string& recid)
 {
   MsgPacket vrp(XVDR_RECORDINGS_DELETE);
   vrp.put_String(recid.c_str());
@@ -734,7 +733,7 @@ bool Connection::DeleteRecording(const std::string& recid)
   uint32_t returnCode = vresp->get_U32();
   delete vresp;
 
-  return (returnCode == XVDR_RET_OK);
+  return returnCode;
 }
 
 void Connection::OnResponsePacket(MsgPacket* pkt)

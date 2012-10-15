@@ -79,7 +79,7 @@ public:
   int         GetRecordingsCount();
   bool        GetRecordingsList();
   bool        RenameRecording(const std::string& recid, const std::string& newname);
-  bool        DeleteRecording(const std::string& recid);
+  int         DeleteRecording(const std::string& recid);
 
   MsgPacket*  ReadResult(MsgPacket* vrp);
 
