@@ -47,6 +47,8 @@
 /* OPCODE 20 - 39: XVDR network functions for live streaming */
 #define XVDR_CHANNELSTREAM_OPEN    20
 #define XVDR_CHANNELSTREAM_CLOSE   21
+#define XVDR_CHANNELSTREAM_REQUEST 22
+#define XVDR_CHANNELSTREAM_PAUSE   23
 
 /* OPCODE 40 - 59: XVDR network functions for recording streaming */
 #define XVDR_RECSTREAM_OPEN        40

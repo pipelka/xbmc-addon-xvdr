@@ -643,11 +643,7 @@ long long LengthRecordedStream(void)
 
 bool CanPauseStream()
 {
-  mCallbacks->Lock();
-  bool rc = (mDemuxer == NULL);
-  mCallbacks->Unlock();
-
-  return rc;
+  return true;
 }
 
 bool CanSeekStream()
@@ -661,6 +657,10 @@ bool CanSeekStream()
 
 void PauseStream(bool bPaused)
 {
+  if(mDemuxer == NULL)
+    return;
+
+  mDemuxer->Pause(bPaused);
 }
 
 const char* GetPVRAPIVersion(void)

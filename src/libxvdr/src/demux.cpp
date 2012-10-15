@@ -32,7 +32,7 @@
 
 using namespace XVDR;
 
-Demux::Demux(ClientInterface* client) : Connection(client), m_priority(50), m_queuelocked(false)
+Demux::Demux(ClientInterface* client) : Connection(client), m_priority(50), m_queuelocked(false), m_paused(false), m_timeshiftmode(false)
 {
 }
 
@@ -46,6 +46,9 @@ bool Demux::OpenChannel(const std::string& hostname, uint32_t channeluid)
 {
   if(!Open(hostname))
     return false;
+
+  m_paused = false;
+  m_timeshiftmode = false;
 
   return SwitchChannel(channeluid);
 }
@@ -100,7 +103,17 @@ Packet* Demux::Read()
   // empty queue -> wait for packet
   if (bEmpty) {
          m_lock.Unlock();
-         m_cond.Wait(2000);
+
+         // request packets in timeshift mode
+         if(m_timeshiftmode)
+         {
+           MsgPacket req(XVDR_CHANNELSTREAM_REQUEST, XVDR_CHANNEL_STREAM);
+           if(!Session::TransmitMessage(&req))
+             return NULL;
+         }
+
+         m_cond.Wait(1000);
+
          m_lock.Lock();
          bEmpty = m_queue.empty();
   }
@@ -217,6 +230,9 @@ bool Demux::SwitchChannel(uint32_t channeluid)
   {
     MutexLock lock(&m_lock);
     m_queuelocked = false;
+    m_paused = false;
+    m_timeshiftmode = false;
+
     m_streams.clear();
   }
 
@@ -470,4 +486,24 @@ void Demux::SetPriority(int priority)
     priority = 50;
 
   m_priority = priority;
+}
+
+void Demux::Pause(bool on)
+{
+  MsgPacket req(XVDR_CHANNELSTREAM_PAUSE);
+  req.put_U32(on);
+
+  MsgPacket* vresp = ReadResult(&req);
+  delete vresp;
+
+  {
+    MutexLock lock(&m_lock);
+
+    if(!on && m_paused)
+      m_timeshiftmode = true;
+
+    m_paused = on;
+  }
+
+  m_cond.Signal();
 }

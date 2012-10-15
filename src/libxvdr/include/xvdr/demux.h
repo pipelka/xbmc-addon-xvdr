@@ -54,6 +54,8 @@ public:
   StreamProperties GetStreamProperties();
   SignalStatus GetSignalStatus();
 
+  void Pause(bool on);
+
 protected:
 
   void OnDisconnect();
@@ -78,6 +80,8 @@ private:
   Mutex m_lock;
   CondWait m_cond;
   bool m_queuelocked;
+  bool m_paused;
+  bool m_timeshiftmode;
 };
 
 } // namespace XVDR
