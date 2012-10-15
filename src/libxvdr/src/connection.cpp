@@ -79,7 +79,7 @@ bool Connection::Login()
   const char* lang = ISO639_FindLanguage(code);
 
   MsgPacket vrp(XVDR_LOGIN);
-  vrp.put_U32(XVDRPROTOCOLVERSION);
+  vrp.setProtocolVersion(XVDRPROTOCOLVERSION);
   vrp.put_U8(m_compressionlevel);
   vrp.put_String(m_name.empty() ? "XBMC Media Center" : m_name.c_str());
   vrp.put_String((lang != NULL) ? lang : "");
