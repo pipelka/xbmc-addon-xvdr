@@ -687,7 +687,7 @@ bool Connection::GetRecordingsList()
 	rec[recording_streamurl] = "";
 	rec[recording_genretype] = 0;
 	rec[recording_genresubtype] = 0;
-	rec[recording_playcount] = 0;
+	rec[recording_playcount] = vresp->get_U32();
 
 	m_client->TransferRecordingEntry(rec);
   }
@@ -1096,3 +1096,54 @@ void Connection::SetAudioType(int type)
   m_audiotype = type;
 }
 
+bool Connection::SetRecordingPlayCount(const std::string& recid, int count)
+{
+  MsgPacket vrp(XVDR_RECORDINGS_SETPLAYCOUNT);
+  vrp.put_String(recid.c_str());
+  vrp.put_U32(count);
+
+  MsgPacket* vresp = ReadResult(&vrp);
+  if (vresp == NULL)
+  {
+    delete vresp;
+    return false;
+  }
+
+  delete vresp;
+  return true;
+}
+
+bool Connection::SetRecordingLastPosition(const std::string& recid, int64_t pos)
+{
+  MsgPacket vrp(XVDR_RECORDINGS_SETPOSITION);
+  vrp.put_String(recid.c_str());
+  vrp.put_S64(pos);
+
+  MsgPacket* vresp = ReadResult(&vrp);
+  if (vresp == NULL)
+  {
+    delete vresp;
+    return false;
+  }
+
+  delete vresp;
+  return true;
+}
+
+int64_t Connection::GetRecordingLastPosition(const std::string& recid)
+{
+  MsgPacket vrp(XVDR_RECORDINGS_GETPOSITION);
+  vrp.put_String(recid.c_str());
+
+  MsgPacket* vresp = ReadResult(&vrp);
+  if (vresp == NULL || vresp->eop())
+  {
+    delete vresp;
+    return -1;
+  }
+
+  int64_t pos = vresp->get_S64();
+  delete vresp;
+
+  return pos;
+}

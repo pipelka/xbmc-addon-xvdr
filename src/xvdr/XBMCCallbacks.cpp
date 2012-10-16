@@ -354,6 +354,7 @@ PVR_RECORDING& operator<< (PVR_RECORDING& lhs, const RecordingEntry& rhs) {
 	lhs.iPlayCount = rhs[recording_playcount];
 	lhs.iPriority = rhs[recording_priority];
 	lhs.recordingTime = rhs[recording_time];
+	lhs.iPlayCount = rhs[recording_playcount];
 	strncpy(lhs.strChannelName, rhs[recording_channelname].c_str(), sizeof(lhs.strChannelName));
 	strncpy(lhs.strDirectory, rhs[recording_directory].c_str(), sizeof(lhs.strDirectory));
 	strncpy(lhs.strPlot, rhs[recording_plot].c_str(), sizeof(lhs.strPlot));

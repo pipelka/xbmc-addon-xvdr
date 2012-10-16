@@ -215,8 +215,8 @@ PVR_ERROR GetAddonCapabilities(PVR_ADDON_CAPABILITIES* pCapabilities)
   pCapabilities->bHandlesDemuxing            = true;
 
   pCapabilities->bSupportsRecordingFolders   = true;
-  pCapabilities->bSupportsRecordingPlayCount = false;
-  pCapabilities->bSupportsLastPlayedPosition = false;
+  pCapabilities->bSupportsRecordingPlayCount = true;
+  pCapabilities->bSupportsLastPlayedPosition = true;
 
   return PVR_ERROR_NO_ERROR;
 }
@@ -682,6 +682,33 @@ const char* GetMininumPVRAPIVersion(void)
   return strMinApiVersion;
 }
 
+PVR_ERROR SetRecordingPlayCount(const PVR_RECORDING &recording, int count)
+{
+  if (!mConnection)
+    return PVR_ERROR_SERVER_ERROR;
+
+  if(!mConnection->SetRecordingPlayCount(recording.strRecordingId, count))
+    return PVR_ERROR_SERVER_ERROR;
+
+  return PVR_ERROR_NO_ERROR;
+}
+
+PVR_ERROR SetRecordingLastPlayedPosition(const PVR_RECORDING &recording, int lastplayedposition)
+{
+  if (!mConnection)
+    return PVR_ERROR_SERVER_ERROR;
+
+  return mConnection->SetRecordingLastPosition(recording.strRecordingId, lastplayedposition) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
+}
+
+int GetRecordingLastPlayedPosition(const PVR_RECORDING &recording)
+{
+  if (!mConnection)
+    return -1;
+
+  return mConnection->GetRecordingLastPosition(recording.strRecordingId);
+}
+
 /** UNUSED API FUNCTIONS */
 PVR_ERROR CallMenuHook(const PVR_MENUHOOK &menuhook) { return PVR_ERROR_NOT_IMPLEMENTED; }
 PVR_ERROR DeleteChannel(const PVR_CHANNEL &channel) { return PVR_ERROR_NOT_IMPLEMENTED; }
@@ -694,8 +721,5 @@ long long SeekLiveStream(long long iPosition, int iWhence /* = SEEK_SET */) { re
 long long PositionLiveStream(void) { return -1; }
 long long LengthLiveStream(void) { return -1; }
 const char * GetLiveStreamURL(const PVR_CHANNEL &channel) { return ""; }
-PVR_ERROR SetRecordingPlayCount(const PVR_RECORDING &recording, int count) { return PVR_ERROR_NOT_IMPLEMENTED; }
-PVR_ERROR SetRecordingLastPlayedPosition(const PVR_RECORDING &recording, int lastplayedposition) { return PVR_ERROR_NOT_IMPLEMENTED; }
-int GetRecordingLastPlayedPosition(const PVR_RECORDING &recording) { return -1; }
 unsigned int GetChannelSwitchDelay(void) { return 0; }
 }

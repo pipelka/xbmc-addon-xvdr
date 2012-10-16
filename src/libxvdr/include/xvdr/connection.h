@@ -80,6 +80,9 @@ public:
   bool        GetRecordingsList();
   bool        RenameRecording(const std::string& recid, const std::string& newname);
   int         DeleteRecording(const std::string& recid);
+  bool        SetRecordingPlayCount(const std::string& recid, int count);
+  bool        SetRecordingLastPosition(const std::string& recid, int64_t pos);
+  int64_t     GetRecordingLastPosition(const std::string& recid);
 
   MsgPacket*  ReadResult(MsgPacket* vrp);
 
