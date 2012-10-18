@@ -67,6 +67,9 @@ case $host in
     SOEXT=dylib
     ISAPPLE=true
     ;;
+  *-androideabi)
+    ADDONNAME=libXBMC_VDR_xvdr.so
+    ;;
 esac
 
 AM_CONDITIONAL([MINGW32], $ISMINGW32)

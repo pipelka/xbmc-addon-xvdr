@@ -2,3 +2,4 @@ XBMC_VDR_xvdr.pvr
 addon.xml
 XBMC_VDR_xvdr_WIN32.pvr
 XBMC_VDR_xvdr_OSX.pvr
+libXBMC_VDR_xvdr.so
