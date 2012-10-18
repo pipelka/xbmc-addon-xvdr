@@ -34,6 +34,11 @@ if test x$zlib_found = xyes; then
         AC_SUBST(ZLIB_LIBS)
 fi
 
+dnl Check for libpthread
+PTHREAD_LIBS=
+AC_SEARCH_LIBS(pthread_create, pthread, [if test "$ac_res" != "none required"; then PTHREAD_LIBS="-lpthread"; fi], 1)
+AC_SUBST(PTHREAD_LIBS)
+
 AC_SUBST(VERSIONEXT)
 
 ISMINGW32=false

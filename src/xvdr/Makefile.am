@@ -38,7 +38,7 @@ libxvdraddon_la_LIBADD += \
 	-L$(srcdir)/../libxvdr/src/pthreads-win32 -lpthreadGC2 -lws2_32
 else
 libxvdraddon_la_LIBADD += \
-	-lpthread
+	$(PTHREAD_LIBS)
 endif
 
 CPPFLAGS = \

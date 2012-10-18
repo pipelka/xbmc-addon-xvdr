@@ -31,7 +31,7 @@ libxvdrstatic_la_LIBADD = \
 	-L$(srcdir)/pthreads-win32 -lpthreadGC2 -lws2_32
 else
 libxvdrstatic_la_LIBADD = \
-	-lpthread
+	$(PTHREAD_LIBS)
 endif
 
 libxvdrstatic_la_LIBADD += \
@@ -48,7 +48,7 @@ libxvdr_la_LIBADD = \
 	-L$(srcdir)/pthreads-win32 -lpthreadGC2 -lws2_32
 else
 libxvdr_la_LIBADD = \
-	-lpthread
+	$(PTHREAD_LIBS)
 endif
 
 libxvdr_la_LIBADD += \
