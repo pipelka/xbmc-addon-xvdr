@@ -4,7 +4,7 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_CPP_EXTENSION := .cpp
-LOCAL_MODULE    := xvdraddon
+LOCAL_MODULE    := XBMC_VDR_xvdr.so
 LOCAL_SRC_FILES := \
 	../src/libxvdr/src/clientinterface.cpp \
 	../src/libxvdr/src/connection.cpp \
