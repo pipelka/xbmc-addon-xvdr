@@ -45,6 +45,7 @@ case $host in
   *-*-cygwin* | *-*-mingw32*)
     LDFLAGS+="-no-undefined -no-cygwin"
     ISMINGW32=true
+    ADDONNAME=XBMC_VDR_xvdr_WIN32.pvr
     SOEXT=dll
     ;;
   arm*-*-linux-gnu*)
