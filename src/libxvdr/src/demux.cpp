@@ -101,7 +101,7 @@ Packet* Demux::Read()
   // empty queue -> wait for packet
   if (bEmpty) {
          m_lock.Unlock();
-         m_cond.Wait(100);
+         m_cond.Wait(0);
          m_lock.Lock();
          bEmpty = m_queue.empty();
   }
@@ -129,7 +129,7 @@ void Demux::OnResponsePacket(ResponsePacket *resp) {
   }
 
   if (resp->getChannelID() != XVDR_CHANNEL_STREAM)
-	return;
+	  return;
 
   Packet* pkt = NULL;
   int iStreamId = -1;
@@ -179,13 +179,13 @@ void Demux::OnResponsePacket(ResponsePacket *resp) {
 	    MutexLock lock(&m_lock);
 
 	    // limit queue size
-	    if(m_queue.size() > 50)
+	    if(m_queue.size() > 200)
 	    {
 	      m_client->FreePacket(pkt);
 	      return;
 	    }
 
-        m_queue.push(pkt);
+      m_queue.push(pkt);
 	  }
 	  m_cond.Signal();
   }
