@@ -101,7 +101,7 @@ Packet* Demux::Read()
   // empty queue -> wait for packet
   if (bEmpty) {
          m_lock.Unlock();
-         m_cond.Wait(0);
+         m_cond.Wait(2000);
          m_lock.Lock();
          bEmpty = m_queue.empty();
   }
