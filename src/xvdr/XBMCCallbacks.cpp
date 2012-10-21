@@ -293,10 +293,16 @@ Timer& operator<< (Timer& lhs, const PVR_TIMER& rhs) {
 	lhs[timer_priority] = rhs.iPriority;
 	lhs[timer_weekdays] = rhs.iWeekdays;
 	lhs[timer_starttime] = rhs.startTime;
-	lhs[timer_state] = (rhs.state == PVR_TIMER_STATE_RECORDING);
 	lhs[timer_directory] = rhs.strDirectory;
 	lhs[timer_summary] = rhs.strSummary;
 	lhs[timer_title] = rhs.strTitle;
+
+	if(rhs.state == PVR_TIMER_STATE_RECORDING)
+	  lhs[timer_state] = 8;
+  if(rhs.state == PVR_TIMER_STATE_SCHEDULED)
+    lhs[timer_state] = 1;
+  if(rhs.state == PVR_TIMER_STATE_NEW)
+    lhs[timer_state] = 0;
 
 	return lhs;
 }
@@ -316,7 +322,14 @@ PVR_TIMER& operator<< (PVR_TIMER& lhs, const Timer& rhs) {
 	lhs.iPriority = rhs[timer_priority];
 	lhs.iWeekdays = rhs[timer_weekdays];
 	lhs.startTime = rhs[timer_starttime];
-	lhs.state = (rhs[timer_state] == 1) ? PVR_TIMER_STATE_RECORDING : PVR_TIMER_STATE_COMPLETED;
+
+	if(rhs[timer_state] == 0)
+	  lhs.state = PVR_TIMER_STATE_NEW;
+	if(rhs[timer_state] & 1)
+	  lhs.state = PVR_TIMER_STATE_SCHEDULED;
+  if(rhs[timer_state] & 8)
+    lhs.state = PVR_TIMER_STATE_RECORDING;
+
 	strncpy(lhs.strDirectory, rhs[timer_directory].c_str(), sizeof(lhs.strDirectory));
 	strncpy(lhs.strSummary, rhs[timer_summary].c_str(), sizeof(lhs.strSummary));
 	strncpy(lhs.strTitle, rhs[timer_title].c_str(), sizeof(lhs.strTitle));

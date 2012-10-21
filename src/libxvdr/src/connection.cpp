@@ -414,11 +414,14 @@ int Connection::GetTimersCount()
 void Connection::ReadTimerPacket(MsgPacket* resp, Timer& tag) {
   tag[timer_index] = resp->get_U32();
 
-  int iActive           = resp->get_U32();
-  int iRecording        = resp->get_U32();
-  int iPending          = resp->get_U32();
+  // TIMER STATES:
 
-  tag[timer_state] = iRecording;
+  // FLAGS   DESCRIPTION
+  // 0       Timer disabled
+  // 1       Timer scheduled
+  // 8       Timer recording
+
+  tag[timer_state] = resp->get_U32();
   tag[timer_priority] = resp->get_U32();
   tag[timer_lifetime] = resp->get_U32();
   tag[timer_channeluid] =  resp->get_U32();
