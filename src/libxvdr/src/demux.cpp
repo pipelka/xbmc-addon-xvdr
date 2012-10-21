@@ -210,6 +210,13 @@ bool Demux::SwitchChannel(uint32_t channeluid)
   vrp.add_S32(m_priority);
 
   ResponsePacket* vresp = ReadResult(&vrp);
+
+  {
+    MutexLock lock(&m_lock);
+    m_queuelocked = false;
+    m_streams.clear();
+  }
+
   uint32_t rc = XVDR_RET_ERROR;
 
   if(vresp != NULL)
@@ -220,13 +227,6 @@ bool Demux::SwitchChannel(uint32_t channeluid)
   if(rc == XVDR_RET_OK)
   {
     m_channeluid = channeluid;
-
-    {
-      MutexLock lock(&m_lock);
-      m_queuelocked = false;
-      m_streams.clear();
-    }
-
     return true;
   }
 
