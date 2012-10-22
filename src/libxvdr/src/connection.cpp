@@ -66,7 +66,11 @@ bool Connection::Open(const std::string& hostname, const std::string& name)
   m_name = name;
 
   if(!Login())
-	 return false;
+  {
+    m_client->Notification(XVDR_WARNING, "Check XVDR Server version");
+    XVDR::CondWait::SleepMs(5000);
+    return false;
+  }
 
   Start();
 
@@ -86,14 +90,14 @@ bool Connection::Login()
   vrp.put_U8(m_audiotype);
 
   // read welcome
-  MsgPacket* vresp = Session::ReadResult(&vrp);
+  MsgPacket* vresp = Session::ReadResult(&vrp, true);
   if (!vresp)
   {
 	m_client->Log(XVDR_ERROR, "failed to read greeting from server");
 	return false;
   }
 
-  m_protocol                = vresp->get_U32();
+  m_protocol                = vresp->getProtocolVersion();
   uint32_t    vdrTime       = vresp->get_U32();
   int32_t     vdrTimeOffset = vresp->get_S32();
   m_server                  = vresp->get_String();

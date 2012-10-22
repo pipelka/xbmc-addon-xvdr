@@ -168,17 +168,19 @@ bool Session::TransmitMessage(MsgPacket* vrp)
   return vrp->write(m_fd, m_timeout);
 }
 
-MsgPacket* Session::ReadResult(MsgPacket* vrp)
+MsgPacket* Session::ReadResult(MsgPacket* vrp, bool bIgnoreConnectionLost)
 {
   if(!TransmitMessage(vrp))
   {
-    SignalConnectionLost();
+    if(!bIgnoreConnectionLost)
+      SignalConnectionLost();
+
     return NULL;
   }
 
   MsgPacket *pkt = ReadMessage();
 
-  if(pkt == NULL)
+  if(pkt == NULL && !bIgnoreConnectionLost)
     SignalConnectionLost();
 
   return pkt;

@@ -48,7 +48,7 @@ public:
 
   bool TransmitMessage(MsgPacket* vrp);
 
-  MsgPacket* ReadResult(MsgPacket* vrp);
+  MsgPacket* ReadResult(MsgPacket* vrp, bool bIgnoreConnectionLost = false);
 
   bool ConnectionLost();
 
