@@ -417,9 +417,12 @@ void Connection::ReadTimerPacket(MsgPacket* resp, Timer& tag) {
   // TIMER STATES:
 
   // FLAGS   DESCRIPTION
-  // 0       Timer disabled
-  // 1       Timer scheduled
-  // 8       Timer recording
+  // 0       timer disabled
+  // 1       timer scheduled
+  // 4       VPS enabled
+  // 8       timer recording now
+  // 1024    conflict warning
+  // 2048    conflict error
 
   tag[timer_state] = resp->get_U32();
   tag[timer_priority] = resp->get_U32();
@@ -622,7 +625,7 @@ bool Connection::UpdateTimer(const Timer& timer)
 
   MsgPacket vrp(XVDR_TIMER_UPDATE);
   vrp.put_U32(timer[timer_index]);
-  vrp.put_U32(2);
+  vrp.put_U32(timer[timer_state] & 1);
   vrp.put_U32(timer[timer_priority]);
   vrp.put_U32(timer[timer_lifetime]);
   vrp.put_U32(timer[timer_channeluid]);

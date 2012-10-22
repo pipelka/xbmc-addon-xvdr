@@ -323,10 +323,14 @@ PVR_TIMER& operator<< (PVR_TIMER& lhs, const Timer& rhs) {
 	lhs.iWeekdays = rhs[timer_weekdays];
 	lhs.startTime = rhs[timer_starttime];
 
-	if(rhs[timer_state] == 0)
-	  lhs.state = PVR_TIMER_STATE_NEW;
-	if(rhs[timer_state] & 1)
-	  lhs.state = PVR_TIMER_STATE_SCHEDULED;
+  if(rhs[timer_state] == 0)
+    lhs.state = PVR_TIMER_STATE_NEW;
+  if(rhs[timer_state] & 1)
+    lhs.state = PVR_TIMER_STATE_SCHEDULED;
+  if(rhs[timer_state] & 1024)
+    lhs.state = PVR_TIMER_STATE_CONFLICT_OK;
+  if(rhs[timer_state] & 2048)
+    lhs.state = PVR_TIMER_STATE_CONFLICT_NOK;
   if(rhs[timer_state] & 8)
     lhs.state = PVR_TIMER_STATE_RECORDING;
 
