@@ -525,6 +525,10 @@ PVR_ERROR GetStreamProperties(PVR_STREAM_PROPERTIES* pProperties)
 
 void DemuxAbort(void)
 {
+  if (!mDemuxer)
+    return;
+
+  mDemuxer->Abort();
 }
 
 void DemuxReset(void)
