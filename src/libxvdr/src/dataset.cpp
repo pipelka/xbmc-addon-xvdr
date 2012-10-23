@@ -196,6 +196,9 @@ RecordingEntry& XVDR::operator<< (RecordingEntry& lhs, MsgPacket* rhs) {
   lhs.GenreType = content & 0xF0;
   lhs.GenreSubType = content & 0x0F;
 
+  lhs.ThumbNailPath = rhs->get_String();
+  lhs.IconPath = rhs->get_String();
+
   return lhs;
 }
 

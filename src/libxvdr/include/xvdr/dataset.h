@@ -113,6 +113,8 @@ public:
   uint8_t     GenreType;
   uint8_t     GenreSubType;
   uint8_t     PlayCount;
+  std::string ThumbNailPath;
+  std::string IconPath;
 };
 
 RecordingEntry& operator<< (RecordingEntry& lhs, MsgPacket* rhs);
