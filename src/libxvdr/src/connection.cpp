@@ -174,6 +174,9 @@ MsgPacket* Connection::ReadResult(MsgPacket* vrp)
 
   m_mutex.Unlock();
 
+  if(vresp == NULL)
+    m_client->Log(XVDR_ERROR, "Can't get response packet for Message ID: %i", vrp->getMsgID());
+
   return vresp;
 }
 
@@ -183,10 +186,7 @@ bool Connection::GetDriveSpace(long long *total, long long *used)
 
   MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
-  {
-	m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return false;
-  }
 
   uint32_t totalspace    = vresp->get_U32();
   uint32_t freespace     = vresp->get_U32();
@@ -208,10 +208,7 @@ bool Connection::SupportChannelScan()
 
   MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
-  {
-	m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return false;
-  }
 
   uint32_t ret = vresp->get_U32();
   delete vresp;
@@ -225,10 +222,7 @@ bool Connection::EnableStatusInterface(bool onOff)
 
   MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
-  {
-	m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return false;
-  }
 
   uint32_t ret = vresp->get_U32();
   delete vresp;
@@ -307,10 +301,7 @@ int Connection::GetChannelsCount()
 
   MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
-  {
-	m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return -1;
-  }
 
   uint32_t count = vresp->get_U32();
 
@@ -325,10 +316,7 @@ bool Connection::GetChannelsList(bool radio)
 
   MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
-  {
-	m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return false;
-  }
 
   while (!vresp->eop())
   {
@@ -350,10 +338,7 @@ bool Connection::GetEPGForChannel(uint32_t channeluid, time_t start, time_t end)
 
   MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
-  {
-	m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return false;
-  }
 
   while (!vresp->eop())
   {
@@ -379,10 +364,7 @@ int Connection::GetTimersCount()
 
   MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
-  {
-	m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return m_timercount;
-  }
 
   m_timercount = vresp->get_U32();
 
@@ -398,7 +380,6 @@ bool Connection::GetTimerInfo(unsigned int timernumber, Timer& tag)
   MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
-	m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     delete vresp;
     return false;
   }
@@ -427,7 +408,6 @@ bool Connection::GetTimersList()
   if (!vresp)
   {
     delete vresp;
-    m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return false;
   }
 
@@ -453,7 +433,6 @@ bool Connection::AddTimer(const Timer& timer)
   if (vresp == NULL || vresp->eop())
   {
     delete vresp;
-    m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return false;
   }
   uint32_t returnCode = vresp->get_U32();
@@ -505,10 +484,7 @@ int Connection::GetRecordingsCount()
 
   MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
-  {
-	m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return -1;
-  }
 
   uint32_t count = vresp->get_U32();
 
@@ -522,10 +498,7 @@ bool Connection::GetRecordingsList()
 
   MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
-  {
-	m_client->Log(XVDR_ERROR, "%s - Can't get response packet", __FUNCTION__);
     return false;
-  }
 
   while (!vresp->eop())
   {
