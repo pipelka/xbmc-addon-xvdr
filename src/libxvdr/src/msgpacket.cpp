@@ -31,7 +31,7 @@
 	m_usage += sizeof(T); \
 	return true
 
-pthread_mutex_t MsgPacket::uidmutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t uidmutex = PTHREAD_MUTEX_INITIALIZER;
 
 uint32_t MsgPacket::globalUID = 1;
 

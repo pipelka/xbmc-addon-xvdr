@@ -7,7 +7,6 @@
 #define MSGPACKET_H
 
 #include <stdint.h>
-#include <pthread.h>
 #include <string.h>
 
 #include <ostream>
@@ -517,8 +516,6 @@ private:
 		InitialPacketSize = 128,
 		IncrementPacketSize = 512
 	};
-
-	static pthread_mutex_t uidmutex;
 };
 
 inline std::ostream& operator<<(std::ostream& out, MsgPacket& p) {
