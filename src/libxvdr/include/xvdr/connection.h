@@ -106,8 +106,6 @@ protected:
   void OnDisconnect();
   void OnReconnect();
 
-  void ReadTimerPacket(MsgPacket* resp, Timer& tag);
-
   bool m_statusinterface;
   ClientInterface* m_client;
 

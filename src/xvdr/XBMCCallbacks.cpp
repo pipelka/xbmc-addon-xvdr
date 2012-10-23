@@ -146,7 +146,7 @@ void cXBMCCallbacks::TransferChannelEntry(const Channel& channel)
   PVR->TransferChannelEntry(m_handle, &pvrchannel);
 }
 
-void cXBMCCallbacks::TransferEpgEntry(const Epg& epg)
+void cXBMCCallbacks::TransferEpgEntry(const EpgItem& epg)
 {
   EPG_TAG pvrepg;
   pvrepg << epg;
@@ -249,60 +249,58 @@ PVR_CHANNEL& operator<< (PVR_CHANNEL& lhs, const Channel& rhs)
 {
 	memset(&lhs, 0, sizeof(lhs));
 
-	lhs.bIsHidden = rhs[channel_ishidden];
-	lhs.bIsRadio = rhs[channel_isradio];
-	lhs.iChannelNumber = rhs[channel_number];
-	lhs.iEncryptionSystem = rhs[channel_encryptionsystem];
-	lhs.iUniqueId = rhs[channel_uid];
-	strncpy(lhs.strChannelName, rhs[channel_name].c_str(), sizeof(lhs.strChannelName));
-	strncpy(lhs.strIconPath, rhs[channel_iconpath].c_str(), sizeof(lhs.strIconPath));
-	strncpy(lhs.strInputFormat, rhs[channel_inputformat].c_str(), sizeof(lhs.strInputFormat));
-	strncpy(lhs.strStreamURL, rhs[channel_streamurl].c_str(), sizeof(lhs.strStreamURL));
+	lhs.bIsHidden = rhs.IsHidden;
+	lhs.bIsRadio = rhs.IsRadio;
+	lhs.iChannelNumber = rhs.Number;
+	lhs.iEncryptionSystem = rhs.EncryptionSystem;
+	lhs.iUniqueId = rhs.UID;
+	strncpy(lhs.strChannelName, rhs.Name.c_str(), sizeof(lhs.strChannelName));
+	strncpy(lhs.strIconPath, rhs.IconPath.c_str(), sizeof(lhs.strIconPath));
+	lhs.strInputFormat[0] = 0;
+	lhs.strStreamURL[0] = 0;
 
 	return lhs;
 }
 
-EPG_TAG& operator<< (EPG_TAG& lhs, const Epg& rhs) {
+EPG_TAG& operator<< (EPG_TAG& lhs, const EpgItem& rhs) {
 	memset(&lhs, 0, sizeof(lhs));
 
-	lhs.endTime = rhs[epg_endtime];
-	lhs.iChannelNumber = rhs[epg_uid];
-	lhs.iGenreSubType = rhs[epg_genresubtype];
-	lhs.iGenreType = rhs[epg_genretype];
-	lhs.iParentalRating = rhs[epg_parentalrating];
-	lhs.iUniqueBroadcastId = rhs[epg_broadcastid];
-	lhs.startTime = rhs[epg_starttime];
+	lhs.endTime = rhs.EndTime;
+	lhs.iChannelNumber = rhs.UID;
+	lhs.iGenreSubType = rhs.GenreSubType;
+	lhs.iGenreType = rhs.GenreType;
+	lhs.iParentalRating = rhs.ParentalRating;
+	lhs.iUniqueBroadcastId = rhs.BroadcastID;
+	lhs.startTime = rhs.StartTime;
 
-	lhs.strPlot = rhs[epg_plot].c_str();
-	lhs.strPlotOutline = rhs[epg_plotoutline].c_str();
-	lhs.strTitle = rhs[epg_title].c_str();
+	lhs.strPlot = rhs.Plot.c_str();
+	lhs.strPlotOutline = rhs.PlotOutline.c_str();
+	lhs.strTitle = rhs.Title.c_str();
 
 	return lhs;
 }
 
 Timer& operator<< (Timer& lhs, const PVR_TIMER& rhs) {
-	lhs[timer_isrepeating] = rhs.bIsRepeating;
-	lhs[timer_endtime] = rhs.endTime;
-	lhs[timer_firstday] = rhs.firstDay;
-	lhs[timer_channeluid] = rhs.iClientChannelUid;
-	lhs[timer_index] = rhs.iClientIndex;
-	lhs[timer_epguid] = rhs.iEpgUid;
-	lhs[timer_lifetime] = rhs.iLifetime;
-	lhs[timer_marginend] = rhs.iMarginEnd;
-	lhs[timer_marginstart] = rhs.iMarginStart;
-	lhs[timer_priority] = rhs.iPriority;
-	lhs[timer_weekdays] = rhs.iWeekdays;
-	lhs[timer_starttime] = rhs.startTime;
-	lhs[timer_directory] = rhs.strDirectory;
-	lhs[timer_summary] = rhs.strSummary;
-	lhs[timer_title] = rhs.strTitle;
+	lhs.IsRepeating = rhs.bIsRepeating;
+	lhs.EndTime = rhs.endTime + rhs.iMarginEnd * 60;
+	lhs.FirstDay = rhs.firstDay;
+	lhs.ChannelUID = rhs.iClientChannelUid;
+	lhs.Index = rhs.iClientIndex;
+	lhs.EpgUID = rhs.iEpgUid;
+	lhs.LifeTime = rhs.iLifetime;
+	lhs.Priority = rhs.iPriority;
+	lhs.WeekDays = rhs.iWeekdays;
+	lhs.StartTime = rhs.startTime - rhs.iMarginStart * 60;
+	lhs.Directory = rhs.strDirectory;
+	lhs.Summary = rhs.strSummary;
+	lhs.Title = rhs.strTitle;
 
 	if(rhs.state == PVR_TIMER_STATE_RECORDING)
-	  lhs[timer_state] = 8;
+	  lhs.State = 8;
   if(rhs.state == PVR_TIMER_STATE_SCHEDULED)
-    lhs[timer_state] = 1;
+    lhs.State = 1;
   if(rhs.state == PVR_TIMER_STATE_NEW)
-    lhs[timer_state] = 0;
+    lhs.State = 0;
 
 	return lhs;
 }
@@ -310,53 +308,51 @@ Timer& operator<< (Timer& lhs, const PVR_TIMER& rhs) {
 PVR_TIMER& operator<< (PVR_TIMER& lhs, const Timer& rhs) {
 	memset(&lhs, 0, sizeof(lhs));
 
-	lhs.bIsRepeating = rhs[timer_isrepeating];
-	lhs.endTime = rhs[timer_endtime];
-	lhs.firstDay = rhs[timer_firstday];
-	lhs.iClientChannelUid = rhs[timer_channeluid];
-	lhs.iClientIndex = rhs[timer_index];
-	lhs.iEpgUid = rhs[timer_epguid];
-	lhs.iLifetime = rhs[timer_lifetime];
-	lhs.iMarginEnd = rhs[timer_marginend];
-	lhs.iMarginStart = rhs[timer_marginstart];
-	lhs.iPriority = rhs[timer_priority];
-	lhs.iWeekdays = rhs[timer_weekdays];
-	lhs.startTime = rhs[timer_starttime];
+	lhs.bIsRepeating = rhs.IsRepeating;
+	lhs.endTime = rhs.EndTime;
+	lhs.firstDay = rhs.FirstDay;
+	lhs.iClientChannelUid = rhs.ChannelUID;
+	lhs.iClientIndex = rhs.Index;
+	lhs.iEpgUid = rhs.EpgUID;
+	lhs.iLifetime = rhs.LifeTime;
+	lhs.iMarginEnd = 0;
+	lhs.iMarginStart = 0;
+	lhs.iPriority = rhs.Priority;
+	lhs.iWeekdays = rhs.WeekDays;
+	lhs.startTime = rhs.StartTime;
 
-  if(rhs[timer_state] == 0)
+  if(rhs.State == 0)
     lhs.state = PVR_TIMER_STATE_NEW;
-  if(rhs[timer_state] & 1)
+  if(rhs.State & 1)
     lhs.state = PVR_TIMER_STATE_SCHEDULED;
-  if(rhs[timer_state] & 1024)
+  if(rhs.State & 1024)
     lhs.state = PVR_TIMER_STATE_CONFLICT_OK;
-  if(rhs[timer_state] & 2048)
+  if(rhs.State & 2048)
     lhs.state = PVR_TIMER_STATE_CONFLICT_NOK;
-  if(rhs[timer_state] & 8)
+  if(rhs.State & 8)
     lhs.state = PVR_TIMER_STATE_RECORDING;
 
-	strncpy(lhs.strDirectory, rhs[timer_directory].c_str(), sizeof(lhs.strDirectory));
-	strncpy(lhs.strSummary, rhs[timer_summary].c_str(), sizeof(lhs.strSummary));
-	strncpy(lhs.strTitle, rhs[timer_title].c_str(), sizeof(lhs.strTitle));
+	strncpy(lhs.strDirectory, rhs.Directory.c_str(), sizeof(lhs.strDirectory));
+	strncpy(lhs.strSummary, rhs.Summary.c_str(), sizeof(lhs.strSummary));
+	strncpy(lhs.strTitle, rhs.Title.c_str(), sizeof(lhs.strTitle));
 
 	return lhs;
 }
 
 RecordingEntry& operator<< (RecordingEntry& lhs, const PVR_RECORDING& rhs) {
-	lhs[recording_duration] = rhs.iDuration;
-	lhs[recording_genresubtype] = rhs.iGenreSubType;
-	lhs[recording_genretype] = rhs.iGenreType;
-	lhs[recording_lifetime] = rhs.iLifetime;
-	lhs[recording_playcount] = rhs.iPlayCount;
-	lhs[recording_priority] = rhs.iPriority;
-	lhs[recording_time] = rhs.recordingTime;
-	lhs[recording_channelname] = rhs.strChannelName;
-	lhs[recording_directory] = rhs.strDirectory;
-	lhs[recording_plot] = rhs.strPlot;
-	lhs[recording_plotoutline] = rhs.strPlotOutline;
-	lhs[recording_id] = rhs.strRecordingId;
-	lhs[recording_streamurl] = rhs.strStreamURL;
-	lhs[recording_title] = rhs.strTitle;
-	lhs[recording_title] = rhs.strTitle;
+	lhs.Duration = rhs.iDuration;
+	lhs.GenreSubType = rhs.iGenreSubType;
+	lhs.GenreType = rhs.iGenreType;
+	lhs.LifeTime = rhs.iLifetime;
+	lhs.PlayCount = rhs.iPlayCount;
+	lhs.Priority = rhs.iPriority;
+	lhs.Time = rhs.recordingTime;
+	lhs.ChannelName = rhs.strChannelName;
+	lhs.Directory = rhs.strDirectory;
+	lhs.Plot = rhs.strPlot;
+	lhs.PlotOutline = rhs.strPlotOutline;
+	lhs.Id = rhs.strRecordingId;
+	lhs.Title = rhs.strTitle;
 
 	return lhs;
 }
@@ -364,21 +360,20 @@ RecordingEntry& operator<< (RecordingEntry& lhs, const PVR_RECORDING& rhs) {
 PVR_RECORDING& operator<< (PVR_RECORDING& lhs, const RecordingEntry& rhs) {
 	memset(&lhs, 0, sizeof(lhs));
 
-	lhs.iDuration = rhs[recording_duration];
-	lhs.iGenreSubType = rhs[recording_genresubtype];
-	lhs.iGenreType = rhs[recording_genretype];
-	lhs.iLifetime = rhs[recording_lifetime];
-	lhs.iPlayCount = rhs[recording_playcount];
-	lhs.iPriority = rhs[recording_priority];
-	lhs.recordingTime = rhs[recording_time];
-	lhs.iPlayCount = rhs[recording_playcount];
-	strncpy(lhs.strChannelName, rhs[recording_channelname].c_str(), sizeof(lhs.strChannelName));
-	strncpy(lhs.strDirectory, rhs[recording_directory].c_str(), sizeof(lhs.strDirectory));
-	strncpy(lhs.strPlot, rhs[recording_plot].c_str(), sizeof(lhs.strPlot));
-	strncpy(lhs.strPlotOutline, rhs[recording_plotoutline].c_str(), sizeof(lhs.strPlotOutline));
-	strncpy(lhs.strRecordingId, rhs[recording_id].c_str(), sizeof(lhs.strRecordingId));
-	strncpy(lhs.strStreamURL, rhs[recording_streamurl].c_str(), sizeof(lhs.strStreamURL));
-	strncpy(lhs.strTitle, rhs[recording_title].c_str(), sizeof(lhs.strTitle));
+	lhs.iDuration = rhs.Duration;
+	lhs.iGenreSubType = rhs.GenreSubType;
+	lhs.iGenreType = rhs.GenreType;
+	lhs.iLifetime = rhs.LifeTime;
+	lhs.iPlayCount = rhs.PlayCount;
+	lhs.iPriority = rhs.Priority;
+	lhs.recordingTime = rhs.Time;
+	strncpy(lhs.strChannelName, rhs.ChannelName.c_str(), sizeof(lhs.strChannelName));
+	strncpy(lhs.strDirectory, rhs.Directory.c_str(), sizeof(lhs.strDirectory));
+	strncpy(lhs.strPlot, rhs.Plot.c_str(), sizeof(lhs.strPlot));
+	strncpy(lhs.strPlotOutline, rhs.PlotOutline.c_str(), sizeof(lhs.strPlotOutline));
+	strncpy(lhs.strRecordingId, rhs.Id.c_str(), sizeof(lhs.strRecordingId));
+	strncpy(lhs.strTitle, rhs.Title.c_str(), sizeof(lhs.strTitle));
+	lhs.strStreamURL[0] = 0;
 
 	return lhs;
 }
@@ -386,8 +381,8 @@ PVR_RECORDING& operator<< (PVR_RECORDING& lhs, const RecordingEntry& rhs) {
 PVR_CHANNEL_GROUP& operator<< (PVR_CHANNEL_GROUP& lhs, const ChannelGroup& rhs) {
 	memset(&lhs, 0, sizeof(lhs));
 
-	lhs.bIsRadio = rhs[channelgroup_isradio];
-	strncpy(lhs.strGroupName, rhs[channelgroup_name].c_str(), sizeof(lhs.strGroupName));
+	lhs.bIsRadio = rhs.IsRadio;
+	strncpy(lhs.strGroupName, rhs.Name.c_str(), sizeof(lhs.strGroupName));
 
 	return lhs;
 }
@@ -395,9 +390,9 @@ PVR_CHANNEL_GROUP& operator<< (PVR_CHANNEL_GROUP& lhs, const ChannelGroup& rhs) 
 PVR_CHANNEL_GROUP_MEMBER& operator<< (PVR_CHANNEL_GROUP_MEMBER& lhs, const ChannelGroupMember& rhs) {
 	memset(&lhs, 0, sizeof(lhs));
 
-	lhs.iChannelNumber = rhs[channelgroupmember_number];
-	lhs.iChannelUniqueId = rhs[channelgroupmember_uid];
-	strncpy(lhs.strGroupName, rhs[channelgroupmember_name].c_str(), sizeof(lhs.strGroupName));
+	lhs.iChannelNumber = rhs.Number;
+	lhs.iChannelUniqueId = rhs.UID;
+	strncpy(lhs.strGroupName, rhs.Name.c_str(), sizeof(lhs.strGroupName));
 
 	return lhs;
 }
@@ -405,22 +400,22 @@ PVR_CHANNEL_GROUP_MEMBER& operator<< (PVR_CHANNEL_GROUP_MEMBER& lhs, const Chann
 PVR_STREAM_PROPERTIES::PVR_STREAM& operator<< (PVR_STREAM_PROPERTIES::PVR_STREAM& lhs, const Stream& rhs) {
 	memset(&lhs, 0, sizeof(lhs));
 
-	lhs.fAspect = rhs[stream_aspect];
-	lhs.iBitRate = rhs[stream_bitrate];
-	lhs.iBitsPerSample = rhs[stream_bitspersample];
-	lhs.iBlockAlign = rhs[stream_blockalign];
-	lhs.iChannels = rhs[stream_channels];
-	lhs.iCodecId = rhs[stream_codecid];
-	lhs.iCodecType = rhs[stream_codectype];
-	lhs.iFPSRate = rhs[stream_fpsrate];
-	lhs.iFPSScale = rhs[stream_fpsscale];
-	lhs.iHeight = rhs[stream_height];
-	lhs.iIdentifier = rhs[stream_identifier];
-	lhs.iPhysicalId = rhs[stream_physicalid];
-	lhs.iSampleRate = rhs[stream_samplerate];
-	lhs.iStreamIndex = rhs[stream_index];
-	lhs.iWidth = rhs[stream_width];
-	strncpy(lhs.strLanguage, rhs[stream_language].c_str(), sizeof(lhs.strLanguage));
+	lhs.fAspect = rhs.Aspect;
+	lhs.iBitRate = rhs.BitRate;
+	lhs.iBitsPerSample = rhs.BitsPerSample;
+	lhs.iBlockAlign = rhs.BlockAlign;
+	lhs.iChannels = rhs.Channels;
+	lhs.iCodecId = rhs.CodecId;
+	lhs.iCodecType = rhs.CodecType;
+	lhs.iFPSRate = rhs.FpsRate;
+	lhs.iFPSScale = rhs.FpsScale;
+	lhs.iHeight = rhs.Height;
+	lhs.iIdentifier = rhs.Identifier;
+	lhs.iPhysicalId = rhs.PhysicalId;
+	lhs.iSampleRate = rhs.SampleRate;
+	lhs.iStreamIndex = rhs.Index;
+	lhs.iWidth = rhs.Width;
+	strncpy(lhs.strLanguage, rhs.Language.c_str(), sizeof(lhs.strLanguage));
 
 	return lhs;
 }
@@ -429,7 +424,7 @@ PVR_STREAM_PROPERTIES& operator<< (PVR_STREAM_PROPERTIES& lhs, const StreamPrope
 	lhs.iStreamCount = rhs.size();
 
 	for(StreamProperties::const_iterator i = rhs.begin(); i != rhs.end(); i++) {
-	  int index = (*i).second[stream_index];
+	  int index = (*i).second.Index;
 		lhs.stream[index] << (*i).second;
 	}
 
@@ -439,15 +434,15 @@ PVR_STREAM_PROPERTIES& operator<< (PVR_STREAM_PROPERTIES& lhs, const StreamPrope
 PVR_SIGNAL_STATUS& operator<< (PVR_SIGNAL_STATUS& lhs, const SignalStatus& rhs) {
 	memset(&lhs, 0, sizeof(lhs));
 
-	lhs.dAudioBitrate = rhs[signal_audiobitrate];
-	lhs.dDolbyBitrate = rhs[signal_dolbybitrate];
-	lhs.dVideoBitrate = rhs[signal_videobitrate];
-	lhs.iBER = rhs[signal_ber];
-	lhs.iSNR = rhs[signal_snr];
-	lhs.iSignal = rhs[signal_strength];
-	lhs.iUNC = rhs[signal_unc];
-	strncpy(lhs.strAdapterName, rhs[signal_adaptername].c_str(), sizeof(lhs.strAdapterName));
-	strncpy(lhs.strAdapterStatus, rhs[signal_adapterstatus].c_str(), sizeof(lhs.strAdapterStatus));
+	lhs.dAudioBitrate = 0;
+	lhs.dDolbyBitrate = 0;
+	lhs.dVideoBitrate = 0;
+	lhs.iBER = rhs.BER;
+	lhs.iSNR = rhs.SNR;
+	lhs.iSignal = rhs.Strength;
+	lhs.iUNC = rhs.UNC;
+	strncpy(lhs.strAdapterName, rhs.AdapterName.c_str(), sizeof(lhs.strAdapterName));
+	strncpy(lhs.strAdapterStatus, rhs.AdapterStatus.c_str(), sizeof(lhs.strAdapterStatus));
 
 	return lhs;
 }

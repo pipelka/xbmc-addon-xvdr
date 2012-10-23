@@ -56,7 +56,7 @@ public:
 
   void TransferChannelEntry(const XVDR::Channel& channel);
 
-  void TransferEpgEntry(const XVDR::Epg& tag);
+  void TransferEpgEntry(const XVDR::EpgItem& tag);
 
   void TransferTimerEntry(const XVDR::Timer& timer);
 
@@ -93,7 +93,7 @@ private:
 
 PVR_CHANNEL& operator<< (PVR_CHANNEL& lhs, const XVDR::Channel& rhs);
 
-EPG_TAG& operator<< (EPG_TAG& lhs, const XVDR::Epg& rhs);
+EPG_TAG& operator<< (EPG_TAG& lhs, const XVDR::EpgItem& rhs);
 
 XVDR::Timer& operator<< (XVDR::Timer& lhs, const PVR_TIMER& rhs);
 

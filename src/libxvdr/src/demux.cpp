@@ -179,14 +179,13 @@ void Demux::OnResponsePacket(MsgPacket *resp) {
 
       Stream& stream = m_streams[id];
 
-      if(stream[stream_physicalid] != id) {
+      if(stream.PhysicalId != id) {
           m_client->Log(XVDR_DEBUG, "stream id %i not found", id);
           break;
       }
 
-      int index = stream[stream_index];
       pkt = m_client->AllocatePacket(length);
-      m_client->SetPacketData(pkt, payload, index, dts, pts);
+      m_client->SetPacketData(pkt, payload, stream.Index, dts, pts);
       break;
   }
 
@@ -295,86 +294,85 @@ void Demux::StreamChange(MsgPacket *resp)
 
   while (!resp->eop())
   {
-    uint32_t    id   = resp->get_U32();
-    const char* type = resp->get_String();
-
     Stream stream;
 
-    stream[stream_index] = index++;
-    stream[stream_physicalid] = id;
-    stream[stream_identifier] = -1;
+    stream.Index = index++;
+    stream.PhysicalId = resp->get_U32();
+    stream.Type = resp->get_String();
 
-    if(!strcmp(type, "AC3"))
+    stream.Identifier = -1;
+
+    if(stream.Type == "AC3")
     {
-      stream[stream_language] = resp->get_String();
-      stream[stream_codectype] = AVMEDIA_TYPE_AUDIO;
-      stream[stream_codecid] = CODEC_ID_AC3;
+      stream.Language = resp->get_String();
+      stream.CodecType = AVMEDIA_TYPE_AUDIO;
+      stream.CodecId = CODEC_ID_AC3;
     }
-    else if(!strcmp(type, "MPEG2AUDIO"))
+    else if(stream.Type == "MPEG2AUDIO")
     {
-      stream[stream_language] = resp->get_String();
-      stream[stream_codectype] = AVMEDIA_TYPE_AUDIO;
-      stream[stream_codecid] = CODEC_ID_MP2;
+      stream.Language = resp->get_String();
+      stream.CodecType = AVMEDIA_TYPE_AUDIO;
+      stream.CodecId = CODEC_ID_MP2;
     }
-    else if(!strcmp(type, "AAC"))
+    else if(stream.Type == "AAC")
     {
-      stream[stream_language] = resp->get_String();
-      stream[stream_codectype] = AVMEDIA_TYPE_AUDIO;
-      stream[stream_codecid] = CODEC_ID_AAC;
+      stream.Language = resp->get_String();
+      stream.CodecType = AVMEDIA_TYPE_AUDIO;
+      stream.CodecId = CODEC_ID_AAC;
     }
-    else if(!strcmp(type, "LATM"))
+    else if(stream.Type == "LATM")
     {
-      stream[stream_language] = resp->get_String();
-      stream[stream_codectype] = AVMEDIA_TYPE_AUDIO;
-      stream[stream_codecid] = CODEC_ID_AAC_LATM;
+      stream.Language = resp->get_String();
+      stream.CodecType = AVMEDIA_TYPE_AUDIO;
+      stream.CodecId = CODEC_ID_AAC_LATM;
     }
-    else if(!strcmp(type, "DTS"))
+    else if(stream.Type == "DTS")
     {
-      stream[stream_language] = resp->get_String();
-      stream[stream_codectype] = AVMEDIA_TYPE_AUDIO;
-      stream[stream_codecid] = CODEC_ID_DTS;
+      stream.Language = resp->get_String();
+      stream.CodecType = AVMEDIA_TYPE_AUDIO;
+      stream.CodecId = CODEC_ID_DTS;
     }
-    else if(!strcmp(type, "EAC3"))
+    else if(stream.Type == "EAC3")
     {
-      stream[stream_language] = resp->get_String();
-      stream[stream_codectype] = AVMEDIA_TYPE_AUDIO;
-      stream[stream_codecid] = CODEC_ID_EAC3;
+      stream.Language = resp->get_String();
+      stream.CodecType = AVMEDIA_TYPE_AUDIO;
+      stream.CodecId = CODEC_ID_EAC3;
     }
-    else if(!strcmp(type, "MPEG2VIDEO"))
+    else if(stream.Type == "MPEG2VIDEO")
     {
-      stream[stream_codectype] = AVMEDIA_TYPE_VIDEO;
-      stream[stream_codecid] = CODEC_ID_MPEG2VIDEO;
-      stream[stream_fpsscale] = resp->get_U32();
-      stream[stream_fpsrate] = resp->get_U32();
-      stream[stream_height] = resp->get_U32();
-      stream[stream_width] = resp->get_U32();
-      stream[stream_aspect] = (double)resp->get_S64() / 10000.0;
+      stream.CodecType = AVMEDIA_TYPE_VIDEO;
+      stream.CodecId = CODEC_ID_MPEG2VIDEO;
+      stream.FpsScale = resp->get_U32();
+      stream.FpsRate = resp->get_U32();
+      stream.Height = resp->get_U32();
+      stream.Width = resp->get_U32();
+      stream.Aspect = (double)resp->get_S64() / 10000.0;
     }
-    else if(!strcmp(type, "H264"))
+    else if(stream.Type == "H264")
     {
-      stream[stream_codectype] = AVMEDIA_TYPE_VIDEO;
-      stream[stream_codecid] = CODEC_ID_H264;
-      stream[stream_fpsscale] = resp->get_U32();
-      stream[stream_fpsrate] = resp->get_U32();
-      stream[stream_height] = resp->get_U32();
-      stream[stream_width] = resp->get_U32();
-      stream[stream_aspect] = (double)resp->get_S64() / 10000.0;
+      stream.CodecType = AVMEDIA_TYPE_VIDEO;
+      stream.CodecId = CODEC_ID_H264;
+      stream.FpsScale = resp->get_U32();
+      stream.FpsRate = resp->get_U32();
+      stream.Height = resp->get_U32();
+      stream.Width = resp->get_U32();
+      stream.Aspect = (double)resp->get_S64() / 10000.0;
     }
-    else if(!strcmp(type, "DVBSUB"))
+    else if(stream.Type == "DVBSUB")
     {
-      stream[stream_language] = resp->get_String();
-      stream[stream_codectype] = AVMEDIA_TYPE_SUBTITLE;
-      stream[stream_codecid] = CODEC_ID_DVB_SUBTITLE;
+      stream.Language = resp->get_String();
+      stream.CodecType = AVMEDIA_TYPE_SUBTITLE;
+      stream.CodecId = CODEC_ID_DVB_SUBTITLE;
 
       uint32_t composition_id = resp->get_U32();
       uint32_t ancillary_id   = resp->get_U32();
 
-      stream[stream_identifier] = (composition_id & 0xffff) | ((ancillary_id & 0xffff) << 16);
+      stream.Identifier = (composition_id & 0xffff) | ((ancillary_id & 0xffff) << 16);
     }
-    else if(!strcmp(type, "TELETEXT"))
+    else if(stream.Type == "TELETEXT")
     {
-      stream[stream_codectype] = AVMEDIA_TYPE_SUBTITLE;
-      stream[stream_codecid] = CODEC_ID_DVB_TELETEXT;
+      stream.CodecType = AVMEDIA_TYPE_SUBTITLE;
+      stream.CodecId = CODEC_ID_DVB_TELETEXT;
     }
 
     if (index > 16)
@@ -383,7 +381,7 @@ void Demux::StreamChange(MsgPacket *resp)
       break;
     }
 
-    m_streams[id] = stream;
+    m_streams[stream.PhysicalId] = stream;
   }
 }
 
@@ -406,16 +404,8 @@ void Demux::StreamStatus(MsgPacket *resp)
 
 void Demux::StreamSignalInfo(MsgPacket *resp)
 {
-  const char* name = resp->get_String();
-  const char* status = resp->get_String();
-
   MutexLock lock(&m_lock);
-  m_signal[signal_adaptername] = name;
-  m_signal[signal_adapterstatus] = status;
-  m_signal[signal_snr] = resp->get_U32();
-  m_signal[signal_strength] = resp->get_U32();
-  m_signal[signal_ber] = resp->get_U32();
-  m_signal[signal_unc] = resp->get_U32();
+  m_signal << resp;
 }
 
 bool Demux::StreamContentInfo(MsgPacket *resp)
@@ -436,32 +426,32 @@ bool Demux::StreamContentInfo(MsgPacket *resp)
     uint32_t composition_id = 0;
     uint32_t ancillary_id   = 0;
 
-    switch (stream[stream_codectype])
+    switch (stream.CodecType)
     {
       case AVMEDIA_TYPE_AUDIO:
-    	stream[stream_language] = resp->get_String();
-        stream[stream_channels] = resp->get_U32();
-        stream[stream_samplerate] = resp->get_U32();
-        stream[stream_blockalign] = resp->get_U32();
-        stream[stream_bitrate] = resp->get_U32();
-        stream[stream_bitspersample] = resp->get_U32();
+    	  stream.Language = resp->get_String();
+        stream.Channels = resp->get_U32();
+        stream.SampleRate = resp->get_U32();
+        stream.BlockAlign = resp->get_U32();
+        stream.BitRate = resp->get_U32();
+        stream.BitsPerSample = resp->get_U32();
         break;
 
       case AVMEDIA_TYPE_VIDEO:
-        stream[stream_fpsscale] = resp->get_U32();
-        stream[stream_fpsrate] = resp->get_U32();
-        stream[stream_height] = resp->get_U32();
-        stream[stream_width] = resp->get_U32();
-        stream[stream_aspect] = (double)resp->get_S64() / 10000.0;
+        stream.FpsScale = resp->get_U32();
+        stream.FpsRate = resp->get_U32();
+        stream.Height = resp->get_U32();
+        stream.Width = resp->get_U32();
+        stream.Aspect = (double)resp->get_S64() / 10000.0;
         break;
 
       case AVMEDIA_TYPE_SUBTITLE:
-      	stream[stream_language] = resp->get_String();
+      	stream.Language = resp->get_String();
 
         composition_id = resp->get_U32();
         ancillary_id   = resp->get_U32();
 
-        stream[stream_identifier] = (composition_id & 0xffff) | ((ancillary_id & 0xffff) << 16);
+        stream.Identifier = (composition_id & 0xffff) | ((ancillary_id & 0xffff) << 16);
         break;
 
       default:

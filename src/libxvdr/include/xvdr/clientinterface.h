@@ -68,7 +68,7 @@ public:
 
   virtual void TransferChannelEntry(const Channel& channel) = 0;
 
-  virtual void TransferEpgEntry(const Epg& tag) = 0;
+  virtual void TransferEpgEntry(const EpgItem& tag) = 0;
 
   virtual void TransferTimerEntry(const Timer& timer) = 0;
 

@@ -332,20 +332,8 @@ bool Connection::GetChannelsList(bool radio)
 
   while (!vresp->eop())
   {
-	Channel tag;
-
-    tag[channel_number] = vresp->get_U32();
-    tag[channel_name] = vresp->get_String();
-    tag[channel_uid] = vresp->get_U32();
-                            vresp->get_U32(); // still here for compatibility
-    tag[channel_encryptionsystem] = vresp->get_U32();
-                            vresp->get_U32(); // uint32_t vtype - currently unused
-    tag[channel_isradio] = radio;
-    tag[channel_inputformat] = "";
-    tag[channel_streamurl] = "";
-    tag[channel_iconpath] = "";
-    tag[channel_ishidden] = false;
-
+	  Channel tag(vresp);
+	  tag.IsRadio = radio;
     m_client->TransferChannelEntry(tag);
   }
 
@@ -369,22 +357,9 @@ bool Connection::GetEPGForChannel(uint32_t channeluid, time_t start, time_t end)
 
   while (!vresp->eop())
   {
-    Epg tag;
-
-    tag[epg_uid] = channeluid;
-    tag[epg_broadcastid] = vresp->get_U32();
-    uint32_t starttime = vresp->get_U32();
-    tag[epg_starttime] = starttime;
-    tag[epg_endtime] = starttime + vresp->get_U32();
-    uint32_t content        = vresp->get_U32();
-    tag[epg_genretype] = content & 0xF0;
-    tag[epg_genresubtype] = content & 0x0F;
-    tag[epg_parentalrating] = vresp->get_U32();
-    tag[epg_title] = vresp->get_String();
-    tag[epg_plotoutline] = vresp->get_String();
-    tag[epg_plot] = vresp->get_String();
-
-    m_client->TransferEpgEntry(tag);
+    EpgItem item(vresp);
+    item.UID = channeluid;
+    m_client->TransferEpgEntry(item);
   }
 
   delete vresp;
@@ -415,54 +390,6 @@ int Connection::GetTimersCount()
   return m_timercount;
 }
 
-void Connection::ReadTimerPacket(MsgPacket* resp, Timer& tag) {
-  tag[timer_index] = resp->get_U32();
-
-  // TIMER STATES:
-
-  // FLAGS   DESCRIPTION
-  // 0       timer disabled
-  // 1       timer scheduled
-  // 4       VPS enabled
-  // 8       timer recording now
-  // 1024    conflict warning
-  // 2048    conflict error
-
-  tag[timer_state] = resp->get_U32();
-  tag[timer_priority] = resp->get_U32();
-  tag[timer_lifetime] = resp->get_U32();
-  tag[timer_channeluid] =  resp->get_U32();
-  tag[timer_starttime] = resp->get_U32();
-  tag[timer_endtime] = resp->get_U32();
-  tag[timer_firstday] = resp->get_U32();
-  int weekdays = resp->get_U32();
-  tag[timer_weekdays] = weekdays;
-  tag[timer_isrepeating] = ((weekdays == 0) ? false : true);
-
-  const char* title = resp->get_String();
-  tag[timer_marginstart] = 0;
-  tag[timer_marginend] = 0;
-
-  char* p = (char*)strrchr(title, '~');
-  if(p == NULL || *p == 0) {
-	  tag[timer_title] = title;
-	  tag[timer_directory] =  "";
-  }
-  else {
-	  const char* name = p + 1;
-
-	  p[0] = 0;
-	  const char* dir = title;
-
-	  // replace dir separators
-	  for(p = (char*)dir; *p != 0; p++)
-		  if(*p == '~') *p = '/';
-
-	  tag[timer_title] = name;
-	  tag[timer_directory] =  dir;
-  }
-}
-
 bool Connection::GetTimerInfo(unsigned int timernumber, Timer& tag)
 {
   MsgPacket vrp(XVDR_TIMER_GET);
@@ -486,7 +413,7 @@ bool Connection::GetTimerInfo(unsigned int timernumber, Timer& tag)
       return false;
   }
 
-  ReadTimerPacket(vresp, tag);
+  tag << vresp;
 
   delete vresp;
   return true;
@@ -509,8 +436,7 @@ bool Connection::GetTimersList()
   {
     while (!vresp->eop())
     {
-      Timer timer;
-      ReadTimerPacket(vresp, timer);
+      Timer timer(vresp);
       m_client->TransferTimerEntry(timer);
     }
   }
@@ -520,58 +446,8 @@ bool Connection::GetTimersList()
 
 bool Connection::AddTimer(const Timer& timer)
 {
-  // add directory in front of the title
-  std::string path;
-  std::string directory = timer[timer_directory];
-  std::string title = timer[timer_title];
-
-  if(!directory.empty()) {
-    path += directory;
-    if(path == "/") {
-      path.clear();
-    }
-    else if(path.size() > 1) {
-      if(path[0] == '/') {
-        path = path.substr(1);
-      }
-    }
-
-    if(path.size() > 0 && path[path.size()-1] != '/') {
-      path += "/";
-    }
-  }
-
-  if(!title.empty()) {
-    path += title;
-  }
-
-  // replace directory separators
-  for(std::size_t i=0; i<path.size(); i++) {
-    if(path[i] == '/' || path[i] == '\\') {
-      path[i] = '~';
-    }
-  }
-
-  if(path.empty()) {
-	m_client->Log(XVDR_ERROR, "%s - Empty filename !", __FUNCTION__);
-    return false;
-  }
-
-  // use timer margin to calculate start/end times
-  uint32_t starttime = (uint32_t)timer[timer_starttime] - (uint32_t)timer[timer_marginstart] * 60;
-  uint32_t endtime = (uint32_t)timer[timer_endtime] + (uint32_t)timer[timer_marginend] * 60;
-
   MsgPacket vrp(XVDR_TIMER_ADD);
-  vrp.put_U32(1);
-  vrp.put_U32(timer[timer_priority]);
-  vrp.put_U32(timer[timer_lifetime]);
-  vrp.put_U32(timer[timer_channeluid]);
-  vrp.put_U32(starttime);
-  vrp.put_U32(endtime);
-  vrp.put_U32(timer[timer_isrepeating] ? timer[timer_firstday] : 0);
-  vrp.put_U32(timer[timer_weekdays]);
-  vrp.put_String(path.c_str());
-  vrp.put_String("");
+  vrp << timer;
 
   MsgPacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->eop())
@@ -607,38 +483,8 @@ int Connection::DeleteTimer(uint32_t timerindex, bool force)
 
 bool Connection::UpdateTimer(const Timer& timer)
 {
-  // use timer margin to calculate start/end times
-  uint32_t starttime = timer[timer_starttime] - timer[timer_marginstart] * 60;
-  uint32_t endtime = timer[timer_endtime] + timer[timer_marginend] * 60;
-
-  std::string dir = timer[timer_directory];
-  while(dir[dir.size()-1] == '/' && dir.size() > 1)
-    dir = dir.substr(0, dir.size()-1);
-
-  std::string name = timer[timer_title];
-  std::string title;
-
-  if(!dir.empty() && dir != "/")
-	  title = dir + "/";
-
-  title += name;
-
-  // replace dir separators
-  for(std::string::iterator i = title.begin(); i != title.end(); i++)
-	  if(*i == '/') *i = '~';
-
   MsgPacket vrp(XVDR_TIMER_UPDATE);
-  vrp.put_U32(timer[timer_index]);
-  vrp.put_U32(timer[timer_state] & 1);
-  vrp.put_U32(timer[timer_priority]);
-  vrp.put_U32(timer[timer_lifetime]);
-  vrp.put_U32(timer[timer_channeluid]);
-  vrp.put_U32(starttime);
-  vrp.put_U32(endtime);
-  vrp.put_U32(timer[timer_isrepeating] ? timer[timer_firstday] : 0);
-  vrp.put_U32(timer[timer_weekdays]);
-  vrp.put_String(title.c_str());
-  vrp.put_String("");
+  vrp << timer;
 
   MsgPacket* vresp = ReadResult(&vrp);
   if (vresp == NULL || vresp->eop())
@@ -683,23 +529,8 @@ bool Connection::GetRecordingsList()
 
   while (!vresp->eop())
   {
-	RecordingEntry rec;
-	rec[recording_time] = vresp->get_U32();
-	rec[recording_duration] = vresp->get_U32();
-	rec[recording_priority] = vresp->get_U32();
-	rec[recording_lifetime] = vresp->get_U32();
-	rec[recording_channelname] = vresp->get_String();
-	rec[recording_title] = vresp->get_String();
-	rec[recording_plotoutline] = vresp->get_String();
-	rec[recording_plot] = vresp->get_String();
-	rec[recording_directory] = vresp->get_String();
-	rec[recording_id] = vresp->get_String();
-	rec[recording_streamurl] = "";
-	rec[recording_genretype] = 0;
-	rec[recording_genresubtype] = 0;
-	rec[recording_playcount] = vresp->get_U32();
-
-	m_client->TransferRecordingEntry(rec);
+	  RecordingEntry rec(vresp);
+    m_client->TransferRecordingEntry(rec);
   }
 
   delete vresp;
@@ -889,10 +720,7 @@ bool Connection::GetChannelGroupList(bool bRadio)
 
   while (!vresp->eop())
   {
-    ChannelGroup group;
-
-    group[channelgroup_name] = vresp->get_String();
-    group[channelgroup_isradio] = vresp->get_U8();
+    ChannelGroup group(vresp);
     m_client->TransferChannelGroup(group);
   }
 
@@ -915,11 +743,8 @@ bool Connection::GetChannelGroupMembers(const std::string& groupname, bool radio
 
   while (!vresp->eop())
   {
-    ChannelGroupMember member;
-    member[channelgroupmember_name] = groupname;
-    member[channelgroupmember_uid] = vresp->get_U32();
-    member[channelgroupmember_number] = vresp->get_U32();
-
+    ChannelGroupMember member(vresp);
+    member.Name = groupname;
     m_client->TransferChannelGroupMember(member);
   }
 

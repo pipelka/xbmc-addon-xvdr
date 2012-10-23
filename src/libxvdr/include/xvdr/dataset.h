@@ -25,235 +25,170 @@
 #include <sstream>
 #include <map>
 
+class MsgPacket;
+
 namespace XVDR {
 
-class DatasetItem {
+class EpgItem {
 public:
 
-	bool empty() const {
-		return m_value.empty();
-	}
+  EpgItem();
+  EpgItem(MsgPacket* p);
 
-	template<class T>
-	void operator=(T v) {
-		std::stringstream str;
-		str << v;
-		str >> m_value;
-	}
-
-	operator std::string() const {
-		return m_value;
-	}
-
-	operator int64_t() const {
-		return value<int64_t>();
-	}
-
-	template<class T>
-	T value() const {
-		T v;
-		GetValue(v);
-		return v;
-	}
-
-	const char* c_str() const {
-		return m_value.c_str();
-	}
-
-protected:
-
-	template<class T>
-	void GetValue(T& v) const {
-		std::stringstream str;
-		str << m_value;
-		str >> v;
-	}
-
-private:
-
-	std::string m_value;
+  uint32_t    UID;
+  uint32_t    BroadcastID;
+  uint32_t    StartTime;
+  uint32_t    EndTime;
+  uint8_t     GenreType;
+  uint8_t     GenreSubType;
+  uint32_t    ParentalRating;
+  std::string Title;
+  std::string PlotOutline;
+  std::string Plot;
 };
 
-template<> void DatasetItem::operator=(std::string v);
-template<> void DatasetItem::operator=(const char* v);
+EpgItem& operator<< (EpgItem& lhs, MsgPacket* rhs);
 
-template<class K>
-class Dataset {
+
+class Channel {
 public:
 
-	typedef std::map<K, DatasetItem> maptype;
+  Channel();
+  Channel(MsgPacket* p);
 
-	DatasetItem& operator[](const K& key) {
-		return m_map[key];
-	}
-
-	const DatasetItem& operator[](const K& key) const {
-		typename std::map<K, DatasetItem>::const_iterator i = m_map.find(key);
-		static DatasetItem empty;
-
-		if(i == m_map.end()) {
-			return empty;
-		}
-
-		return i->second;
-	}
-
-	bool equals(const Dataset& rhs) const {
-		if(m_map.size() != rhs.m_map.size()) {
-			return false;
-		}
-
-		for(typename maptype::const_iterator i = m_map.begin(); i != m_map.end(); i++) {
-			typename maptype::const_iterator j = rhs.m_map.find(i->first);
-			if(j == rhs.m_map.end()) {
-				return false;
-			}
-			if(i->second != j->second) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-private:
-
-	maptype m_map;
+  uint32_t    UID;
+  std::string Name;
+  int         Number;
+  uint32_t    EncryptionSystem;
+  std::string IconPath;
+  bool        IsHidden;
+  bool        IsRadio;
 };
 
-typedef enum {
-	epg_uid,
-	epg_broadcastid,
-	epg_starttime,
-	epg_endtime,
-	epg_genretype,
-	epg_genresubtype,
-	epg_genredescription,
-	epg_parentalrating,
-	epg_title,
-	epg_plotoutline,
-	epg_plot
-} EpgKeyType;
+Channel& operator<< (Channel& lhs, MsgPacket* rhs);
 
-class Epg : public Dataset<EpgKeyType> {
-};
 
-typedef enum {
-	channel_uid,
-    channel_name,
-    channel_number,
-    channel_encryptionsystem,
-    channel_isradio,
-    channel_inputformat,
-    channel_streamurl,
-    channel_iconpath,
-    channel_ishidden
-} ChannelKeyType;
-
-class Channel : public Dataset<ChannelKeyType> {
-};
-
-typedef enum {
-	timer_index,
-	timer_epguid,
-	timer_state,
-	timer_priority,
-	timer_lifetime,
-	timer_channeluid,
-	timer_starttime,
-	timer_endtime,
-	timer_firstday,
-	timer_weekdays,
-	timer_isrepeating,
-	timer_marginstart,
-	timer_marginend,
-	timer_title,
-	timer_directory,
-	timer_summary
-} TimerKeyType;
-
-class Timer : public Dataset<TimerKeyType> {
-};
-
-typedef enum {
-	recording_time,
-	recording_duration,
-	recording_priority,
-	recording_lifetime,
-	recording_channelname,
-	recording_title,
-	recording_plotoutline,
-	recording_plot,
-	recording_directory,
-	recording_id,
-	recording_streamurl,
-	recording_genretype,
-	recording_genresubtype,
-	recording_playcount
-} RecordingKeyType;
-
-class RecordingEntry : public Dataset<RecordingKeyType> {
-};
-
-typedef enum {
-	channelgroup_name,
-	channelgroup_isradio
-} ChannelGroupKeyType;
-
-class ChannelGroup : public Dataset<ChannelGroupKeyType> {
-};
-
-typedef enum {
-	channelgroupmember_name,
-	channelgroupmember_uid,
-	channelgroupmember_number
-}  ChannelGroupMemberKeyType;
-
-class ChannelGroupMember : public Dataset<ChannelGroupMemberKeyType> {
-};
-
-typedef enum {
-    signal_adaptername,
-    signal_adapterstatus,
-    signal_snr,
-    signal_strength,
-    signal_ber,
-    signal_unc,
-    signal_videobitrate,
-    signal_audiobitrate,
-    signal_dolbybitrate,
-} SignalStatusKeyType;
-
-class SignalStatus : public Dataset<SignalStatusKeyType> {
-};
-
-typedef enum {
-  stream_index,
-  stream_identifier,
-  stream_physicalid,
-  stream_codectype,
-  stream_codecid,
-  stream_language,
-  stream_fpsscale,
-  stream_fpsrate,
-  stream_height,
-  stream_width,
-  stream_aspect,
-  stream_channels,
-  stream_samplerate,
-  stream_blockalign,
-  stream_bitrate,
-  stream_bitspersample
-} StreamKeyType;
-
-class Stream : public Dataset<StreamKeyType> {
+class Timer {
 public:
+
+  Timer();
+  Timer(MsgPacket* p);
+
+  uint32_t    Index;
+  uint32_t    EpgUID;
+  uint32_t    State;
+  uint8_t     Priority;
+  uint8_t     LifeTime;
+  uint32_t    ChannelUID;
+  uint32_t    StartTime;
+  uint32_t    EndTime;
+  uint8_t     FirstDay;
+  uint8_t     WeekDays;
+  bool        IsRepeating;
+  std::string Title;
+  std::string Directory;
+  std::string Summary;
+};
+
+Timer& operator<< (Timer& lhs, MsgPacket* rhs);
+MsgPacket& operator<< (MsgPacket& lhs, const Timer& rhs);
+
+
+class RecordingEntry {
+public:
+
+  RecordingEntry();
+  RecordingEntry(MsgPacket* p);
+
+  uint32_t    Time;
+  uint32_t    Duration;
+  uint8_t     Priority;
+  uint8_t     LifeTime;
+  std::string ChannelName;
+  std::string Title;
+  std::string PlotOutline;
+  std::string Plot;
+  std::string Directory;
+  std::string Id;
+  uint8_t     GenreType;
+  uint8_t     GenreSubType;
+  uint8_t     PlayCount;
+};
+
+RecordingEntry& operator<< (RecordingEntry& lhs, MsgPacket* rhs);
+
+
+class ChannelGroup {
+public:
+
+  ChannelGroup();
+  ChannelGroup(MsgPacket* p);
+
+  std::string Name;
+  bool        IsRadio;
+};
+
+ChannelGroup& operator<< (ChannelGroup& lhs, MsgPacket* rhs);
+
+
+class ChannelGroupMember {
+public:
+
+  ChannelGroupMember();
+  ChannelGroupMember(MsgPacket* p);
+
+  std::string Name;
+  uint32_t    UID;
+  uint32_t    Number;
+};
+
+ChannelGroupMember& operator<< (ChannelGroupMember& lhs, MsgPacket* rhs);
+
+
+class SignalStatus {
+public:
+
+  SignalStatus();
+  SignalStatus(MsgPacket* p);
+
+  std::string AdapterName;
+  std::string AdapterStatus;
+  uint32_t    SNR;
+  uint32_t    Strength;
+  uint32_t    BER;
+  uint32_t    UNC;
+};
+
+SignalStatus& operator<< (SignalStatus& lhs, MsgPacket* rhs);
+
+
+class Stream {
+public:
+
+  Stream();
+
+  int         Index;
+  int         Identifier;
+  uint32_t    PhysicalId;
+  int         CodecId;
+  int         CodecType;
+  std::string Language;
+  uint32_t    FpsScale;
+  uint32_t    FpsRate;
+  double      Aspect;
+  uint32_t    Height;
+  uint32_t    Width;
+  uint32_t    Channels;
+  uint32_t    SampleRate;
+  uint32_t    BlockAlign;
+  uint32_t    BitRate;
+  uint32_t    BitsPerSample;
+  std::string Type;
 };
 
 class StreamProperties : public std::map<uint32_t, Stream> {
 };
 
 bool operator==(Stream const& lhs, Stream const& rhs);
-bool operator==(DatasetItem const& lhs, DatasetItem const& rhs);
 
 } // namespace XVDR
