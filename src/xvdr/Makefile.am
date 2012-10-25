@@ -41,7 +41,7 @@ libxvdraddon_la_LIBADD += \
 	$(PTHREAD_LIBS)
 endif
 
-CPPFLAGS = \
+AM_CPPFLAGS = \
 	$(ARCH_DEFINES)
 
 INCLUDES = \

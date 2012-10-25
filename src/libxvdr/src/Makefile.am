@@ -57,7 +57,7 @@ libxvdr_la_LDFLAGS = \
 	-avoid-version
 
 
-CPPFLAGS = \
+AM_CPPFLAGS = \
 	$(ARCH_DEFINES)
 
 INCLUDES = -I$(srcdir)/../include -D__STDC_CONSTANT_MACROS
