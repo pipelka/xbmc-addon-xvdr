@@ -66,6 +66,7 @@ public:
   std::string IconPath;
   bool        IsHidden;
   bool        IsRadio;
+  std::string ServiceReference;
 };
 
 Channel& operator<< (Channel& lhs, MsgPacket* rhs);

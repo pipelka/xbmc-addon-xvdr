@@ -64,6 +64,7 @@ Channel& XVDR::operator<< (Channel& lhs, MsgPacket* rhs) {
   lhs.UID = rhs->get_U32();
   lhs.EncryptionSystem = rhs->get_U32();
   lhs.IconPath = rhs->get_String();
+  lhs.ServiceReference = rhs->get_String();
   lhs.IsHidden = false;
 
   return lhs;
