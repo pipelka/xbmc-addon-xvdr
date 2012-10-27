@@ -138,17 +138,15 @@ MsgPacket& XVDR::operator<< (MsgPacket& lhs, const Timer& rhs) {
   while(dir[dir.size()-1] == '/' && dir.size() > 1)
     dir = dir.substr(0, dir.size()-1);
 
-  std::string name = rhs.Title;
-  std::string title;
-
-  if(!dir.empty() && dir != "/")
-    title = dir + "/";
-
-  title += name;
-
   // replace dir separators
-  for(std::string::iterator i = title.begin(); i != title.end(); i++)
+  for(std::string::iterator i = dir.begin(); i != dir.end(); i++)
     if(*i == '/') *i = '~';
+
+  std::string title;
+  if(!dir.empty() && dir != "~")
+    title = dir + "~";
+
+  title += rhs.Title;
 
   lhs.put_U32(rhs.Index);
   lhs.put_U32(rhs.State);
