@@ -127,16 +127,7 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
 
 ADDON_STATUS ADDON_GetStatus()
 {
-  if(mConnection != NULL) {
-    if(mConnection->ConnectionLost()) {
-      return ADDON_STATUS_LOST_CONNECTION;
-    }
-    else {
-      return ADDON_STATUS_OK;
-    }
-  }
-
-  return ADDON_STATUS_UNKNOWN;
+  return ADDON_STATUS_OK;
 }
 
 void ADDON_Destroy()
