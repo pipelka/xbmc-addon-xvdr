@@ -4,7 +4,7 @@ LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_CPP_EXTENSION := .cpp
-LOCAL_MODULE    := XBMC_VDR_xvdr.so
+LOCAL_MODULE    := XBMC_VDR_xvdr
 LOCAL_SRC_FILES := \
 	../src/libxvdr/src/clientinterface.cpp \
 	../src/libxvdr/src/connection.cpp \
@@ -12,8 +12,7 @@ LOCAL_SRC_FILES := \
 	../src/libxvdr/src/demux.cpp \
 	../src/libxvdr/src/iso639.cpp \
 	../src/libxvdr/src/os-config.cpp \
-	../src/libxvdr/src/requestpacket.cpp \
-	../src/libxvdr/src/responsepacket.cpp \
+	../src/libxvdr/src/msgpacket.cpp \
 	../src/libxvdr/src/session.cpp \
 	../src/libxvdr/src/thread.cpp \
 	../src/xvdr/XBMCAddon.cpp \
