@@ -60,7 +60,7 @@ libxvdr_la_LDFLAGS = \
 AM_CPPFLAGS = \
 	$(ARCH_DEFINES)
 
-INCLUDES = -I$(srcdir)/../include -D__STDC_CONSTANT_MACROS
+INCLUDES = -I$(srcdir)/../include
 
 install:
 

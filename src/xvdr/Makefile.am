@@ -48,7 +48,7 @@ INCLUDES = \
 	-I. \
 	-I$(top_srcdir)/src/libxvdr/include \
 	-I$(top_srcdir) -I$(srcdir)/include \
-	-DUSE_DEMUX -D__STDC_CONSTANT_MACROS -D_LINUX
+	-DUSE_DEMUX
 
 EXTRA_DIST = \
 	include
