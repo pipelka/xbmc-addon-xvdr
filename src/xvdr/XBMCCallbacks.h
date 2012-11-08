@@ -22,7 +22,6 @@
 
 #include "XBMCAddon.h"
 #include "xvdr/clientinterface.h"
-#include "xvdr/thread.h"
 
 #include "xbmc_pvr_types.h"
 
@@ -34,17 +33,21 @@ public:
 
   ~cXBMCCallbacks();
 
-  void Log(XVDR_LOGLEVEL level, const std::string& text, ...);
+  void OnLog(XVDR::LOGLEVEL level, const char* msg);
 
-  void Notification(XVDR_LOGLEVEL level, const std::string& text, ...);
+  void OnNotification(XVDR::LOGLEVEL level, const char* msg);
 
   void Recording(const std::string& line1, const std::string& line2, bool on);
 
-  void ConvertToUTF8(std::string& text);
+  void OnDisconnect();
+
+  void OnReconnect();
+
+  void OnSignalLost();
+
+  void OnSignalRestored();
 
   std::string GetLanguageCode();
-
-  const char* GetLocalizedString(int id);
 
   void TriggerChannelUpdate();
 
@@ -68,8 +71,6 @@ public:
 
   XVDR::Packet* AllocatePacket(int length);
 
-  //uint8_t* GetPacketPayload(XVDR::Packet* packet);
-
   void SetPacketData(XVDR::Packet* packet, uint8_t* data = NULL, int streamid = 0, uint64_t dts = 0, uint64_t pts = 0);
 
   void FreePacket(XVDR::Packet* packet);
@@ -78,17 +79,9 @@ public:
 
   XVDR::Packet* ContentInfo(const XVDR::StreamProperties& p);
 
-  void Lock();
-
-  void Unlock();
-
 private:
 
   ADDON_HANDLE m_handle;
-
-  XVDR::Mutex m_mutex;
-
-  char* m_msg;
 };
 
 PVR_CHANNEL& operator<< (PVR_CHANNEL& lhs, const XVDR::Channel& rhs);

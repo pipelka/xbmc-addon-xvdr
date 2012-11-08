@@ -2,24 +2,20 @@
 
 #include <stdint.h>
 #include <string>
-#include "xvdr/dataset.h"
 
-/*#define XVDR_INFO    XVDR::ClientInterface::INFO
-#define XVDR_NOTICE  XVDR::ClientInterface::NOTICE
-#define XVDR_WARNING XVDR::ClientInterface::WARNING
-#define XVDR_ERROR   XVDR::ClientInterface::ERROR
-#define XVDR_DEBUG   XVDR::ClientInterface::DEBUG*/
+#include "xvdr/dataset.h"
+#include "xvdr/thread.h"
+
+namespace XVDR {
 
 typedef enum
 {
-  XVDR_INFO,
-  XVDR_NOTICE,
-  XVDR_WARNING,
-  XVDR_ERROR,
-  XVDR_DEBUG
-} XVDR_LOGLEVEL;
-
-namespace XVDR {
+  INFO,
+  NOTICE,
+  WARNING,
+  FAILURE,
+  DEBUG
+} LOGLEVEL;
 
 typedef void Packet;
 
@@ -27,34 +23,33 @@ class ClientInterface
 {
 public:
 
-  /*typedef enum
-  {
-    INFO,
-    NOTICE,
-    WARNING,
-    ERROR,
-    DEBUG
-  } LEVEL;*/
-
   ClientInterface();
 
   virtual ~ClientInterface();
 
   // log and notification
 
-  virtual void Log(XVDR_LOGLEVEL level, const std::string& text, ...) = 0;
+  void Log(LOGLEVEL level, const std::string& text, ...);
 
-  virtual void Notification(XVDR_LOGLEVEL level, const std::string& text, ...) = 0;
+  void Notification(LOGLEVEL level, const std::string& text, ...);
 
-  virtual void Recording(const std::string& line1, const std::string& line2, bool on) = 0;
+  virtual void Recording(const std::string& line1, const std::string& line2, bool on);
+
+  // connection lost notification
+
+  virtual void OnDisconnect();
+
+  virtual void OnReconnect();
+
+  // tv signal lost notification
+
+  virtual void OnSignalLost();
+
+  virtual void OnSignalRestored();
 
   // localisation
 
-  virtual void ConvertToUTF8(std::string& text) = 0;
-
   virtual std::string GetLanguageCode() = 0;
-
-  virtual const char* GetLocalizedString(int id) = 0;
 
   // triggers
 
@@ -90,6 +85,25 @@ public:
 
   virtual Packet* ContentInfo(const StreamProperties& p);
 
+  // access locking
+
+  void Lock();
+
+  void Unlock();
+
+protected:
+
+  virtual void OnLog(LOGLEVEL level, const char* msg);
+
+  virtual void OnNotification(LOGLEVEL level, const char* msg);
+
+private:
+
+  char* m_msg;
+
+  Mutex m_msgmutex;
+
+  Mutex m_mutex;
 };
 
 } // namespace XVDR

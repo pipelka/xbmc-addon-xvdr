@@ -465,6 +465,33 @@ PVR_ERROR DeleteRecording(const PVR_RECORDING &recording)
 /*******************************************/
 /** PVR Live Stream Functions             **/
 
+void ChannelNotification(Demux::SwitchStatus status)
+{
+  switch (status)
+  {
+    // active recording
+    case Demux::SC_ACTIVE_RECORDING:
+      mCallbacks->Notification(INFO, XBMC->GetLocalizedString(30062));
+      break;
+    // all receivers busy
+    case Demux::SC_DEVICE_BUSY:
+      mCallbacks->Notification(INFO, XBMC->GetLocalizedString(30063));
+      break;
+    // encrypted channel
+    case Demux::SC_ENCRYPTED:
+      mCallbacks->Notification(INFO, XBMC->GetLocalizedString(30066));
+      break;
+    // error on switching channel
+    case Demux::SC_ERROR:
+      mCallbacks->Notification(INFO, XBMC->GetLocalizedString(30064));
+      break;
+    // invalid channel
+    case Demux::SC_INVALID_CHANNEL:
+      mCallbacks->Notification(FAILURE, XBMC->GetLocalizedString(30065), "");
+      break;
+  }
+}
+
 bool OpenLiveStream(const PVR_CHANNEL &channel)
 {
   mCallbacks->Lock();
@@ -475,19 +502,21 @@ bool OpenLiveStream(const PVR_CHANNEL &channel)
     delete mDemuxer;
   }
 
-  bool rc = false;
   mDemuxer = new Demux(mCallbacks);
   mDemuxer->SetTimeout(cXBMCSettings::GetInstance().ConnectTimeout() * 1000);
   mDemuxer->SetAudioType(cXBMCSettings::GetInstance().AudioType());
   mDemuxer->SetPriority(priotable[cXBMCSettings::GetInstance().Priority()]);
 
-  if (mDemuxer->OpenChannel(cXBMCSettings::GetInstance().Hostname(), channel.iUniqueId)) {
+  Demux::SwitchStatus status = mDemuxer->OpenChannel(cXBMCSettings::GetInstance().Hostname(), channel.iUniqueId);
+
+  if (status == Demux::SC_OK)
     CurrentChannel = channel.iChannelNumber;
-    rc = true;
-  }
+  else
+    ChannelNotification(status);
 
   mCallbacks->Unlock();
-  return rc;
+
+  return (status == Demux::SC_OK);
 }
 
 void CloseLiveStream(void)
@@ -561,13 +590,16 @@ bool SwitchChannel(const PVR_CHANNEL &channel)
   mDemuxer->SetAudioType(cXBMCSettings::GetInstance().AudioType());
   mDemuxer->SetPriority(priotable[cXBMCSettings::GetInstance().Priority()]);
 
-  if(mDemuxer->SwitchChannel(channel.iUniqueId)) {
+  Demux::SwitchStatus status = mDemuxer->SwitchChannel(channel.iUniqueId);
+
+  if(status == Demux::SC_OK)
     CurrentChannel = channel.iChannelNumber;
-    rc = true;
-  }
+  else
+    ChannelNotification(status);
 
   mCallbacks->Unlock();
-  return rc;
+
+  return (status == Demux::SC_OK);
 }
 
 PVR_ERROR SignalStatus(PVR_SIGNAL_STATUS &signalStatus)

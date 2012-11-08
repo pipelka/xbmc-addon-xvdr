@@ -59,7 +59,7 @@ bool Connection::Open(const std::string& hostname, const std::string& name)
 
   if(!Session::Open(hostname))
   {
-    m_client->Log(XVDR_ERROR, "%s - Can't connect to XVDR Server", __FUNCTION__);
+    m_client->Log(FAILURE, "%s - Can't connect to XVDR Server", __FUNCTION__);
     return false;
   }
 
@@ -67,7 +67,7 @@ bool Connection::Open(const std::string& hostname, const std::string& name)
 
   if(!Login())
   {
-    m_client->Notification(XVDR_WARNING, "Check XVDR Server version");
+    m_client->Notification(WARNING, "Check XVDR Server version");
     XVDR::CondWait::SleepMs(5000);
     return false;
   }
@@ -93,8 +93,8 @@ bool Connection::Login()
   MsgPacket* vresp = Session::ReadResult(&vrp, true);
   if (!vresp)
   {
-	m_client->Log(XVDR_ERROR, "failed to read greeting from server");
-	return false;
+    m_client->Log(FAILURE, "failed to read greeting from server");
+    return false;
   }
 
   m_protocol                = vresp->getProtocolVersion();
@@ -104,9 +104,9 @@ bool Connection::Login()
   m_version                 = vresp->get_String();
 
   if (m_name.empty())
-	m_client->Log(XVDR_INFO, "Logged in at '%u+%i' to '%s' Version: '%s' with protocol version '%u'", vdrTime, vdrTimeOffset, m_server.c_str(), m_version.c_str(), m_protocol);
+    m_client->Log(INFO, "Logged in at '%u+%i' to '%s' Version: '%s' with protocol version '%u'", vdrTime, vdrTimeOffset, m_server.c_str(), m_version.c_str(), m_protocol);
 
-  m_client->Log(XVDR_INFO, "Preferred Audio Language: %s", lang);
+  m_client->Log(INFO, "Preferred Audio Language: %s", lang);
 
   delete vresp;
   return true;
@@ -131,16 +131,12 @@ void Connection::SignalConnectionLost()
 
 void Connection::OnDisconnect()
 {
-  m_client->Log(XVDR_ERROR, "%s - connection lost !!!", __FUNCTION__);
-  m_client->Notification(XVDR_ERROR, m_client->GetLocalizedString(30044));
+  m_client->OnDisconnect();
 }
 
 void Connection::OnReconnect()
 {
-  m_client->Notification(XVDR_INFO, m_client->GetLocalizedString(30045));
-
-  m_client->TriggerTimerUpdate();
-  m_client->TriggerRecordingUpdate();
+  m_client->OnReconnect();
 }
 
 MsgPacket* Connection::ReadResult(MsgPacket* vrp)
@@ -175,7 +171,7 @@ MsgPacket* Connection::ReadResult(MsgPacket* vrp)
   m_mutex.Unlock();
 
   if(vresp == NULL)
-    m_client->Log(XVDR_ERROR, "Can't get response packet for Message ID: %i", vrp->getMsgID());
+    m_client->Log(FAILURE, "Can't get response packet for Message ID: %i", vrp->getMsgID());
 
   return vresp;
 }
@@ -243,11 +239,11 @@ bool Connection::SetUpdateChannels(uint8_t method)
   MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
-	m_client->Log(XVDR_INFO, "Setting channel update method not supported by server. Consider updating the XVDR server.");
+    m_client->Log(INFO, "Setting channel update method not supported by server. Consider updating the XVDR server.");
     return false;
   }
 
-  m_client->Log(XVDR_INFO, "Channel update method set to %i", method);
+  m_client->Log(INFO, "Channel update method set to %i", method);
 
   uint32_t ret = vresp->get_U32();
   delete vresp;
@@ -275,11 +271,11 @@ bool Connection::ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& 
   MsgPacket* vresp = ReadResult(&vrp);
   if (!vresp)
   {
-	m_client->Log(XVDR_INFO, "Channel filter method not supported by server. Consider updating the XVDR server.");
+    m_client->Log(INFO, "Channel filter method not supported by server. Consider updating the XVDR server.");
     return false;
   }
 
-  m_client->Log(XVDR_INFO, "Channel filter set");
+  m_client->Log(INFO, "Channel filter set");
 
   uint32_t ret = vresp->get_U32();
   delete vresp;
@@ -480,6 +476,9 @@ bool Connection::UpdateTimer(const Timer& timer)
 
 int Connection::GetRecordingsCount()
 {
+  if(ConnectionLost())
+    return 0;
+
   MsgPacket vrp(XVDR_RECORDINGS_GETCOUNT);
 
   MsgPacket* vresp = ReadResult(&vrp);
@@ -494,6 +493,9 @@ int Connection::GetRecordingsCount()
 
 bool Connection::GetRecordingsList()
 {
+  if(ConnectionLost())
+    return true;
+
   MsgPacket vrp(XVDR_RECORDINGS_GETLIST);
 
   MsgPacket* vresp = ReadResult(&vrp);
@@ -513,7 +515,7 @@ bool Connection::GetRecordingsList()
 
 bool Connection::RenameRecording(const std::string& recid, const std::string& newname)
 {
-  m_client->Log(XVDR_DEBUG, "%s - uid: %s", __FUNCTION__, recid.c_str());
+  m_client->Log(DEBUG, "%s - uid: %s", __FUNCTION__, recid.c_str());
 
   MsgPacket vrp(XVDR_RECORDINGS_RENAME);
   vrp.put_String(recid.c_str());
@@ -579,7 +581,7 @@ void Connection::Action()
       {
         lastPing = time(NULL);
 
-    	m_client->Log(XVDR_DEBUG, "Ping ...");
+        m_client->Log(DEBUG, "Ping ...");
 
         if(!SendPing())
           SignalConnectionLost();
@@ -616,11 +618,11 @@ void Connection::Action()
         const char* msgstr = vresp->get_String();
 
         if (type == 2)
-          m_client->Notification(XVDR_ERROR, msgstr);
+          m_client->Notification(FAILURE, msgstr);
         if (type == 1)
-          m_client->Notification(XVDR_WARNING, msgstr);
+          m_client->Notification(WARNING, msgstr);
         else
-          m_client->Notification(XVDR_INFO, msgstr);
+          m_client->Notification(INFO, msgstr);
 
       }
       else if (vresp->getMsgID() == XVDR_STATUS_RECORDING)
@@ -635,18 +637,18 @@ void Connection::Action()
       }
       else if (vresp->getMsgID() == XVDR_STATUS_TIMERCHANGE)
       {
-    	m_client->Log(XVDR_DEBUG, "Server requested timer update");
+        m_client->Log(DEBUG, "Server requested timer update");
         m_client->TriggerTimerUpdate();
       }
       else if (vresp->getMsgID() == XVDR_STATUS_CHANNELCHANGE)
       {
-    	m_client->Log(XVDR_DEBUG, "Server requested channel update");
+        m_client->Log(DEBUG, "Server requested channel update");
         m_client->TriggerChannelUpdate();
       }
       else if (vresp->getMsgID() == XVDR_STATUS_RECORDINGSCHANGE)
       {
-    	m_client->Log(XVDR_DEBUG, "Server requested recordings update");
-    	m_client->TriggerRecordingUpdate();
+        m_client->Log(DEBUG, "Server requested recordings update");
+        m_client->TriggerRecordingUpdate();
       }
     }
 
@@ -743,7 +745,7 @@ bool Connection::OpenRecording(const std::string& recid)
     m_recid = recid;
   }
   else {
-	m_client->Log(XVDR_ERROR, "%s - Can't open recording", __FUNCTION__);
+    m_client->Log(FAILURE, "%s - Can't open recording", __FUNCTION__);
     m_recid.clear();
 
   }
@@ -787,7 +789,7 @@ int Connection::ReadRecording(unsigned char* buf, uint32_t buf_size)
     {
       m_currentPlayingRecordFrames = frames;
       m_currentPlayingRecordBytes  = bytes;
-      m_client->Log(XVDR_DEBUG, "Size of recording changed: %lu bytes (%u frames)", bytes, frames);
+      m_client->Log(DEBUG, "Size of recording changed: %lu bytes (%u frames)", bytes, frames);
     }
     delete vresp;
   }
@@ -803,13 +805,13 @@ int Connection::ReadRecording(unsigned char* buf, uint32_t buf_size)
   uint32_t length = vresp->getPayloadLength();
 
   if(length == 0) {
-	  return -1;
+    return -1;
   }
 
   uint8_t *data = vresp->getPayload();
   if (length > buf_size)
   {
-	m_client->Log(XVDR_ERROR, "%s: PANIC - Received more bytes as requested", __FUNCTION__);
+    m_client->Log(FAILURE, "%s: PANIC - Received more bytes as requested", __FUNCTION__);
     delete vresp;
     return 0;
   }
@@ -872,7 +874,7 @@ bool Connection::TryReconnect() {
   ChannelFilter(m_ftachannels, m_nativelang, m_caids);
   SetUpdateChannels(m_updatechannels);
 
-  m_client->Log(XVDR_DEBUG, "%s - reconnected", __FUNCTION__);
+  m_client->Log(DEBUG, "%s - reconnected", __FUNCTION__);
   m_connectionLost = false;
 
   OnReconnect();

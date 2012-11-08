@@ -27,6 +27,7 @@
 #include "xvdr/clientinterface.h"
 #include "xvdr/connection.h"
 #include "xvdr/dataset.h"
+#include "xvdr/command.h"
 
 class MsgPacket;
 
@@ -38,17 +39,29 @@ class Demux : public Connection
 {
 public:
 
+  // channel switch return codes
+  typedef enum {
+    SC_OK = XVDR_RET_OK,                            /* !< channel switch successful */
+    SC_ACTIVE_RECORDING = XVDR_RET_RECRUNNING,      /* !< active recording blocks channel switch */
+    SC_DEVICE_BUSY = XVDR_RET_DATALOCKED,           /* !< all devices busy */
+    SC_ENCRYPTED = XVDR_RET_ENCRYPTED,              /* !< encrypted channel cannot be decrypted */
+    SC_ERROR = XVDR_RET_ERROR,                      /* !< server (communication) error */
+    SC_INVALID_CHANNEL = XVDR_RET_DATAINVALID       /* !< invalid channel */
+  } SwitchStatus;
+
+public:
+
   Demux(ClientInterface* client);
   ~Demux();
 
-  bool OpenChannel(const std::string& hostname, uint32_t channeluid);
+  SwitchStatus OpenChannel(const std::string& hostname, uint32_t channeluid);
   void CloseChannel();
 
   void Abort();
 
   Packet* Read();
 
-  bool SwitchChannel(uint32_t channeluid);
+  SwitchStatus SwitchChannel(uint32_t channeluid);
   void SetPriority(int priority);
 
   StreamProperties GetStreamProperties();

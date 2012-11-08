@@ -24,7 +24,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include "DVDDemuxPacket.h"
 
 using namespace ADDON;
@@ -34,12 +33,10 @@ using namespace XVDR;
 
 cXBMCCallbacks::cXBMCCallbacks() : m_handle(NULL)
 {
-  m_msg = (char*)malloc(MSG_MAXLEN);
 }
 
 cXBMCCallbacks::~cXBMCCallbacks()
 {
-  free(m_msg);
 }
 
 void cXBMCCallbacks::SetHandle(ADDON_HANDLE handle)
@@ -47,59 +44,47 @@ void cXBMCCallbacks::SetHandle(ADDON_HANDLE handle)
   m_handle = handle;
 }
 
-void cXBMCCallbacks::Log(XVDR_LOGLEVEL level, const std::string& text, ...)
+void cXBMCCallbacks::OnLog(LOGLEVEL level, const char* msg)
 {
   addon_log_t lt;
   switch(level)
   {
-    case XVDR_DEBUG:
+    case DEBUG:
       lt = LOG_DEBUG;
       break;
     default:
-    case XVDR_INFO:
+    case INFO:
       lt = LOG_INFO;
       break;
-    case XVDR_NOTICE:
+    case NOTICE:
       lt = LOG_NOTICE;
       break;
-    case XVDR_ERROR:
+    case FAILURE:
       lt = LOG_ERROR;
       break;
   }
 
-  va_list ap;
-  va_start(ap, &text);
-
-  vsnprintf(m_msg, MSG_MAXLEN, text.c_str(), ap);
-  va_end(ap);
-
-  XBMC->Log(lt, m_msg);
+  XBMC->Log(lt, msg);
 }
 
-void cXBMCCallbacks::Notification(XVDR_LOGLEVEL level, const std::string& text, ...)
+void cXBMCCallbacks::OnNotification(LOGLEVEL level, const char* msg)
 {
   queue_msg qm;
   switch(level)
   {
     default:
-    case XVDR_INFO:
+    case INFO:
       qm = QUEUE_INFO;
       break;
-    case XVDR_ERROR:
+    case FAILURE:
       qm = QUEUE_ERROR;
       break;
-    case XVDR_WARNING:
+    case WARNING:
       qm = QUEUE_WARNING;
       break;
   }
 
-  va_list ap;
-  va_start(ap, &text);
-
-  vsnprintf(m_msg, MSG_MAXLEN, text.c_str(), ap);
-  va_end(ap);
-
-  XBMC->QueueNotification(qm, m_msg);
+  XBMC->QueueNotification(qm, msg);
 }
 
 void cXBMCCallbacks::Recording(const std::string& line1, const std::string& line2, bool on)
@@ -107,20 +92,10 @@ void cXBMCCallbacks::Recording(const std::string& line1, const std::string& line
   PVR->Recording(line1.c_str(), line2.c_str(), on);
 }
 
-void cXBMCCallbacks::ConvertToUTF8(std::string& text)
-{
-  XBMC->UnknownToUTF8(text);
-}
-
 std::string cXBMCCallbacks::GetLanguageCode()
 {
   const char* code = XBMC->GetDVDMenuLanguage();
   return (code == NULL) ? "" : code;
-}
-
-const char* cXBMCCallbacks::GetLocalizedString(int id)
-{
-  return XBMC->GetLocalizedString(id);
 }
 
 void cXBMCCallbacks::TriggerChannelUpdate()
@@ -237,12 +212,24 @@ Packet* cXBMCCallbacks::ContentInfo(const StreamProperties& p) {
   return pkt;
 }
 
-void cXBMCCallbacks::Lock() {
-  m_mutex.Lock();
+void cXBMCCallbacks::OnDisconnect() {
+  Log(FAILURE, "%s - connection lost !!!", __FUNCTION__);
+  Notification(FAILURE, XBMC->GetLocalizedString(30044));
 }
 
-void cXBMCCallbacks::Unlock() {
-  m_mutex.Unlock();
+void cXBMCCallbacks::OnReconnect() {
+  Notification(INFO, XBMC->GetLocalizedString(30045));
+
+  TriggerTimerUpdate();
+  TriggerRecordingUpdate();
+}
+
+void cXBMCCallbacks::OnSignalLost() {
+  Notification(FAILURE, XBMC->GetLocalizedString(30047));
+}
+
+void cXBMCCallbacks::OnSignalRestored() {
+  Notification(INFO, XBMC->GetLocalizedString(30048));
 }
 
 PVR_CHANNEL& operator<< (PVR_CHANNEL& lhs, const Channel& rhs)
@@ -438,8 +425,8 @@ PVR_SIGNAL_STATUS& operator<< (PVR_SIGNAL_STATUS& lhs, const SignalStatus& rhs) 
 	lhs.dDolbyBitrate = 0;
 	lhs.dVideoBitrate = 0;
 	lhs.iBER = rhs.BER;
-	lhs.iSNR = rhs.SNR;
-	lhs.iSignal = rhs.Strength;
+  lhs.iSNR = rhs.SNR;
+  lhs.iSignal = rhs.Strength;
 	lhs.iUNC = rhs.UNC;
 	strncpy(lhs.strAdapterName, rhs.AdapterName.c_str(), sizeof(lhs.strAdapterName));
 	strncpy(lhs.strAdapterStatus, rhs.AdapterStatus.c_str(), sizeof(lhs.strAdapterStatus));

@@ -19,16 +19,66 @@
  *
  */
 
+#include <stdarg.h>
 #include "xvdr/clientinterface.h"
 
 using namespace XVDR;
 
+#define MAX_MESSAGE_SIZE 512
+
 ClientInterface::ClientInterface()
 {
+  m_msg = new char[MAX_MESSAGE_SIZE];
 }
 
 ClientInterface::~ClientInterface()
 {
+  delete[] m_msg;
+}
+
+void ClientInterface::Log(LOGLEVEL level, const std::string& text, ...)
+{
+  MutexLock lock(&m_msgmutex);
+
+  va_list ap;
+  va_start(ap, &text);
+
+  vsnprintf(m_msg, MAX_MESSAGE_SIZE, text.c_str(), ap);
+  va_end(ap);
+
+  OnLog(level, m_msg);
+}
+
+void ClientInterface::Notification(LOGLEVEL level, const std::string& text, ...)
+{
+  MutexLock lock(&m_msgmutex);
+
+  va_list ap;
+  va_start(ap, &text);
+
+  vsnprintf(m_msg, MAX_MESSAGE_SIZE, text.c_str(), ap);
+  va_end(ap);
+
+  OnNotification(level, m_msg);
+}
+
+void ClientInterface::Recording(const std::string& line1, const std::string& line2, bool on)
+{
+  Log(INFO, line1.c_str());
+}
+
+void ClientInterface::OnLog(LOGLEVEL level, const char* msg) {
+  printf("[%s] %s",
+      level == INFO ? "INFO" :
+      level == NOTICE ? "NOTICE" :
+      level == WARNING ? "WARNING" :
+      level == FAILURE ? "FAILURE" :
+      level == DEBUG ? "DEBUG" : "UNKNOWN",
+      msg);
+}
+
+void ClientInterface::OnNotification(LOGLEVEL level, const char* msg) {
+  OnLog(level, msg);
 }
 
 Packet* ClientInterface::StreamChange(const StreamProperties& p) {
@@ -38,3 +88,28 @@ Packet* ClientInterface::StreamChange(const StreamProperties& p) {
 Packet* ClientInterface::ContentInfo(const StreamProperties& p) {
 	return NULL;
 }
+
+void ClientInterface::OnDisconnect() {
+  Log(FAILURE, "connection lost!");
+}
+
+void ClientInterface::OnReconnect() {
+  Log(INFO, "connection restored.");
+}
+
+void ClientInterface::OnSignalLost() {
+  Log(FAILURE, "signal lost!");
+}
+
+void ClientInterface::OnSignalRestored() {
+  Log(INFO, "signal restored.");
+}
+
+void ClientInterface::Lock() {
+  m_mutex.Lock();
+}
+
+void ClientInterface::Unlock() {
+  m_mutex.Unlock();
+}
+
