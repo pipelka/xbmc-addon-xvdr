@@ -110,10 +110,11 @@ int Session::OpenSocket(const std::string& hostname, int port) {
 	if(connect(sock, info->ai_addr, info->ai_addrlen) == -1) {
 		if(sockerror() == EINPROGRESS || sockerror() == SEWOULDBLOCK) {
 
-			if(!pollfd(sock, m_timeout, false)) {
-				freeaddrinfo(result);
-				return false;
-			}
+      if(!pollfd(sock, m_timeout, false)) {
+        freeaddrinfo(result);
+        closesocket(sock);
+        return INVALID_SOCKET;
+      }
 
 			socklen_t optlen = sizeof(int);
 			getsockopt(sock, SOL_SOCKET, SO_ERROR, (sockval_t*)&rc, &optlen);
@@ -123,10 +124,11 @@ int Session::OpenSocket(const std::string& hostname, int port) {
 		}
 	}
 
-	if(rc != 0) {
+  if(rc != 0) {
 		freeaddrinfo(result);
+    closesocket(sock);
 		return INVALID_SOCKET;
-	}
+  }
 
 	setsock_nonblock(sock, false);
 
@@ -197,9 +199,8 @@ void Session::SignalConnectionLost()
   if(m_connectionLost)
     return;
 
-  m_connectionLost = true;
-  Abort();
   Close();
+  m_connectionLost = true;
 
   OnDisconnect();
 }

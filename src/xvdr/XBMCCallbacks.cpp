@@ -218,6 +218,7 @@ void cXBMCCallbacks::OnDisconnect() {
 }
 
 void cXBMCCallbacks::OnReconnect() {
+  Log(INFO, "%s - connection restored", __FUNCTION__);
   Notification(INFO, XBMC->GetLocalizedString(30045));
 
   TriggerTimerUpdate();

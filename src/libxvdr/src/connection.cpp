@@ -142,7 +142,7 @@ void Connection::OnReconnect()
 MsgPacket* Connection::ReadResult(MsgPacket* vrp)
 {
   if(m_connectionLost)
-	return Session::ReadResult(vrp);
+	  return Session::ReadResult(vrp);
 
   m_mutex.Lock();
 
@@ -874,7 +874,6 @@ bool Connection::TryReconnect() {
   ChannelFilter(m_ftachannels, m_nativelang, m_caids);
   SetUpdateChannels(m_updatechannels);
 
-  m_client->Log(DEBUG, "%s - reconnected", __FUNCTION__);
   m_connectionLost = false;
 
   OnReconnect();
