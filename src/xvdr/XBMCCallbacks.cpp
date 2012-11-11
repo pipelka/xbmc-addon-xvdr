@@ -94,8 +94,31 @@ void cXBMCCallbacks::Recording(const std::string& line1, const std::string& line
 
 std::string cXBMCCallbacks::GetLanguageCode()
 {
-  const char* code = XBMC->GetDVDMenuLanguage();
-  return (code == NULL) ? "" : code;
+  std::string code;
+
+  char* string = XBMC->GetDVDMenuLanguage();
+
+  if(string != NULL) {
+    code = string;
+    XBMC->FreeString(string);
+  }
+
+  return code;
+}
+
+std::string cXBMCCallbacks::GetLocalizedString(int id)
+{
+  std::string result;
+
+  char* string = XBMC->GetLocalizedString(id);
+
+  if(string != NULL) {
+    result = string;
+    XBMC->FreeString(string);
+  }
+
+  return result;
+
 }
 
 void cXBMCCallbacks::TriggerChannelUpdate()
@@ -214,23 +237,23 @@ Packet* cXBMCCallbacks::ContentInfo(const StreamProperties& p) {
 
 void cXBMCCallbacks::OnDisconnect() {
   Log(FAILURE, "%s - connection lost !!!", __FUNCTION__);
-  Notification(FAILURE, XBMC->GetLocalizedString(30044));
+  Notification(FAILURE, GetLocalizedString(30044));
 }
 
 void cXBMCCallbacks::OnReconnect() {
   Log(INFO, "%s - connection restored", __FUNCTION__);
-  Notification(INFO, XBMC->GetLocalizedString(30045));
+  Notification(INFO, GetLocalizedString(30045));
 
   TriggerTimerUpdate();
   TriggerRecordingUpdate();
 }
 
 void cXBMCCallbacks::OnSignalLost() {
-  Notification(FAILURE, XBMC->GetLocalizedString(30047));
+  Notification(FAILURE, GetLocalizedString(30047));
 }
 
 void cXBMCCallbacks::OnSignalRestored() {
-  Notification(INFO, XBMC->GetLocalizedString(30048));
+  Notification(INFO, GetLocalizedString(30048));
 }
 
 PVR_CHANNEL& operator<< (PVR_CHANNEL& lhs, const Channel& rhs)

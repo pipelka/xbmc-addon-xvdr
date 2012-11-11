@@ -49,6 +49,8 @@ public:
 
   std::string GetLanguageCode();
 
+  std::string GetLocalizedString(int id);
+
   void TriggerChannelUpdate();
 
   void TriggerRecordingUpdate();

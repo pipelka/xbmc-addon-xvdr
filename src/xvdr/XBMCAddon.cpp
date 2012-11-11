@@ -471,23 +471,23 @@ void ChannelNotification(Demux::SwitchStatus status)
   {
     // active recording
     case Demux::SC_ACTIVE_RECORDING:
-      mCallbacks->Notification(INFO, XBMC->GetLocalizedString(30062));
+      mCallbacks->Notification(INFO, mCallbacks->GetLocalizedString(30062));
       break;
     // all receivers busy
     case Demux::SC_DEVICE_BUSY:
-      mCallbacks->Notification(INFO, XBMC->GetLocalizedString(30063));
+      mCallbacks->Notification(INFO, mCallbacks->GetLocalizedString(30063));
       break;
     // encrypted channel
     case Demux::SC_ENCRYPTED:
-      mCallbacks->Notification(INFO, XBMC->GetLocalizedString(30066));
+      mCallbacks->Notification(INFO, mCallbacks->GetLocalizedString(30066));
       break;
     // error on switching channel
     case Demux::SC_ERROR:
-      mCallbacks->Notification(INFO, XBMC->GetLocalizedString(30064));
+      mCallbacks->Notification(INFO, mCallbacks->GetLocalizedString(30064));
       break;
     // invalid channel
     case Demux::SC_INVALID_CHANNEL:
-      mCallbacks->Notification(FAILURE, XBMC->GetLocalizedString(30065), "");
+      mCallbacks->Notification(FAILURE, mCallbacks->GetLocalizedString(30065), "");
       break;
   }
 }

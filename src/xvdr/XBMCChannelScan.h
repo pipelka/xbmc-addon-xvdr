@@ -25,6 +25,7 @@
 #include "xvdr/msgpacket.h"
 #include "xvdr/thread.h"
 #include "XBMCAddon.h"
+#include "XBMCCallbacks.h"
 #include <string>
 #include <map>
 
@@ -43,7 +44,7 @@ class cXBMCChannelScan : public XVDR::Connection
 {
 public:
 
-  cXBMCChannelScan(XVDR::ClientInterface* client);
+  cXBMCChannelScan(cXBMCCallbacks* client);
   ~cXBMCChannelScan();
 
   bool Open(const std::string& hostname, const char* name = "XBMC channel scanner");
