@@ -72,10 +72,10 @@ struct DemuxPacket;
 #define PVR_STREAM_MAX_STREAMS 20
 
 /* current PVR API version */
-#define XBMC_PVR_API_VERSION "1.5.0"
+#define XBMC_PVR_API_VERSION "1.6.0"
 
 /* min. PVR API version */
-#define XBMC_PVR_MIN_API_VERSION "1.5.0"
+#define XBMC_PVR_MIN_API_VERSION "1.6.0"
 
 #ifdef __cplusplus
 extern "C" {
@@ -151,7 +151,6 @@ extern "C" {
     unsigned int iStreamCount;
     struct PVR_STREAM
     {
-      unsigned int iStreamIndex;       /*!< @brief (required) stream index */
       unsigned int iPhysicalId;        /*!< @brief (required) physical index */
       unsigned int iCodecType;         /*!< @brief (required) codec type id */
       unsigned int iCodecId;           /*!< @brief (required) codec id */
@@ -335,6 +334,8 @@ extern "C" {
     bool         (__cdecl* CanPauseStream)(void);
     void         (__cdecl* PauseStream)(bool);
     bool         (__cdecl* CanSeekStream)(void);
+    bool         (__cdecl* SeekTime)(int, bool, double*);
+    void         (__cdecl* SetSpeed)(int);
   } PVRClient;
 
 #ifdef __cplusplus

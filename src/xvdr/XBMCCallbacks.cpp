@@ -401,7 +401,6 @@ PVR_STREAM_PROPERTIES::PVR_STREAM& operator<< (PVR_STREAM_PROPERTIES::PVR_STREAM
 	lhs.iIdentifier = rhs.Identifier;
 	lhs.iPhysicalId = rhs.PhysicalId;
 	lhs.iSampleRate = rhs.SampleRate;
-	lhs.iStreamIndex = rhs.Index;
 	lhs.iWidth = rhs.Width;
 	strncpy(lhs.strLanguage, rhs.Language.c_str(), sizeof(lhs.strLanguage));
 

@@ -749,4 +749,6 @@ long long PositionLiveStream(void) { return -1; }
 long long LengthLiveStream(void) { return -1; }
 const char * GetLiveStreamURL(const PVR_CHANNEL &channel) { return ""; }
 unsigned int GetChannelSwitchDelay(void) { return 0; }
+bool SeekTime(int time, bool backwards, double *startpts) { return false; }
+void SetSpeed(int speed) {};
 }
