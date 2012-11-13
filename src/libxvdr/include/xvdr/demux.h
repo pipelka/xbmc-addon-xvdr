@@ -61,6 +61,10 @@ public:
 
   Packet* Read();
 
+  template<class T>T* Read() {
+    return (T*)Read();
+  }
+
   SwitchStatus SwitchChannel(uint32_t channeluid);
   void SetPriority(int priority);
 
