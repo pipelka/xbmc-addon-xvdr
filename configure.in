@@ -90,5 +90,6 @@ src/Makefile
 src/libxvdr/Makefile
 src/libxvdr/include/Makefile
 src/libxvdr/src/Makefile
+src/libxvdr/tests/Makefile
 src/xvdr/Makefile
 ])
