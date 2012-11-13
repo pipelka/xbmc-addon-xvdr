@@ -68,7 +68,7 @@ void ClientInterface::Recording(const std::string& line1, const std::string& lin
 }
 
 void ClientInterface::OnLog(LOGLEVEL level, const char* msg) {
-  printf("[%s] %s",
+  printf("[%s] %s\n",
       level == INFO ? "INFO" :
       level == NOTICE ? "NOTICE" :
       level == WARNING ? "WARNING" :

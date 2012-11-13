@@ -22,6 +22,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "xvdr/connection.h"
 #include "xvdr/clientinterface.h"
@@ -103,9 +104,7 @@ bool Connection::Login()
   m_server                  = vresp->get_String();
   m_version                 = vresp->get_String();
 
-  if (m_name.empty())
-    m_client->Log(INFO, "Logged in at '%u+%i' to '%s' Version: '%s' with protocol version '%u'", vdrTime, vdrTimeOffset, m_server.c_str(), m_version.c_str(), m_protocol);
-
+  m_client->Log(INFO, "Logged in at '%u+%i' to '%s' Version: '%s' with protocol version '%u'", vdrTime, vdrTimeOffset, m_server.c_str(), m_version.c_str(), m_protocol);
   m_client->Log(INFO, "Preferred Audio Language: %s", lang);
 
   delete vresp;

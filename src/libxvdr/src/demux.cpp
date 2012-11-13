@@ -243,11 +243,15 @@ Demux::SwitchStatus Demux::SwitchChannel(uint32_t channeluid)
   delete vresp;
 
   if(status == SC_OK)
+  {
     m_channeluid = channeluid;
+    m_client->Log(INFO, "sucessfully switched channel");
+  }
+  else
+    m_client->Log(FAILURE, "%s - failed to set channel (status: %i)", __FUNCTION__, status);
 
   m_cond.Signal();
 
-  m_client->Log(FAILURE, "%s - failed to set channel", __FUNCTION__);
   return status;
 }
 
