@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
     ConsoleClient::Packet* p = demux.Read<ConsoleClient::Packet>();
     if(p->data != NULL) {
       uint32_t header = p->data[0] << 24 | p->data[1] << 16 | p->data[2] << 8 | p->data[3];
-      client.Log(INFO, "Demux (index: %i length: %i bytes) Header: %08X", p->index, p->length, header);
+      client.Log(INFO, "Demux (index: %i length: %i bytes) Header: %08X PTS: %lli", p->index, p->length, header, p->pts);
     }
     client.FreePacket(p);
   }
