@@ -100,7 +100,7 @@ int Session::OpenSocket(const std::string& hostname, int port) {
 
 	if(sock == INVALID_SOCKET) {
 		freeaddrinfo(result);
-		return false;
+		return INVALID_SOCKET;
 	}
 
 	setsock_nonblock(sock);
