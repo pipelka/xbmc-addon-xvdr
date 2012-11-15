@@ -5,7 +5,8 @@ ADD_LIBS = $(PTHREAD_LIBS)
 endif
 
 noinst_PROGRAMS = \
-	demux
+	demux \
+	listener
 
 demux_SOURCES = \
 	consoleclient.cpp \
@@ -13,6 +14,15 @@ demux_SOURCES = \
 	demux.cpp
 
 demux_LDADD = \
+	../src/libxvdrstatic.la \
+	$(ADD_LIBS)
+
+listener_SOURCES = \
+	consoleclient.cpp \
+	consoleclient.h \
+	listener.cpp
+
+listener_LDADD = \
 	../src/libxvdrstatic.la \
 	$(ADD_LIBS)
 
