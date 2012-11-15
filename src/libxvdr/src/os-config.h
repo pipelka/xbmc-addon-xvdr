@@ -33,6 +33,12 @@ uint16_t be16toh(uint16_t u);
 // LINUX / OTHER
 #else
 
+#ifdef __FreeBSD__
+#include <sys/types.h>
+#include <sys/endian.h>
+#include <netinet/in.h>
+#endif
+
 #define INVALID_SOCKET -1
 #define SEWOULDBLOCK EAGAIN
 

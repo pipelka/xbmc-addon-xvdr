@@ -150,10 +150,10 @@ Mutex::Mutex(void) : props(new props_t)
   locked = 0;
   pthread_mutexattr_t attr;
   pthread_mutexattr_init(&attr);
-#ifndef __APPLE__
-  pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK_NP);
-#else
+#if defined(__APPLE__) || defined(__FreeBSD__)
   pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
+#else
+  pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK_NP);
 #endif
   pthread_mutex_init(&props->mutex, &attr);
   mutex = &props->mutex;
