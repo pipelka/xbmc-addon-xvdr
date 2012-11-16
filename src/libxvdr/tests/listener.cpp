@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
-  pause();
+  CondWait::SleepMs(0);
 
   client.Log(INFO, "Shutting down ..");
   xvdr.Close();
