@@ -100,7 +100,11 @@ std::string cXBMCCallbacks::GetLanguageCode()
 
   if(string != NULL) {
     code = string;
+#ifdef _WIN32
+    Log(DEBUG, "Possible leak caused by Win32 workaround in %s", __FUNCTION__);
+#else
     XBMC->FreeString(string);
+#endif
   }
 
   return code;
