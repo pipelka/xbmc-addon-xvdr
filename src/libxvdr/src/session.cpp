@@ -244,8 +244,5 @@ bool Session::ConnectionLost() {
 bool Session::SendPing()
 {
   MsgPacket vrp(XVDR_PING);
-  MsgPacket* vresp = Session::ReadResult(&vrp);
-  delete vresp;
-
-  return (vresp != NULL);
+  return TransmitMessage(&vrp);
 }
