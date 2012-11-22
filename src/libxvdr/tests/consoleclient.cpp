@@ -3,11 +3,11 @@
 
 #include "consoleclient.h"
 
-ConsoleClient::ConsoleClient() : Connection(this) {
+ConsoleClient::ConsoleClient() : Connection(this), m_gotstreamprops(false) {
 }
 
 std::string ConsoleClient::GetLanguageCode() {
-  return "en";
+  return "de";
 }
 
 void ConsoleClient::TransferChannelEntry(const XVDR::Channel& channel) {
@@ -34,6 +34,12 @@ XVDR::Packet* ConsoleClient::StreamChange(const XVDR::StreamProperties& streams)
   }
   return NULL;
 }
+
+/*XVDR::Packet* ConsoleClient::ContentInfo(const XVDR::StreamProperties& streams) {
+  Log(INFO, "Got content info ...");
+  m_gotstreamprops = true;
+  return NULL;
+}*/
 
 XVDR::Packet* ConsoleClient::AllocatePacket(int length) {
   Packet* p = new Packet;

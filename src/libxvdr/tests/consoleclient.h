@@ -28,6 +28,8 @@ public:
 
   XVDR::Packet* StreamChange(const XVDR::StreamProperties& streams);
 
+  //XVDR::Packet* ContentInfo(const XVDR::StreamProperties& streams);
+
   XVDR::Packet* AllocatePacket(int length);
   void SetPacketData(XVDR::Packet* packet, uint8_t* data, int index, uint64_t pts, uint64_t dts);
   void FreePacket(XVDR::Packet* packet);
@@ -44,6 +46,8 @@ public:
     uint8_t* data;
     int length;
   };
+
+  bool m_gotstreamprops;
 };
 
 #endif // CONSOLECLIENT_H

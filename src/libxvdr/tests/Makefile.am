@@ -5,6 +5,7 @@ ADD_LIBS = $(PTHREAD_LIBS)
 endif
 
 noinst_PROGRAMS = \
+	ac3analyze \
 	demux \
 	listener
 
@@ -23,6 +24,15 @@ listener_SOURCES = \
 	listener.cpp
 
 listener_LDADD = \
+	../src/libxvdrstatic.la \
+	$(ADD_LIBS)
+
+ac3analyze_SOURCES = \
+	consoleclient.cpp \
+	consoleclient.h \
+	ac3analyze.cpp
+
+ac3analyze_LDADD = \
 	../src/libxvdrstatic.la \
 	$(ADD_LIBS)
 
