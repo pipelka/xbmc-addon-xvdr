@@ -21,6 +21,7 @@
 #include <winsock2.h>
 #include <ws2spi.h>
 #include <ws2tcpip.h>
+
 #include "pthreads-win32/pthread.h"
 
 uint32_t htobe32(uint32_t u);
@@ -83,4 +84,5 @@ uint16_t be16toh(uint16_t u);
 
 bool pollfd(int fd, int timeout_ms, bool in);
 bool setsock_nonblock(int fd, bool nonblock = true);
+void setsock_keepalive(int fd);
 int socketread(int fd, uint8_t* data, int datalen, int timeout_ms);

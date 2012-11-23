@@ -86,12 +86,12 @@ bool Connection::Login()
   MsgPacket vrp(XVDR_LOGIN);
   vrp.setProtocolVersion(XVDRPROTOCOLVERSION);
   vrp.put_U8(m_compressionlevel);
-  vrp.put_String(m_name.empty() ? "XBMC Media Center" : m_name.c_str());
+  vrp.put_String(m_name.empty() ? "XVDR Client" : m_name.c_str());
   vrp.put_String((lang != NULL) ? lang : "");
   vrp.put_U8(m_audiotype);
 
   // read welcome
-  MsgPacket* vresp = Session::ReadResult(&vrp, true);
+  MsgPacket* vresp = Session::ReadResult(&vrp);
   if (!vresp)
   {
     m_client->Log(FAILURE, "failed to read greeting from server");
@@ -557,7 +557,6 @@ void Connection::OnResponsePacket(MsgPacket* pkt)
 
 void Connection::Action()
 {
-  uint32_t lastPing = 0;
   MsgPacket* vresp;
 
   while (Running())
@@ -572,26 +571,9 @@ void Connection::Action()
     // read message
     vresp = Session::ReadMessage();
 
-    // check if the connection is still up
-    if ((vresp == NULL) && (time(NULL) - lastPing) > 5)
-    {
-      MutexLock lock(&m_mutex);
-      if(m_queue.empty())
-      {
-        lastPing = time(NULL);
-
-        m_client->Log(DEBUG, "Ping ...");
-
-        if(!SendPing())
-          SignalConnectionLost();
-      }
-    }
-
     // there wasn't any response
     if (vresp == NULL)
       continue;
-
-    lastPing = time(NULL);
 
     // CHANNEL_REQUEST_RESPONSE
 

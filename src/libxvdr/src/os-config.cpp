@@ -5,6 +5,15 @@
 
 #ifdef WIN32
 
+#if !defined(SIO_KEEPALIVE_VALS)
+#define SIO_KEEPALIVE_VALS  _WSAIOW(IOC_VENDOR,4)
+struct tcp_keepalive {
+  u_long onoff;
+  u_long keepalivetime;
+  u_long keepaliveinterval;
+};
+#endif
+
 uint32_t htobe32(uint32_t u) {
 	return (u >> 24) | ((u >> 8) & 0xff00) | ((u << 8) & 0xff0000) | (u << 24);
 }
@@ -46,6 +55,27 @@ bool pollfd(int fd, int timeout_ms, bool in) {
 	return (select(fd + 1, NULL, &fds, NULL, &tv) > 0);
 }
 
+void setsock_keepalive(int sock) {
+  struct tcp_keepalive param;
+  param.onoff = 1;
+  param.keepalivetime = 1000;
+  param.keepaliveinterval = 3000;
+
+  DWORD bytes = 0;
+
+  WSAIoctl(
+    sock,
+    SIO_KEEPALIVE_VALS,
+    &param,
+    sizeof(param),
+    NULL,
+    0,
+    &bytes,
+    NULL,
+    NULL
+  );
+}
+
 // LINUX / OTHER
 
 #else
@@ -60,6 +90,22 @@ bool pollfd(int fd, int timeout_ms, bool in) {
 
 	return (::poll(&p, 1, timeout_ms) > 0);
 }
+
+void setsock_keepalive(int sock) {
+  int val = 1;
+  setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (sockval_t*)&val, sizeof(val));
+
+  val = 1;
+  setsockopt(sock, SOL_TCP, TCP_KEEPIDLE, (sockval_t*)&val, sizeof(val));
+
+  val = 1;
+  setsockopt(sock, SOL_TCP, TCP_KEEPINTVL, (sockval_t*)&val, sizeof(val));
+
+  val = 3;
+  setsockopt(sock, SOL_TCP, TCP_KEEPCNT, (sockval_t*)&val, sizeof(val));
+}
+
+
 #endif
 
 // GENERAL

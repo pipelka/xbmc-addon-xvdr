@@ -48,7 +48,7 @@ public:
 
   bool TransmitMessage(MsgPacket* vrp);
 
-  MsgPacket* ReadResult(MsgPacket* vrp, bool bIgnoreConnectionLost = false);
+  MsgPacket* ReadResult(MsgPacket* vrp);
 
   bool ConnectionLost();
 
@@ -63,8 +63,6 @@ protected:
   virtual void OnReconnect();
 
   virtual void SignalConnectionLost();
-
-  bool SendPing();
 
   std::string m_hostname;
 

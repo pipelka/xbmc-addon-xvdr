@@ -40,7 +40,6 @@
 #define XVDR_LOGIN                 1
 #define XVDR_GETTIME               2
 #define XVDR_ENABLESTATUSINTERFACE 3
-#define XVDR_PING                  7
 #define XVDR_UPDATECHANNELS        8
 #define XVDR_CHANNELFILTER         9
 

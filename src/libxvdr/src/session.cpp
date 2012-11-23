@@ -135,6 +135,8 @@ int Session::OpenSocket(const std::string& hostname, int port) {
 	int val = 1;
 	setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (sockval_t*)&val, sizeof(val));
 
+	setsock_keepalive(sock);
+
 	freeaddrinfo(result);
 
 	return sock;
@@ -162,7 +164,13 @@ bool Session::IsOpen()
 
 MsgPacket* Session::ReadMessage()
 {
-  return MsgPacket::read(m_fd, m_timeout);
+  bool bClosed = false;
+  MsgPacket* p = MsgPacket::read(m_fd, bClosed, m_timeout);
+
+  if(bClosed)
+    SignalConnectionLost();
+
+  return p;
 }
 
 bool Session::TransmitMessage(MsgPacket* vrp)
@@ -170,22 +178,12 @@ bool Session::TransmitMessage(MsgPacket* vrp)
   return vrp->write(m_fd, m_timeout);
 }
 
-MsgPacket* Session::ReadResult(MsgPacket* vrp, bool bIgnoreConnectionLost)
+MsgPacket* Session::ReadResult(MsgPacket* vrp)
 {
   if(!TransmitMessage(vrp))
-  {
-    if(!bIgnoreConnectionLost)
-      SignalConnectionLost();
-
     return NULL;
-  }
 
-  MsgPacket *pkt = ReadMessage();
-
-  if(pkt == NULL && !bIgnoreConnectionLost)
-    SignalConnectionLost();
-
-  return pkt;
+  return ReadMessage();
 }
 
 void Session::OnReconnect() {
@@ -239,10 +237,4 @@ bool Session::TryReconnect() {
 
 bool Session::ConnectionLost() {
   return m_connectionLost;
-}
-
-bool Session::SendPing()
-{
-  MsgPacket vrp(XVDR_PING);
-  return TransmitMessage(&vrp);
 }
