@@ -80,6 +80,8 @@ bool Connection::Open(const std::string& hostname, const std::string& name)
 
 bool Connection::Login()
 {
+  MutexLock lock(&m_cmdlock);
+
   std::string code = m_client->GetLanguageCode();
   const char* lang = ISO639_FindLanguage(code);
 
@@ -177,6 +179,8 @@ MsgPacket* Connection::ReadResult(MsgPacket* vrp)
 
 bool Connection::GetDriveSpace(long long *total, long long *used)
 {
+  MutexLock lock(&m_cmdlock);
+
   MsgPacket vrp(XVDR_RECORDINGS_DISKSIZE);
 
   MsgPacket* vresp = ReadResult(&vrp);
@@ -212,6 +216,8 @@ bool Connection::SupportChannelScan()
 
 bool Connection::EnableStatusInterface(bool onOff)
 {
+  MutexLock lock(&m_cmdlock);
+
   MsgPacket vrp(XVDR_ENABLESTATUSINTERFACE);
   vrp.put_U8(onOff);
 
@@ -257,6 +263,8 @@ bool Connection::SetUpdateChannels(uint8_t method)
 
 bool Connection::ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& caids)
 {
+  MutexLock lock(&m_cmdlock);
+
   std::size_t count = caids.size();
 
   MsgPacket vrp(XVDR_CHANNELFILTER);
@@ -292,6 +300,8 @@ bool Connection::ChannelFilter(bool fta, bool nativelangonly, std::vector<int>& 
 
 int Connection::GetChannelsCount()
 {
+  MutexLock lock(&m_cmdlock);
+
   MsgPacket vrp(XVDR_CHANNELS_GETCOUNT);
 
   MsgPacket* vresp = ReadResult(&vrp);
@@ -306,6 +316,8 @@ int Connection::GetChannelsCount()
 
 bool Connection::GetChannelsList(bool radio)
 {
+  MutexLock lock(&m_cmdlock);
+
   MsgPacket vrp(XVDR_CHANNELS_GETCHANNELS);
   vrp.put_U32(radio);
 
@@ -326,6 +338,8 @@ bool Connection::GetChannelsList(bool radio)
 
 bool Connection::GetEPGForChannel(uint32_t channeluid, time_t start, time_t end)
 {
+  MutexLock lock(&m_cmdlock);
+
   MsgPacket vrp(XVDR_EPG_GETFORCHANNEL);
   vrp.put_U32(channeluid);
   vrp.put_U32(start);
@@ -351,6 +365,8 @@ bool Connection::GetEPGForChannel(uint32_t channeluid, time_t start, time_t end)
 
 int Connection::GetTimersCount()
 {
+  MutexLock lock(&m_cmdlock);
+
   // return caches values on connection loss
   if(ConnectionLost())
     return m_timercount;
@@ -369,6 +385,8 @@ int Connection::GetTimersCount()
 
 bool Connection::GetTimerInfo(unsigned int timernumber, Timer& tag)
 {
+  MutexLock lock(&m_cmdlock);
+
   MsgPacket vrp(XVDR_TIMER_GET);
   vrp.put_U32(timernumber);
 
@@ -397,6 +415,8 @@ bool Connection::GetTimerInfo(unsigned int timernumber, Timer& tag)
 
 bool Connection::GetTimersList()
 {
+  MutexLock lock(&m_cmdlock);
+
   MsgPacket vrp(XVDR_TIMER_GETLIST);
 
   MsgPacket* vresp = ReadResult(&vrp);
@@ -421,6 +441,8 @@ bool Connection::GetTimersList()
 
 bool Connection::AddTimer(const Timer& timer)
 {
+  MutexLock lock(&m_cmdlock);
+
   MsgPacket vrp(XVDR_TIMER_ADD);
   vrp << timer;
 
@@ -438,6 +460,8 @@ bool Connection::AddTimer(const Timer& timer)
 
 int Connection::DeleteTimer(uint32_t timerindex, bool force)
 {
+  MutexLock lock(&m_cmdlock);
+
   MsgPacket vrp(XVDR_TIMER_DELETE);
   vrp.put_U32(timerindex);
   vrp.put_U32(force);
@@ -457,6 +481,8 @@ int Connection::DeleteTimer(uint32_t timerindex, bool force)
 
 bool Connection::UpdateTimer(const Timer& timer)
 {
+  MutexLock lock(&m_cmdlock);
+
   MsgPacket vrp(XVDR_TIMER_UPDATE);
   vrp << timer;
 
@@ -475,6 +501,8 @@ bool Connection::UpdateTimer(const Timer& timer)
 
 int Connection::GetRecordingsCount()
 {
+  MutexLock lock(&m_cmdlock);
+
   if(ConnectionLost())
     return 0;
 
@@ -492,6 +520,8 @@ int Connection::GetRecordingsCount()
 
 bool Connection::GetRecordingsList()
 {
+  MutexLock lock(&m_cmdlock);
+
   if(ConnectionLost())
     return true;
 
@@ -514,6 +544,7 @@ bool Connection::GetRecordingsList()
 
 bool Connection::RenameRecording(const std::string& recid, const std::string& newname)
 {
+  MutexLock lock(&m_cmdlock);
   m_client->Log(DEBUG, "%s - uid: %s", __FUNCTION__, recid.c_str());
 
   MsgPacket vrp(XVDR_RECORDINGS_RENAME);
@@ -535,6 +566,8 @@ bool Connection::RenameRecording(const std::string& recid, const std::string& ne
 
 int Connection::DeleteRecording(const std::string& recid)
 {
+  MutexLock lock(&m_cmdlock);
+
   MsgPacket vrp(XVDR_RECORDINGS_DELETE);
   vrp.put_String(recid.c_str());
 
@@ -646,6 +679,8 @@ void Connection::Action()
 
 int Connection::GetChannelGroupCount(bool automatic)
 {
+  MutexLock lock(&m_cmdlock);
+
   MsgPacket vrp(XVDR_CHANNELGROUP_GETCOUNT);
   vrp.put_U32(automatic);
 
@@ -664,6 +699,8 @@ int Connection::GetChannelGroupCount(bool automatic)
 
 bool Connection::GetChannelGroupList(bool bRadio)
 {
+  MutexLock lock(&m_cmdlock);
+
   MsgPacket vrp(XVDR_CHANNELGROUP_LIST);
   vrp.put_U8(bRadio);
 
@@ -686,6 +723,8 @@ bool Connection::GetChannelGroupList(bool bRadio)
 
 bool Connection::GetChannelGroupMembers(const std::string& groupname, bool radio)
 {
+  MutexLock lock(&m_cmdlock);
+
   MsgPacket vrp(XVDR_CHANNELGROUP_MEMBERS);
   vrp.put_String(groupname.c_str());
   vrp.put_U8(radio);
@@ -710,6 +749,8 @@ bool Connection::GetChannelGroupMembers(const std::string& groupname, bool radio
 
 bool Connection::OpenRecording(const std::string& recid)
 {
+  MutexLock lock(&m_cmdlock);
+
   MsgPacket vrp(XVDR_RECSTREAM_OPEN);
   vrp.put_String(recid.c_str());
 
@@ -736,6 +777,8 @@ bool Connection::OpenRecording(const std::string& recid)
 
 bool Connection::CloseRecording()
 {
+  MutexLock lock(&m_cmdlock);
+
   if(m_recid.empty())
     return false;
 
@@ -752,6 +795,8 @@ bool Connection::CloseRecording()
 
 int Connection::ReadRecording(unsigned char* buf, uint32_t buf_size)
 {
+  MutexLock lock(&m_cmdlock);
+
   if (ConnectionLost())
     return 0;
 
@@ -806,6 +851,7 @@ int Connection::ReadRecording(unsigned char* buf, uint32_t buf_size)
 
 long long Connection::SeekRecording(long long pos, uint32_t whence)
 {
+  MutexLock lock(&m_cmdlock);
   uint64_t nextPos = m_currentPlayingRecordPosition;
 
   switch (whence)
@@ -839,11 +885,13 @@ long long Connection::SeekRecording(long long pos, uint32_t whence)
 
 long long Connection::RecordingPosition(void)
 {
+  MutexLock lock(&m_cmdlock);
   return m_currentPlayingRecordPosition;
 }
 
 long long Connection::RecordingLength(void)
 {
+  MutexLock lock(&m_cmdlock);
   return m_currentPlayingRecordBytes;
 }
 
@@ -888,6 +936,8 @@ void Connection::SetAudioType(int type)
 
 bool Connection::SetRecordingPlayCount(const std::string& recid, int count)
 {
+  MutexLock lock(&m_cmdlock);
+
   MsgPacket vrp(XVDR_RECORDINGS_SETPLAYCOUNT);
   vrp.put_String(recid.c_str());
   vrp.put_U32(count);
@@ -905,6 +955,8 @@ bool Connection::SetRecordingPlayCount(const std::string& recid, int count)
 
 bool Connection::SetRecordingLastPosition(const std::string& recid, int64_t pos)
 {
+  MutexLock lock(&m_cmdlock);
+
   MsgPacket vrp(XVDR_RECORDINGS_SETPOSITION);
   vrp.put_String(recid.c_str());
   vrp.put_S64(pos);
@@ -922,6 +974,8 @@ bool Connection::SetRecordingLastPosition(const std::string& recid, int64_t pos)
 
 int64_t Connection::GetRecordingLastPosition(const std::string& recid)
 {
+  MutexLock lock(&m_cmdlock);
+
   MsgPacket vrp(XVDR_RECORDINGS_GETPOSITION);
   vrp.put_String(recid.c_str());
 

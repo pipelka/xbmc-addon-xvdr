@@ -119,9 +119,11 @@ private:
     MsgPacket* pkt;
   };
   typedef std::map<int, SMessage> SMessages;
+  SMessages m_queue;
 
   Mutex m_mutex;
-  SMessages m_queue;
+  Mutex m_cmdlock;
+
   bool m_aborting;
   uint32_t m_timercount;
   uint8_t m_updatechannels;

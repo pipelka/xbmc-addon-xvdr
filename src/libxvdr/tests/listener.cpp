@@ -15,14 +15,13 @@ int main(int argc, char* argv[]) {
   }
 
   ConsoleClient client;
-  Connection xvdr(&client);
 
-  if(!xvdr.Open(hostname, "listener client")) {
+  if(!client.Open(hostname, "listener client")) {
     client.Log(FAILURE,"Unable to open connection !");
     return 1;
   }
 
-  if(!xvdr.EnableStatusInterface(true)) {
+  if(!client.EnableStatusInterface(true)) {
     client.Log(FAILURE,"Unable to enable status interface !");
     return 1;
   }
@@ -30,7 +29,7 @@ int main(int argc, char* argv[]) {
   CondWait::SleepMs(0);
 
   client.Log(INFO, "Shutting down ..");
-  xvdr.Close();
+  client.Close();
 
   client.Log(INFO, "Done.");
   return 0;

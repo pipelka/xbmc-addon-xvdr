@@ -2,22 +2,23 @@
 #define CONSOLECLIENT_H
 
 #include "xvdr/clientinterface.h"
+#include "xvdr/connection.h"
 #include <map>
 
 using namespace XVDR;
 
-class ConsoleClient : public ClientInterface {
+class ConsoleClient : public ClientInterface, public Connection {
 public:
+
+  ConsoleClient();
 
   std::string GetLanguageCode();
 
-  void TriggerChannelUpdate() {}
-  void TriggerRecordingUpdate() {}
-  void TriggerTimerUpdate() {}
+  void TriggerChannelUpdate();
+  void TriggerRecordingUpdate();
+  void TriggerTimerUpdate();
 
-  void TransferChannelEntry(const XVDR::Channel& channel) {
-    m_channels[channel.Number] = channel;
-  }
+  void TransferChannelEntry(const XVDR::Channel& channel);
 
   void TransferEpgEntry(const XVDR::EpgItem&) {}
   void TransferTimerEntry(const XVDR::Timer&) {}

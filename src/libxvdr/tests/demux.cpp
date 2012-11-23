@@ -17,15 +17,19 @@ int main(int argc, char* argv[]) {
   }
 
   ConsoleClient client;
-  Connection xvdr(&client);
 
-  if(!xvdr.Open(hostname, "Demux test client")) {
+  if(!client.Open(hostname, "Demux test client")) {
     client.Log(FAILURE,"Unable to open connection !");
     return 1;
   }
 
+  if(!client.EnableStatusInterface(true)) {
+    client.Log(FAILURE,"Unable to enable status interface !");
+    return 1;
+  }
+
   client.Log(INFO, "Fetching channels ..");
-  xvdr.GetChannelsList();
+  client.GetChannelsList();
   client.Log(INFO, "Got %i channels.", client.m_channels.size());
 
   Channel c = client.m_channels[channel_number];
@@ -50,7 +54,7 @@ int main(int argc, char* argv[]) {
 
   demux.CloseChannel();
 
-  xvdr.Close();
+  client.Close();
 
   return 0;
 }

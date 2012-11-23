@@ -289,12 +289,7 @@ int GetChannelsAmount(void)
   if (!mConnection)
     return 0;
 
-  mCallbacks->Lock();
-
-  int result = mConnection->GetChannelsCount();
-
-  mCallbacks->Unlock();
-  return result;
+  return mConnection->GetChannelsCount();
 }
 
 PVR_ERROR GetChannels(ADDON_HANDLE handle, bool bRadio)
@@ -321,12 +316,7 @@ int GetChannelGroupsAmount()
   if (!mConnection)
     return PVR_ERROR_SERVER_ERROR;
 
-  mCallbacks->Lock();
-
-  int result = mConnection->GetChannelGroupCount(cXBMCSettings::GetInstance().AutoChannelGroups());
-
-  mCallbacks->Unlock();
-  return result;
+  return mConnection->GetChannelGroupCount(cXBMCSettings::GetInstance().AutoChannelGroups());
 }
 
 PVR_ERROR GetChannelGroups(ADDON_HANDLE handle, bool bRadio)
@@ -369,12 +359,7 @@ int GetTimersAmount(void)
   if (!mConnection)
     return 0;
 
-  mCallbacks->Lock();
-
-  int result = mConnection->GetTimersCount();
-
-  mCallbacks->Unlock();
-  return result;
+  return mConnection->GetTimersCount();
 }
 
 PVR_ERROR GetTimers(ADDON_HANDLE handle)

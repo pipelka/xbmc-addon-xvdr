@@ -401,7 +401,7 @@ bool MsgPacket::write(int fd, int timeout_ms) {
 			return false;
 		}
 
-		int rc = send(fd, (sendval_t*)(m_packet + written), m_usage - written, MSG_DONTWAIT | MSG_NOSIGNAL);
+		int rc = send(fd, (sendval_t*)(m_packet + written), m_usage - written, MSG_DONTWAIT);
 
 		if(rc == -1 && sockerror() == ENOTSOCK) {
 			rc = ::write(fd, m_packet + written, m_usage - written);

@@ -3,8 +3,28 @@
 
 #include "consoleclient.h"
 
+ConsoleClient::ConsoleClient() : Connection(this) {
+}
+
 std::string ConsoleClient::GetLanguageCode() {
   return "en";
+}
+
+void ConsoleClient::TransferChannelEntry(const XVDR::Channel& channel) {
+  m_channels[channel.Number] = channel;
+  CondWait::SleepMs(10);
+}
+
+void ConsoleClient::TriggerChannelUpdate() {
+  GetChannelsList();
+}
+
+void ConsoleClient::TriggerRecordingUpdate() {
+  GetRecordingsList();
+}
+
+void ConsoleClient::TriggerTimerUpdate() {
+  GetTimersList();
 }
 
 XVDR::Packet* ConsoleClient::StreamChange(const XVDR::StreamProperties& streams) {
