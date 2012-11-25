@@ -95,6 +95,7 @@ void setsock_keepalive(int sock) {
   int val = 1;
   setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (sockval_t*)&val, sizeof(val));
 
+#ifndef __APPLE__
   val = 1;
   setsockopt(sock, SOL_TCP, TCP_KEEPIDLE, (sockval_t*)&val, sizeof(val));
 
@@ -103,6 +104,7 @@ void setsock_keepalive(int sock) {
 
   val = 3;
   setsockopt(sock, SOL_TCP, TCP_KEEPCNT, (sockval_t*)&val, sizeof(val));
+#endif
 }
 
 
