@@ -626,6 +626,7 @@ void Connection::Action()
 
     else if (vresp->getType() == XVDR_CHANNEL_STATUS)
     {
+      MutexLock lock(&m_cmdlock);
       if (vresp->getMsgID() == XVDR_STATUS_MESSAGE)
       {
         uint32_t type = vresp->get_U32();
