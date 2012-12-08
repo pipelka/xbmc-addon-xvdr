@@ -48,6 +48,8 @@ CHelper_libXBMC_pvr* PVR = NULL;
 Demux* mDemuxer = NULL;
 Connection* mConnection = NULL;
 cXBMCCallbacks *mCallbacks = NULL;
+XVDR::Mutex addonMutex;
+
 int CurrentChannel = 0;
 
 static int priotable[] = { 0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,99,100 };
@@ -60,6 +62,8 @@ extern "C" {
 
 ADDON_STATUS ADDON_Create(void* hdl, void* props)
 {
+  XVDR::MutexLock lock(&addonMutex);
+
   if (!hdl || !props)
     return ADDON_STATUS_UNKNOWN;
 
@@ -78,8 +82,10 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
   PVR = new CHelper_libXBMC_pvr;
   if (!PVR->RegisterMe(hdl))
   {
+    delete GUI;
     delete PVR;
     delete XBMC;
+    GUI = NULL;
     PVR = NULL;
     XBMC = NULL;
     return ADDON_STATUS_UNKNOWN;
@@ -105,10 +111,12 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
 
   if (!bConnected){
     delete mConnection;
+    delete GUI;
     delete PVR;
     delete XBMC;
     delete mCallbacks;
     mConnection = NULL;
+    GUI = NULL;
     PVR = NULL;
     XBMC = NULL;
     return ADDON_STATUS_LOST_CONNECTION;
@@ -132,12 +140,15 @@ ADDON_STATUS ADDON_GetStatus()
 
 void ADDON_Destroy()
 {
+  XVDR::MutexLock lock(&addonMutex);
   delete mConnection;
+  delete GUI;
   delete PVR;
   delete XBMC;
   delete mCallbacks;
 
   mConnection = NULL;
+  GUI = NULL;
   PVR = NULL;
   XBMC = NULL;
   mCallbacks = NULL;
@@ -155,6 +166,8 @@ unsigned int ADDON_GetSettings(ADDON_StructSetting ***sSet)
 
 ADDON_STATUS ADDON_SetSetting(const char *settingName, const void *settingValue)
 {
+  XVDR::MutexLock lock(&addonMutex);
+
   bool bChanged = false;
   cXBMCSettings& s = cXBMCSettings::GetInstance();
   bChanged = s.set(settingName, settingValue);
