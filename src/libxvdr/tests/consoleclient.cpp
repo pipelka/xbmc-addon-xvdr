@@ -36,7 +36,6 @@ std::string ConsoleClient::GetLanguageCode() {
 
 void ConsoleClient::TransferChannelEntry(const XVDR::Channel& channel) {
   m_channels[channel.Number] = channel;
-  CondWait::SleepMs(10);
 }
 
 void ConsoleClient::TriggerChannelUpdate() {
