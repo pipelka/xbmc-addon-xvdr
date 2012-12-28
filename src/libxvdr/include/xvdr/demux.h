@@ -88,7 +88,8 @@ protected:
   void StreamChange(MsgPacket *resp);
   void StreamStatus(MsgPacket *resp);
   void StreamSignalInfo(MsgPacket *resp);
-  bool StreamContentInfo(MsgPacket *resp);
+
+  void GetContentFromType(const std::string& type, int& codecid, int& codectype);
 
 private:
 

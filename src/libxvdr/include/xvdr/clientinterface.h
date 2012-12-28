@@ -114,8 +114,6 @@ public:
 
   virtual Packet* StreamChange(const StreamProperties& p);
 
-  virtual Packet* ContentInfo(const StreamProperties& p);
-
   // access locking
 
   void Lock();

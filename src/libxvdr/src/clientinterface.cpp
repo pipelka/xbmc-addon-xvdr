@@ -88,10 +88,6 @@ Packet* ClientInterface::StreamChange(const StreamProperties& p) {
 	return NULL;
 }
 
-Packet* ClientInterface::ContentInfo(const StreamProperties& p) {
-	return NULL;
-}
-
 void ClientInterface::OnDisconnect() {
   Log(FAILURE, "connection lost!");
 }

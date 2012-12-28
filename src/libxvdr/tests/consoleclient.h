@@ -68,6 +68,7 @@ public:
     uint8_t* data;
     int length;
   };
+
 };
 
 #endif // CONSOLECLIENT_H
