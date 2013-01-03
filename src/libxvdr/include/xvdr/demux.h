@@ -76,6 +76,8 @@ public:
 
   void Pause(bool on);
 
+  void RequestSignalInfo();
+
 protected:
 
   void OnDisconnect();
@@ -102,6 +104,7 @@ private:
   bool m_queuelocked;
   bool m_paused;
   bool m_timeshiftmode;
+  TimeMs m_lastsignal;
 };
 
 } // namespace XVDR

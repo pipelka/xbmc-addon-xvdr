@@ -633,6 +633,7 @@ PVR_ERROR SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
     return PVR_ERROR_SERVER_ERROR;
   }
 
+  mDemuxer->RequestSignalInfo();
   signalStatus << mDemuxer->GetSignalStatus();
 
   mCallbacks->Unlock();

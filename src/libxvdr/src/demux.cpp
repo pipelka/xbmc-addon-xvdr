@@ -475,3 +475,15 @@ void Demux::Pause(bool on)
 
   m_cond.Signal();
 }
+
+void Demux::RequestSignalInfo()
+{
+  if(!m_lastsignal.TimedOut())
+    return;
+
+  MsgPacket req(XVDR_CHANNELSTREAM_SIGNAL);
+  Session::TransmitMessage(&req);
+
+  // signal status timeout
+  m_lastsignal.Set(5000);
+}
