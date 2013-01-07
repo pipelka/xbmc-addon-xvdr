@@ -60,7 +60,8 @@ int main(int argc, char* argv[]) {
 
   Demux demux(&client);
 
-  client.Log(INFO, "Opening channel #%i", channel_number);
+  TimeMs t;
+  client.Log(INFO, "Opening channel #%i (%s)", channel_number, c.Name.c_str());
 
   if(demux.OpenChannel(hostname, c.UID) != Demux::SC_OK) {
     client.Log(FAILURE, "Unable to open channel !");
@@ -68,9 +69,13 @@ int main(int argc, char* argv[]) {
   }
 
   ConsoleClient::Packet* p = NULL;
+  int firstVideoPacket = 0;
+  int firstPacket = 0;
+  int switchTime = t.Elapsed();
+
+  client.Log(INFO, "Switched to channel after %i ms", switchTime);
 
   for(int i = 0; i < 100; i++) {
-  //while(true) {
     p = demux.Read<ConsoleClient::Packet>();
 
     if(p == NULL) {
@@ -78,6 +83,14 @@ int main(int argc, char* argv[]) {
     }
 
     if(p->data != NULL) {
+      if(firstPacket == 0) {
+        firstPacket = t.Elapsed();
+        client.Log(INFO, "Received first packet after %i ms", firstPacket);
+      }
+      if(firstVideoPacket == 0 && p->index == 0) {
+        firstVideoPacket = t.Elapsed();
+        client.Log(INFO, "Received first video packet after %i ms", firstVideoPacket);
+      }
       uint32_t header = p->data[0] << 24 | p->data[1] << 16 | p->data[2] << 8 | p->data[3];
       client.Log(INFO, "Demux (index: %i length: %i bytes) Header: %08X PTS: %lli", p->index, p->length, header, p->pts);
     }
@@ -85,14 +98,25 @@ int main(int argc, char* argv[]) {
     client.FreePacket(p);
   }
 
-  demux.CloseChannel();
+  client.Log(INFO, "Stopping ...");
+  t.Set(0);
 
   // wait for pending notifications
   if(p == NULL) {
     CondWait::SleepMs(5000);
   }
 
+  demux.CloseChannel();
   client.Close();
+
+  int stopTime = t.Elapsed();
+
+  client.Log(INFO, "");
+  client.Log(INFO, "Stream summary:");
+  client.Log(INFO, "Channel: %i - %s", channel_number, c.Name.c_str());
+  client.Log(INFO, "Switch time: %i ms", switchTime);
+  client.Log(INFO, "First packet after: %i ms", firstPacket);
+  client.Log(INFO, "First video after: %i ms", firstVideoPacket);
 
   return 0;
 }
