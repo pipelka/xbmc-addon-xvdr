@@ -106,6 +106,7 @@
 #define XVDR_STREAM_MUXPKT       4
 #define XVDR_STREAM_SIGNALINFO   5
 #define XVDR_STREAM_CONTENTINFO  6
+#define XVDR_STREAM_DETACH       7
 
 /** Stream status codes */
 #define XVDR_STREAM_STATUS_SIGNALLOST     111

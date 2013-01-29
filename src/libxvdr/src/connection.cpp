@@ -123,6 +123,12 @@ void Connection::Abort()
   Session::Abort();
 }
 
+bool Connection::Aborting()
+{
+  MutexLock lock(&m_mutex);
+  return m_aborting;
+}
+
 void Connection::SignalConnectionLost()
 {
   MutexLock lock(&m_mutex);

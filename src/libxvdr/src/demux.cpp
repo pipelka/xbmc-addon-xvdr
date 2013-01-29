@@ -88,8 +88,7 @@ void Demux::Abort()
 
 Packet* Demux::Read()
 {
-  if(ConnectionLost())
-  {
+  if(ConnectionLost() || Aborting()) {
     return NULL;
   }
 
@@ -151,6 +150,11 @@ void Demux::OnResponsePacket(MsgPacket *resp) {
 
   switch (resp->getMsgID())
   {
+    case XVDR_STREAM_DETACH:
+      m_client->Log(INFO, "received detach command. aborting session ...");
+      Abort();
+      break;
+
     case XVDR_STREAM_CHANGE:
       StreamChange(resp);
       pkt = m_client->StreamChange(m_streams);

@@ -48,6 +48,7 @@ public:
 
   bool        Open(const std::string& hostname, const std::string& name = "");
   void        Abort();
+  bool        Aborting();
 
   void SetTimeout(int ms);
   void SetCompressionLevel(int level);
