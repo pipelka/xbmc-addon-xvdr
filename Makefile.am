@@ -65,4 +65,5 @@ repo-zip: all
 	zip -9 -r ../repository.xvdr.linux64.zip repository.xvdr.linux64 --exclude \*.am \*.in \*Makefile \*.gitignore && \
 	zip -9 -r ../repository.xvdr.rpi.zip repository.xvdr.rpi --exclude \*.am \*.in \*Makefile \*.gitignore && \
 	zip -9 -r ../repository.xvdr.osx.zip repository.xvdr.osx --exclude \*.am \*.in \*Makefile \*.gitignore && \
+	zip -9 -r ../repository.xvdr.osx64.zip repository.xvdr.osx64 --exclude \*.am \*.in \*Makefile \*.gitignore && \
 	zip -9 -r ../repository.xvdr.win32.zip repository.xvdr.win32 --exclude \*.am \*.in \*Makefile \*.gitignore
