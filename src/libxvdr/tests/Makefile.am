@@ -7,7 +7,8 @@ endif
 noinst_PROGRAMS = \
 	ac3analyze \
 	demux \
-	listener
+	listener \
+	scanner
 
 demux_SOURCES = \
 	consoleclient.cpp \
@@ -24,6 +25,15 @@ listener_SOURCES = \
 	listener.cpp
 
 listener_LDADD = \
+	../src/libxvdrstatic.la \
+	$(ADD_LIBS)
+
+scanner_SOURCES = \
+	consoleclient.cpp \
+	consoleclient.h \
+	scanner.cpp
+
+scanner_LDADD = \
 	../src/libxvdrstatic.la \
 	$(ADD_LIBS)
 

@@ -100,6 +100,14 @@ public:
   long long RecordingPosition(void);
   long long RecordingLength(void);
 
+  // Channelscanner
+
+  bool GetChannelScannerSetup(ChannelScannerSetup& setup, ChannelScannerList& satellites, ChannelScannerList& countries);
+  bool GetChannelScannerSetup(ChannelScannerSetup& setup);
+  bool SetChannelScannerSetup(const ChannelScannerSetup& setup);
+  bool StartChannelScanner();
+  bool StopChannelScanner();
+
 protected:
 
   virtual void Action(void);

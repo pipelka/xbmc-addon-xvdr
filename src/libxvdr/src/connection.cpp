@@ -673,6 +673,12 @@ void Connection::Action()
         m_client->Log(DEBUG, "Server requested recordings update");
         m_client->TriggerRecordingUpdate();
       }
+      else if (vresp->getMsgID() == XVDR_STATUS_CHANNELSCAN)
+      {
+        ChannelScannerStatus status;
+        status << vresp;
+        m_client->OnChannelScannerStatus(status);
+      }
     }
 
     // OTHER CHANNELID
@@ -999,4 +1005,70 @@ int64_t Connection::GetRecordingLastPosition(const std::string& recid)
   delete vresp;
 
   return pos;
+}
+
+bool Connection::GetChannelScannerSetup(ChannelScannerSetup& setup, ChannelScannerList& satellites, ChannelScannerList& countries) {
+  MutexLock lock(&m_cmdlock);
+
+  MsgPacket vrp(XVDR_SCAN_GETSETUP);
+  MsgPacket* vresp = ReadResult(&vrp);
+
+  if(vresp == NULL || vresp->get_U32() != XVDR_RET_OK) {
+    delete vresp;
+    return false;
+  }
+
+  setup << vresp;
+  satellites << vresp;
+  countries << vresp;
+  delete vresp;
+
+  return true;
+}
+
+bool Connection::GetChannelScannerSetup(ChannelScannerSetup& setup) {
+  MutexLock lock(&m_cmdlock);
+
+  ChannelScannerList satellites;
+  ChannelScannerList countries;
+
+  return GetChannelScannerSetup(setup, satellites, countries);
+}
+
+bool Connection::SetChannelScannerSetup(const ChannelScannerSetup& setup) {
+  MutexLock lock(&m_cmdlock);
+
+  MsgPacket vrp(XVDR_SCAN_SETSETUP);
+  vrp << setup;
+
+  MsgPacket* vresp = ReadResult(&vrp);
+
+  bool rc = (vresp != NULL && vresp->get_U32() == XVDR_RET_OK);
+  delete vresp;
+
+  return rc;
+}
+
+bool Connection::StartChannelScanner() {
+  MutexLock lock(&m_cmdlock);
+
+  MsgPacket vrp(XVDR_SCAN_START);
+  MsgPacket* vresp = ReadResult(&vrp);
+
+  bool rc = (vresp != NULL && vresp->get_U32() == XVDR_RET_OK);
+  delete vresp;
+
+  return rc;
+}
+
+bool Connection::StopChannelScanner() {
+  MutexLock lock(&m_cmdlock);
+
+  MsgPacket vrp(XVDR_SCAN_STOP);
+  MsgPacket* vresp = ReadResult(&vrp);
+
+  bool rc = (vresp != NULL && vresp->get_U32() == XVDR_RET_OK);
+  delete vresp;
+
+  return rc;
 }

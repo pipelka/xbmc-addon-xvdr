@@ -262,6 +262,10 @@ void cXBMCCallbacks::OnSignalRestored() {
   Notification(INFO, GetLocalizedString(30048));
 }
 
+void cXBMCCallbacks::OnChannelScannerStatus(const XVDR::ChannelScannerStatus& status) {
+  Notification(INFO, GetLocalizedString(30038), status.progress, status.newChannels);
+}
+
 PVR_CHANNEL& operator<< (PVR_CHANNEL& lhs, const Channel& rhs)
 {
 	memset(&lhs, 0, sizeof(lhs));

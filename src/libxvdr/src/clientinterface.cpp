@@ -108,6 +108,10 @@ void ClientInterface::OnSignalRestored() {
   Log(INFO, "signal restored.");
 }
 
+void ClientInterface::OnChannelScannerStatus(const ChannelScannerStatus& status) {
+  Log(INFO, "Scanner: %i%% done (%i new channels)", status.progress, status.newChannels);
+}
+
 void ClientInterface::Lock() {
   m_mutex.Lock();
 }

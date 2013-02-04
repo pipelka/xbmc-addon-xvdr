@@ -12,12 +12,12 @@ LIB    = ../../addons/pvr.vdr.xvdr/$(ADDONNAME)
 lib_LTLIBRARIES = libxvdraddon.la
 
 libxvdraddon_la_SOURCES = \
+	GUIDialogChannelScanner.cpp \
+	GUIDialogChannelScanner.h \
 	XBMCAddon.cpp \
 	XBMCAddon.h \
 	XBMCCallbacks.cpp \
 	XBMCCallbacks.h \
-	XBMCChannelScan.cpp \
-	XBMCChannelScan.h \
 	XBMCSettings.cpp \
 	XBMCSettings.h
 

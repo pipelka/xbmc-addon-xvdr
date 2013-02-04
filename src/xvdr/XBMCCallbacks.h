@@ -50,6 +50,8 @@ public:
 
   void OnSignalRestored();
 
+  void OnChannelScannerStatus(const XVDR::ChannelScannerStatus& status);
+
   std::string GetLanguageCode();
 
   std::string GetLocalizedString(int id);

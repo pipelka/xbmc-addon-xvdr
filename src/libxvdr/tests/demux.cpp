@@ -67,16 +67,30 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  ConsoleClient::Packet* p = NULL;
+
   for(int i = 0; i < 100; i++) {
-    ConsoleClient::Packet* p = demux.Read<ConsoleClient::Packet>();
+  //while(true) {
+    p = demux.Read<ConsoleClient::Packet>();
+
+    if(p == NULL) {
+      break;
+    }
+
     if(p->data != NULL) {
       uint32_t header = p->data[0] << 24 | p->data[1] << 16 | p->data[2] << 8 | p->data[3];
       client.Log(INFO, "Demux (index: %i length: %i bytes) Header: %08X PTS: %lli", p->index, p->length, header, p->pts);
     }
+
     client.FreePacket(p);
   }
 
   demux.CloseChannel();
+
+  // wait for pending notifications
+  if(p == NULL) {
+    CondWait::SleepMs(5000);
+  }
 
   client.Close();
 

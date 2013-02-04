@@ -25,8 +25,8 @@
 
 #include "XBMCAddon.h"
 #include "XBMCCallbacks.h"
-#include "XBMCChannelScan.h"
 #include "XBMCSettings.h"
+#include "GUIDialogChannelScanner.h"
 
 #include "xvdr/demux.h"
 #include "xvdr/command.h"
@@ -270,12 +270,9 @@ PVR_ERROR GetDriveSpace(long long *iTotal, long long *iUsed)
 
 PVR_ERROR DialogChannelScan(void)
 {
-  mCallbacks->Lock();
+  CGUIDialogChannelScanner scanner(GUI, mConnection);
+  scanner.DoModal();
 
-  cXBMCChannelScan scanner(mCallbacks);
-  scanner.Open(cXBMCSettings::GetInstance().Hostname());
-
-  mCallbacks->Unlock();
   return PVR_ERROR_NO_ERROR;
 }
 

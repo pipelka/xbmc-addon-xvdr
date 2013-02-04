@@ -70,6 +70,10 @@ public:
 
   virtual void OnSignalRestored();
 
+  // scanner status
+
+  virtual void OnChannelScannerStatus(const ChannelScannerStatus& status);
+
   // localisation
 
   virtual std::string GetLanguageCode() = 0;

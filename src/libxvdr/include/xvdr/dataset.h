@@ -196,4 +196,131 @@ class StreamProperties : public std::map<uint32_t, Stream> {
 
 bool operator==(Stream const& lhs, Stream const& rhs);
 
+
+class ChannelScannerSetup {
+public:
+
+  typedef enum {
+    LOGLEVEL_ERRORSONLY = 0,
+    LOGLEVEL_1 = 1,
+    LOGLEVEL_2 = 2,
+    LOGLEVEL_DEFAULT = 3,
+    LOGLEVEL_DEBUG = 4,
+    LOGLEVEL_EXTENDEDDEBUG = 5
+  } Verbosity;
+
+  typedef enum {
+    LOGTYPE_OFF = 0,
+    LOGTYPE_STDOUT = 1,
+    LOGTYPE_SYSLOG = 2
+  } LogType;
+
+  typedef enum {
+    DVBTYPE_DVBT = 0,
+    DVBTYPE_DVBC = 1,
+    DVBTYPE_DVBS = 2,
+    DVBTYPE_ATSC = 5
+  } DVBType;
+
+  typedef enum {
+    DVBINVERSION_AUTO = 0,
+    DVBINVERSION_OFF = 0,
+    DVBINVERSION_ON = 1
+  } DVBInversion;
+
+  typedef enum {
+    SYMBOLRATE_AUTO = 0,
+    SYMBOLRATE_6900 = 1,
+    SYMBOLRATE_6875 = 2,
+    SYMBOLRATE_6111 = 3,
+    SYMBOLRATE_6250 = 4,
+    SYMBOLRATE_6790 = 5,
+    SYMBOLRATE_6811 = 6,
+    SYMBOLRATE_5900 = 7,
+    SYMBOLRATE_5000 = 8,
+    SYMBOLRATE_3450 = 9,
+    SYMBOLRATE_4000 = 10,
+    SYMBOLRATE_6950 = 11,
+    SYMBOLRATE_7000 = 12,
+    SYMBOLRATE_6952 = 13,
+    SYMBOLRATE_5156 = 14,
+    SYMBOLRATE_4583 = 15,
+    SYMBOLRATE_ALL = 16
+  } SymbolRate;
+
+  typedef enum {
+    QAM_AUTO = 0,
+    QAM_64 = 1,
+    QAM_128 = 2,
+    QAM_256 = 3,
+    QAM_ALL = 4
+  } QAM;
+
+  typedef enum {
+    ATSCTYPE_VSB = 0,
+    ATSCTYPE_QAM = 1,
+    ATSCTYPE_BOTH = 2
+  } ATSCType;
+
+  typedef enum {
+    FLAG_TV = 1,
+    FLAG_RADIO = 2,
+    FLAG_FTA = 4,
+    FLAG_SCRAMBLED = 16,
+    FLAG_HDTV = 32
+  } Flags;
+
+  Verbosity verbosity;
+  LogType logtype;
+  DVBType dvbtype;
+  DVBInversion dvbt_inversion;
+  DVBInversion dvbc_inversion;
+  SymbolRate  dvbc_symbolrate;
+  QAM dvbc_qam;
+  uint16_t countryid;
+  uint16_t satid;
+  ATSCType atsc_type;
+  uint32_t flags;
+};
+
+ChannelScannerSetup& operator<< (ChannelScannerSetup& lhs, MsgPacket* rhs);
+MsgPacket& operator<< (MsgPacket& lhs, const ChannelScannerSetup& rhs);
+
+
+class ChannelScannerListItem {
+public:
+
+  uint32_t id;
+  std::string shortname;
+  std::string fullname;
+};
+
+typedef std::map<uint16_t, ChannelScannerListItem> ChannelScannerList;
+
+ChannelScannerListItem& operator<< (ChannelScannerListItem& lhs, MsgPacket* rhs);
+
+ChannelScannerList& operator<< (ChannelScannerList& lhs, MsgPacket* rhs);
+
+
+class ChannelScannerStatus {
+public:
+
+  typedef enum {
+    UNKNOWN = 0,
+    SCANNING = 1,
+    STOPPED = 2,
+    BUSY = 3
+  } Status;
+
+  Status status;
+  int progress;
+  uint16_t strength;
+  int numChannels;
+  int newChannels;
+  std::string device;
+  std::string transponder;
+};
+
+ChannelScannerStatus& operator<< (ChannelScannerStatus& lhs, MsgPacket* rhs);
+
 } // namespace XVDR

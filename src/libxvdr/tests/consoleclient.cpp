@@ -27,7 +27,7 @@
 
 #include "consoleclient.h"
 
-ConsoleClient::ConsoleClient() : Connection(this), m_gotstreamprops(false) {
+ConsoleClient::ConsoleClient() : Connection(this) {
 }
 
 std::string ConsoleClient::GetLanguageCode() {
@@ -57,12 +57,6 @@ XVDR::Packet* ConsoleClient::StreamChange(const XVDR::StreamProperties& streams)
   }
   return NULL;
 }
-
-/*XVDR::Packet* ConsoleClient::ContentInfo(const XVDR::StreamProperties& streams) {
-  Log(INFO, "Got content info ...");
-  m_gotstreamprops = true;
-  return NULL;
-}*/
 
 XVDR::Packet* ConsoleClient::AllocatePacket(int length) {
   Packet* p = new Packet;

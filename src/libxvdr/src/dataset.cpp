@@ -291,3 +291,69 @@ bool XVDR::operator==(Stream const& lhs, Stream const& rhs) {
     lhs.BitRate == rhs.BitRate &&
     lhs.BitsPerSample == rhs.BitsPerSample;
 }
+
+ChannelScannerSetup& XVDR::operator<< (ChannelScannerSetup& lhs, MsgPacket* rhs) {
+  lhs.verbosity = (ChannelScannerSetup::Verbosity)rhs->get_U16();
+  lhs.logtype = (ChannelScannerSetup::LogType)rhs->get_U16();
+  lhs.dvbtype = (ChannelScannerSetup::DVBType)rhs->get_U16();
+  lhs.dvbt_inversion = (ChannelScannerSetup::DVBInversion)rhs->get_U16();
+  lhs.dvbc_inversion = (ChannelScannerSetup::DVBInversion)rhs->get_U16();
+  lhs.dvbc_symbolrate = (ChannelScannerSetup::SymbolRate)rhs->get_U16();
+  lhs.dvbc_qam = (ChannelScannerSetup::QAM)rhs->get_U16();
+  lhs.countryid = (ChannelScannerSetup::QAM)rhs->get_U16();
+  lhs.satid = (ChannelScannerSetup::QAM)rhs->get_U16();
+  lhs.flags = rhs->get_U32();
+  lhs.atsc_type = (ChannelScannerSetup::ATSCType)rhs->get_U16();
+
+  return lhs;
+}
+
+MsgPacket& XVDR::operator<< (MsgPacket& lhs, const ChannelScannerSetup& rhs) {
+  lhs.put_U16(rhs.verbosity);
+  lhs.put_U16(rhs.logtype);
+  lhs.put_U16(rhs.dvbtype);
+  lhs.put_U16(rhs.dvbt_inversion);
+  lhs.put_U16(rhs.dvbc_inversion);
+  lhs.put_U16(rhs.dvbc_symbolrate);
+  lhs.put_U16(rhs.dvbc_qam);
+  lhs.put_U16(rhs.countryid);
+  lhs.put_U16(rhs.satid);
+  lhs.put_U32(rhs.flags);
+  lhs.put_U16(rhs.atsc_type);
+
+  return lhs;
+}
+
+ChannelScannerListItem& XVDR::operator<< (ChannelScannerListItem& lhs, MsgPacket* rhs) {
+  lhs.id = rhs->get_U32();
+  lhs.shortname = rhs->get_String();
+  lhs.fullname = rhs->get_String();
+
+  return lhs;
+}
+
+ChannelScannerList& XVDR::operator<< (ChannelScannerList& lhs, MsgPacket* rhs) {
+  uint16_t length = rhs->get_U16();
+  ChannelScannerListItem item;
+
+  lhs.clear();
+
+  for(uint16_t i = 0; i < length; i++) {
+    item << rhs;
+    lhs[item.id] = item;
+  }
+
+  return lhs;
+}
+
+ChannelScannerStatus& XVDR::operator<< (ChannelScannerStatus& lhs, MsgPacket* rhs) {
+  lhs.status = (ChannelScannerStatus::Status)rhs->get_U8();
+  lhs.progress = rhs->get_U16();
+  lhs.strength = rhs->get_U16();
+  lhs.numChannels = rhs->get_U16();
+  lhs.newChannels = rhs->get_U16();
+  lhs.device = rhs->get_String();
+  lhs.transponder = rhs->get_String();
+
+  return lhs;
+}
