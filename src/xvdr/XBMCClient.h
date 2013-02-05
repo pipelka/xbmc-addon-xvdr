@@ -24,6 +24,7 @@
  */
 
 #include "XBMCAddon.h"
+#include "XBMCSettings.h"
 #include "xvdr/clientinterface.h"
 #include "xvdr/connection.h"
 
@@ -104,6 +105,8 @@ public:
   void DialogChannelScan();
 
 private:
+
+  cXBMCSettings& m_settings;
 
   ADDON_HANDLE m_handle;
 

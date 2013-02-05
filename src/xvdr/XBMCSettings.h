@@ -135,6 +135,7 @@ public:
   cXBMCConfigParameter<bool> NativeLangOnly;
   cXBMCConfigParameter<bool> EncryptedChannels;
   cXBMCConfigParameter<std::string> caids;
+  cXBMCConfigParameter<std::string> PiconPath;
   std::vector<int> vcaids;
 
 protected:
@@ -151,7 +152,8 @@ protected:
   FTAChannels("ftachannels", true),
   NativeLangOnly("nativelangonly", false),
   EncryptedChannels("encryptedchannels", true),
-  caids("caids")
+  caids("caids"),
+  PiconPath("piconpath")
   {}
 
 private:

@@ -183,7 +183,7 @@ ADDON_STATUS ADDON_SetSetting(const char *settingName, const void *settingValue)
   if(!bChanged)
     return ADDON_STATUS_OK;
 
-  if(strcmp(settingName, "host") == 0)
+  if(strcmp(settingName, "host") == 0 || strcmp(settingName, "piconpath") == 0)
     return ADDON_STATUS_NEED_RESTART;
 
   s.checkValues();

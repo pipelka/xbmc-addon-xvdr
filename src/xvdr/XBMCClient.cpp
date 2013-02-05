@@ -37,7 +37,7 @@ using namespace XVDR;
 
 #define MSG_MAXLEN 512
 
-cXBMCClient::cXBMCClient() : XVDR::Connection(this), m_handle(NULL), m_emptyChannelsSeen(false)
+cXBMCClient::cXBMCClient() : XVDR::Connection(this), m_handle(NULL), m_settings(cXBMCSettings::GetInstance()), m_emptyChannelsSeen(false)
 {
   m_scanner = new CGUIDialogChannelScanner(GUI, this);
 }
@@ -172,7 +172,20 @@ void cXBMCClient::TriggerTimerUpdate()
 void cXBMCClient::TransferChannelEntry(const Channel& channel)
 {
   PVR_CHANNEL pvrchannel;
-  pvrchannel << channel;
+
+  // local picons ?
+  if(!m_settings.PiconPath().empty()) {
+    Channel c(channel);
+    c.IconPath = m_settings.PiconPath();
+    if(c.IconPath[c.IconPath.length()-1] != '/') {
+      c.IconPath += "/";
+    }
+    c.IconPath += channel.ServiceReference + ".png";
+    pvrchannel << c;
+  }
+  else {
+    pvrchannel << channel;
+  }
 
   PVR->TransferChannelEntry(m_handle, &pvrchannel);
 }
