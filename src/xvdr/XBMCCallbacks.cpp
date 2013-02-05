@@ -263,7 +263,7 @@ void cXBMCCallbacks::OnSignalRestored() {
 }
 
 void cXBMCCallbacks::OnChannelScannerStatus(const XVDR::ChannelScannerStatus& status) {
-  Notification(INFO, GetLocalizedString(30038), status.progress, status.newChannels);
+  XBMC->QueueNotification(QUEUE_INFO, GetLocalizedString(30038).c_str(), status.progress, status.newChannels);
 }
 
 PVR_CHANNEL& operator<< (PVR_CHANNEL& lhs, const Channel& rhs)

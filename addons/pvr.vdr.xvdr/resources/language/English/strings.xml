@@ -39,7 +39,7 @@
     <string id="30035">New channels</string>
     <string id="30036">Channel search - Finished</string>
     <string id="30037">No device available - exiting</string>
-    <string id="30038">%i percent done / %i new channels</string>
+    <string id="30038">%i%% done / %i new channels</string>
     <string id="30039">Running</string>
     <string id="30040">Stopped</string>
     <string id="30041">Finished</string>
