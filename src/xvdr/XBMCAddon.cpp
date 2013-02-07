@@ -155,12 +155,12 @@ ADDON_STATUS ADDON_GetStatus()
 void ADDON_Destroy()
 {
   XVDR::MutexLock lock(&addonMutex);
+  delete mScanner;
   delete mConnection;
   delete GUI;
   delete PVR;
   delete XBMC;
   delete mCallbacks;
-  delete mScanner;
 
   mConnection = NULL;
   GUI = NULL;
