@@ -16,10 +16,27 @@ This is a PVR add-on for XBMC to add VDR (http://www.cadsoft.de/vdr) as a TV/PVR
 It adds support for Live TV watching, replaying of Recordings, programming Timers and
 EPG TV Guide to use on same computer or over the Network.
 
-This add-on requires the installed "vdr-plugin-xvdr" plugin on the VDR server.
+
+------------------------------------------
+REQUIREMENTS:
+
 VDR itself doen't need any patches or modification to use all the current features.
 
-VDR Versions older as 1.6.0 are not supported by this addon and the VDR plugin.
+* This add-on requires the installed "vdr-plugin-xvdr" plugin on the VDR server.
+* For channel scanning you need the "wirbelscan" plugin (version >= 0.0.7) installed on
+  the VDR server: http://wirbel.htpc-forum.de/wirbelscan/index2.html
+
+Please activate the channel scanner via:
+System / LiveTV / Client specific settings / XVDR Channel Scanner.
+
+The current XBMC version (12.0) locks up on activating the channel scanner via the
+standard system settings:
+System / LiveTV / General / Search for channels
+
+Please use the client specific setting.
+
+VDR Versions older as 1.7.22 are not supported by this addon and the VDR plugin.
+
 
 ---------------------------------------------
 ADDON COMPILATION & INSTALLATION INSTRUCTIONS

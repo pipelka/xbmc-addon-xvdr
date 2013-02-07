@@ -11,7 +11,7 @@
     <string id="30007">VDR Aufnahmeordner</string>
     <string id="30008">XVDR Kanalsuche</string>
     <string id="30009">Kanalsuche - Einstellungen</string>
-    <string id="30010">Kanalsuche starten</string>
+    <string id="30010">Kanalsuche starten / stoppen</string>
     <string id="30011">Empfangsart</string>
     <string id="30012">TV Kanäle</string>
     <string id="30013">Radio Kanäle</string>
@@ -25,7 +25,7 @@
     <string id="30021">Terrestrisch Inversion</string>
     <string id="30022">Satellit</string>
     <string id="30023">ATSC Type</string>
-    <string id="30024">Zurück</string>
+    <string id="30024">Zurück / Hintergrund</string>
     <string id="30025">Kanalsuche - läuft... %i %%</string>
     <string id="30026">Empfangsart:</string>
     <string id="30027">Gerät:</string>
@@ -42,7 +42,7 @@
     <string id="30038">%i%% erledigt / %i neue Kanäle</string>
     <string id="30039">Läuft...</string>
     <string id="30040">Angehalten</string>
-    <string id="30041">Fertig</string>
+    <string id="30041">Finished</string>
     <string id="30042">Kanalsuche - Abgebrochen</string>
     <string id="30043">Kanalsuche - Fehler</string>
     <string id="30044">Verbindung zum VDR Server unterbrochen</string>

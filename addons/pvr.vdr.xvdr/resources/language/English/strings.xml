@@ -11,12 +11,12 @@
     <string id="30007">VDR recordings directory</string>
     <string id="30008">XVDR Channel Scanner</string>
     <string id="30009">Channel search - Settings</string>
-    <string id="30010">Start Channel search</string>
+    <string id="30010">Start / Stop Scanner</string>
     <string id="30011">Source Type</string>
     <string id="30012">TV channels</string>
     <string id="30013">Radio channels</string>
     <string id="30014">FTA channels</string>
-    <string id="30015">Scrambled channels</string>
+    <string id="30015">Encrypted channels</string>
     <string id="30016">HD channels</string>
     <string id="30017">Country</string>
     <string id="30018">Inversion</string>
@@ -25,7 +25,7 @@
     <string id="30021">Terr Inversion</string>
     <string id="30022">Satellite</string>
     <string id="30023">ATSC Type</string>
-    <string id="30024">Back</string>
+    <string id="30024">Hide / Background</string>
     <string id="30025">Channel search - running... %i %%</string>
     <string id="30026">Type:</string>
     <string id="30027">Device:</string>

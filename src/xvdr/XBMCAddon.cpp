@@ -44,6 +44,8 @@
 using namespace ADDON;
 using namespace XVDR;
 
+#define XVDR_HOOK_SETTINGS_CHANNELSCAN 1001
+
 CHelper_libXBMC_addon* XBMC = NULL;
 CHelper_libXBMC_gui* GUI = NULL;
 CHelper_libXBMC_pvr* PVR = NULL;
@@ -52,6 +54,7 @@ Demux* mDemuxer = NULL;
 Connection* mConnection = NULL;
 cXBMCCallbacks *mCallbacks = NULL;
 XVDR::Mutex addonMutex;
+CGUIDialogChannelScanner* mScanner;
 
 int CurrentChannel = 0;
 
@@ -96,6 +99,12 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
 
   XBMC->Log(LOG_DEBUG, "Creating VDR XVDR PVR-Client");
 
+  PVR_MENUHOOK hook;
+  hook.category = PVR_MENUHOOK_SETTING;
+  hook.iHookId = XVDR_HOOK_SETTINGS_CHANNELSCAN;
+  hook.iLocalizedStringId = 30008;
+  PVR->AddMenuHook(&hook);
+
   mCallbacks = new cXBMCCallbacks;
 
   cXBMCSettings& s = cXBMCSettings::GetInstance();
@@ -133,6 +142,8 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
   mConnection->ChannelFilter(s.FTAChannels(), s.NativeLangOnly(), s.vcaids);
   mConnection->SetUpdateChannels(s.UpdateChannels());
 
+  mScanner = new CGUIDialogChannelScanner(GUI, mConnection);
+
   return ADDON_STATUS_OK;
 }
 
@@ -149,12 +160,14 @@ void ADDON_Destroy()
   delete PVR;
   delete XBMC;
   delete mCallbacks;
+  delete mScanner;
 
   mConnection = NULL;
   GUI = NULL;
   PVR = NULL;
   XBMC = NULL;
   mCallbacks = NULL;
+  mScanner = NULL;
 }
 
 bool ADDON_HasSettings()
@@ -270,9 +283,7 @@ PVR_ERROR GetDriveSpace(long long *iTotal, long long *iUsed)
 
 PVR_ERROR DialogChannelScan(void)
 {
-  CGUIDialogChannelScanner scanner(GUI, mConnection);
-  scanner.DoModal();
-
+  mScanner->DoModal();
   return PVR_ERROR_NO_ERROR;
 }
 
@@ -755,8 +766,17 @@ int GetRecordingLastPlayedPosition(const PVR_RECORDING &recording)
   return mConnection->GetRecordingLastPosition(recording.strRecordingId);
 }
 
+PVR_ERROR CallMenuHook(const PVR_MENUHOOK &menuhook) {
+  switch(menuhook.iHookId) {
+    case XVDR_HOOK_SETTINGS_CHANNELSCAN:
+      DialogChannelScan();
+      return PVR_ERROR_NO_ERROR;
+  }
+
+  return PVR_ERROR_NOT_IMPLEMENTED;
+}
+
 /** UNUSED API FUNCTIONS */
-PVR_ERROR CallMenuHook(const PVR_MENUHOOK &menuhook) { return PVR_ERROR_NOT_IMPLEMENTED; }
 PVR_ERROR DeleteChannel(const PVR_CHANNEL &channel) { return PVR_ERROR_NOT_IMPLEMENTED; }
 PVR_ERROR RenameChannel(const PVR_CHANNEL &channel) { return PVR_ERROR_NOT_IMPLEMENTED; }
 PVR_ERROR MoveChannel(const PVR_CHANNEL &channel) { return PVR_ERROR_NOT_IMPLEMENTED; }

@@ -63,7 +63,7 @@ protected:
 
 private:
 
-  void StartScan();
+  bool StartScan();
 
   CAddonGUISpinControl* m_dvbtype;
   CAddonGUISpinControl* m_country;
@@ -77,4 +77,7 @@ private:
   CAddonGUIRadioButton* m_flag_fta;
   CAddonGUIRadioButton* m_flag_encrypted;
   CAddonGUIRadioButton* m_flag_hd;
+
+  bool m_scanning;
+
 };

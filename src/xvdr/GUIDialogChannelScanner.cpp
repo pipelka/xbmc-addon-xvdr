@@ -34,7 +34,7 @@
 #define CTL_START           20
 #define CTL_CANCEL          21
 
-CGUIDialogChannelScanner::CGUIDialogChannelScanner(CHelper_libXBMC_gui* GUI, XVDR::Connection* connection) : m_gui(GUI), m_connection(connection) {
+CGUIDialogChannelScanner::CGUIDialogChannelScanner(CHelper_libXBMC_gui* GUI, XVDR::Connection* connection) : m_gui(GUI), m_connection(connection), m_scanning(false) {
   m_window = m_gui->Window_create("ChannelScan.xml", "skin.confluence", false, true);
 
   m_window->m_cbhdl   = this;
@@ -45,7 +45,7 @@ CGUIDialogChannelScanner::CGUIDialogChannelScanner(CHelper_libXBMC_gui* GUI, XVD
 
 }
 
-CGUIDialogChannelScanner::~CGUIDialogChannelScanner() {
+CGUIDialogChannelScanner::~CGUIDialogChannelScanner(){
   m_gui->Window_destroy(m_window);
 }
 
@@ -190,7 +190,12 @@ bool CGUIDialogChannelScanner::OnClick(int controlId) {
   }
 
   if(controlId == CTL_START) {
-    StartScan();
+    if(!m_scanning) {
+      m_scanning = StartScan();
+    }
+    else if(m_connection->StopChannelScanner()) {
+      m_scanning = false;
+    }
     Close();
   }
 
@@ -218,7 +223,7 @@ void CGUIDialogChannelScanner::UpdateVisibility() {
   }
 }
 
-void CGUIDialogChannelScanner::StartScan() {
+bool CGUIDialogChannelScanner::StartScan() {
   m_setup.dvbtype = (XVDR::ChannelScannerSetup::DVBType)m_dvbtype->GetValue();
   m_setup.countryid = m_country->GetValue();
   m_setup.dvbt_inversion = (XVDR::ChannelScannerSetup::DVBInversion)m_inv_dvbt->GetValue();
@@ -235,8 +240,8 @@ void CGUIDialogChannelScanner::StartScan() {
   if(m_flag_hd->IsSelected()) m_setup.flags |= XVDR::ChannelScannerSetup::FLAG_HDTV;
 
   if(!m_connection->SetChannelScannerSetup(m_setup)) {
-    return;
+    return false;
   }
 
-  m_connection->StartChannelScanner();
+  return m_connection->StartChannelScanner();
 }
