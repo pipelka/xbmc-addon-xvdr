@@ -917,6 +917,7 @@ bool Connection::TryReconnect() {
   EnableStatusInterface(m_statusinterface);
   ChannelFilter(m_ftachannels, m_nativelang, m_caids);
   SetUpdateChannels(m_updatechannels);
+  SupportChannelScan();
 
   m_connectionLost = false;
 
