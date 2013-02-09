@@ -1073,3 +1073,20 @@ bool Connection::StopChannelScanner() {
 
   return rc;
 }
+
+bool Connection::GetChannelScannerStatus(ChannelScannerStatus& status) {
+  MutexLock lock(&m_cmdlock);
+
+  MsgPacket vrp(XVDR_SCAN_GETSTATUS);
+  MsgPacket* vresp = ReadResult(&vrp);
+
+  bool rc = (vresp != NULL && vresp->get_U32() == XVDR_RET_OK);
+  if(rc)  {
+    status << vresp;
+  }
+
+  delete vresp;
+  return rc;
+
+}
+

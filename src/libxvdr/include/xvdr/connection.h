@@ -105,6 +105,7 @@ public:
   bool GetChannelScannerSetup(ChannelScannerSetup& setup, ChannelScannerList& satellites, ChannelScannerList& countries);
   bool GetChannelScannerSetup(ChannelScannerSetup& setup);
   bool SetChannelScannerSetup(const ChannelScannerSetup& setup);
+  bool GetChannelScannerStatus(ChannelScannerStatus& status);
   bool StartChannelScanner();
   bool StopChannelScanner();
 
