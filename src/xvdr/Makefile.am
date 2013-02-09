@@ -9,15 +9,16 @@ LIBS   =
 LIBDIR = ../../addons/pvr.vdr.xvdr
 LIB    = ../../addons/pvr.vdr.xvdr/$(ADDONNAME)
 
+SUBDIRS = \
+	dialogs
+
 lib_LTLIBRARIES = libxvdraddon.la
 
 libxvdraddon_la_SOURCES = \
-	GUIDialogChannelScanner.cpp \
-	GUIDialogChannelScanner.h \
 	XBMCAddon.cpp \
 	XBMCAddon.h \
-	XBMCCallbacks.cpp \
-	XBMCCallbacks.h \
+	XBMCClient.cpp \
+	XBMCClient.h \
 	XBMCSettings.cpp \
 	XBMCSettings.h
 
@@ -30,7 +31,8 @@ libxvdraddon_la_LDFLAGS = \
 	-avoid-version
 
 libxvdraddon_la_LIBADD = \
-	../libxvdr/src/libxvdrstatic.la
+	../libxvdr/src/libxvdrstatic.la \
+	./dialogs/libxvdrdialogs.la \
 	$(ZLIB_LIBS)
 
 if MINGW32
@@ -46,6 +48,7 @@ AM_CPPFLAGS = \
 
 INCLUDES = \
 	-I. \
+	-I$(srcdir)/dialogs \
 	-I$(top_srcdir)/src/libxvdr/include \
 	-I$(top_srcdir) -I$(srcdir)/include \
 	-DUSE_DEMUX

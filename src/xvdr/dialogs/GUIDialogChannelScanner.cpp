@@ -23,6 +23,7 @@
  */
 
 #include "GUIDialogChannelScanner.h"
+#include "XBMCClient.h"
 
 #define CTL_DVBTYPE         2
 #define CTL_COUNTRY         3
@@ -34,47 +35,12 @@
 #define CTL_START           20
 #define CTL_CANCEL          21
 
-CGUIDialogChannelScanner::CGUIDialogChannelScanner(CHelper_libXBMC_gui* GUI, XVDR::Connection* connection) : m_gui(GUI), m_connection(connection), m_scanning(false) {
-  m_window = m_gui->Window_create("ChannelScan.xml", "skin.confluence", false, true);
+using namespace XVDR;
 
-  m_window->m_cbhdl   = this;
-  m_window->CBOnInit  = OnInitCB;
-  m_window->CBOnFocus = OnFocusCB;
-  m_window->CBOnClick = OnClickCB;
-  m_window->CBOnAction= OnActionCB;
-
+CGUIDialogChannelScanner::CGUIDialogChannelScanner(CHelper_libXBMC_gui* GUI, cXBMCClient* connection) : CGUIDialogBase("ChannelScan.xml", GUI), m_connection(connection) {
 }
 
 CGUIDialogChannelScanner::~CGUIDialogChannelScanner(){
-  m_gui->Window_destroy(m_window);
-}
-
-bool CGUIDialogChannelScanner::OnClickCB(GUIHANDLE cbhdl, int controlId) {
-  CGUIDialogChannelScanner* dialog = static_cast<CGUIDialogChannelScanner*>(cbhdl);
-  return dialog->OnClick(controlId);
-}
-
-bool CGUIDialogChannelScanner::OnFocusCB(GUIHANDLE cbhdl, int controlId) {
-  CGUIDialogChannelScanner* dialog = static_cast<CGUIDialogChannelScanner*>(cbhdl);
-  return dialog->OnFocus(controlId);
-}
-
-bool CGUIDialogChannelScanner::OnInitCB(GUIHANDLE cbhdl) {
-  CGUIDialogChannelScanner* dialog = static_cast<CGUIDialogChannelScanner*>(cbhdl);
-  return dialog->OnInit();
-}
-
-bool CGUIDialogChannelScanner::OnActionCB(GUIHANDLE cbhdl, int actionId) {
-  return true;
-}
-
-void CGUIDialogChannelScanner::Close() {
-  OnClose();
-  m_window->Close();
-}
-
-void CGUIDialogChannelScanner::DoModal() {
-  m_window->DoModal();
 }
 
 void CGUIDialogChannelScanner::OnClose() {
@@ -92,14 +58,12 @@ void CGUIDialogChannelScanner::OnClose() {
   m_gui->Control_releaseRadioButton(m_flag_hd);
 }
 
-bool CGUIDialogChannelScanner::OnFocus(int controlId) {
-  return true;
+bool CGUIDialogChannelScanner::LoadSetup() {
+  // load scanner setup
+  return m_connection->GetChannelScannerSetup(m_setup, m_satellites, m_countries);
 }
 
 bool CGUIDialogChannelScanner::OnInit() {
-  // load scanner setup
-  m_connection->GetChannelScannerSetup(m_setup, m_satellites, m_countries);
-
   // dvbtype
   m_dvbtype = m_gui->Control_getSpin(m_window, CTL_DVBTYPE);
   m_dvbtype->Clear();
@@ -187,23 +151,33 @@ bool CGUIDialogChannelScanner::OnInit() {
 bool CGUIDialogChannelScanner::OnClick(int controlId) {
   if(controlId == CTL_DVBTYPE) {
     UpdateVisibility();
+    return true;
   }
 
   if(controlId == CTL_START) {
-    if(!m_scanning) {
-      m_scanning = StartScan();
+    if(!IsScanning()) {
+      if(!StartScan()) {
+        // bring an error message here
+        return true;
+      }
+      m_connection->Notification(XVDR::INFO, m_connection->GetLocalizedString(30072));
+      SetControlLabel(CTL_START, m_connection->GetLocalizedString(30009).c_str());
     }
-    else if(m_connection->StopChannelScanner()) {
-      m_scanning = false;
+    else {
+      m_connection->StopChannelScanner();
+      SetControlLabel(CTL_START, m_connection->GetLocalizedString(30010).c_str());
+      m_connection->Notification(XVDR::INFO, m_connection->GetLocalizedString(30073));
     }
     Close();
+    return true;
   }
 
   if(controlId == CTL_CANCEL) {
     Close();
+    return true;
   }
 
-  return true;
+  return false;
 }
 
 void CGUIDialogChannelScanner::UpdateVisibility() {
@@ -215,9 +189,11 @@ void CGUIDialogChannelScanner::UpdateVisibility() {
 
   for(int j = 0; j < 3; j++) {
     for(int i = 0; i < 3; i++) {
-      CAddonGUISpinControl* c = m_gui->Control_getSpin(m_window, controls[j][i]);
-      if(c != NULL) {
+      int control = controls[j][i];
+      CAddonGUISpinControl* c = m_gui->Control_getSpin(m_window, control);
+      if(control != 0 && c != NULL) {
         c->SetVisible(m_dvbtype->GetValue() == j);
+        m_gui->Control_releaseSpin(c);
       }
     }
   }
@@ -244,4 +220,13 @@ bool CGUIDialogChannelScanner::StartScan() {
   }
 
   return m_connection->StartChannelScanner();
+}
+
+bool CGUIDialogChannelScanner::IsScanning() {
+  XVDR::ChannelScannerStatus status;
+  if(!m_connection->GetChannelScannerStatus(status)) {
+    return false;
+  }
+
+  return (status.status == XVDR::ChannelScannerStatus::SCANNING);
 }

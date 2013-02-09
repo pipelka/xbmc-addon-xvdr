@@ -23,40 +23,35 @@
  *
  */
 
-#include "addons/library.xbmc.gui/libXBMC_gui.h"
 #include "xvdr/connection.h"
+#include "GUIDialogBase.h"
 
-class CGUIDialogChannelScanner {
+class cXBMCClient;
+
+namespace XVDR {
+
+class CGUIDialogChannelScanner : public CGUIDialogBase {
 public:
 
-  CGUIDialogChannelScanner(CHelper_libXBMC_gui* GUI, XVDR::Connection* connection);
+  CGUIDialogChannelScanner(CHelper_libXBMC_gui* GUI, cXBMCClient* connection);
 
   virtual ~CGUIDialogChannelScanner();
 
-  void Close();
-
-  void DoModal();
-
-  static bool OnClickCB(GUIHANDLE cbhdl, int controlId);
-  static bool OnFocusCB(GUIHANDLE cbhdl, int controlId);
-  static bool OnInitCB(GUIHANDLE cbhdl);
-  static bool OnActionCB(GUIHANDLE cbhdl, int actionId);
+  bool LoadSetup();
 
 protected:
 
-  virtual bool OnInit();
+  bool OnInit();
 
-  virtual bool OnClick(int controlId);
+  bool OnClick(int controlId);
 
-  virtual bool OnFocus(int controlId);
-
-  virtual void OnClose();
+  void OnClose();
 
   void UpdateVisibility();
 
-  CAddonGUIWindow* m_window;
-  CHelper_libXBMC_gui* m_gui;
-  XVDR::Connection* m_connection;
+  bool IsScanning();
+
+  cXBMCClient* m_connection;
   XVDR::ChannelScannerSetup m_setup;
   XVDR::ChannelScannerList m_satellites;
   XVDR::ChannelScannerList m_countries;
@@ -78,6 +73,6 @@ private:
   CAddonGUIRadioButton* m_flag_encrypted;
   CAddonGUIRadioButton* m_flag_hd;
 
-  bool m_scanning;
-
 };
+
+} // namespace XVDR

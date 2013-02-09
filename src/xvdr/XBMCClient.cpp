@@ -22,8 +22,11 @@
  *
  */
 
-#include "XBMCCallbacks.h"
+#include "XBMCClient.h"
 #include "XBMCAddon.h"
+#include "GUIDialogChannelScanner.h"
+#include "GUIDialogOk.h"
+#include "GUIDialogYesNo.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,20 +37,44 @@ using namespace XVDR;
 
 #define MSG_MAXLEN 512
 
-cXBMCCallbacks::cXBMCCallbacks() : m_handle(NULL)
+cXBMCClient::cXBMCClient() : XVDR::Connection(this), m_handle(NULL), m_emptyChannelsSeen(false)
 {
+  m_scanner = new CGUIDialogChannelScanner(GUI, this);
 }
 
-cXBMCCallbacks::~cXBMCCallbacks()
+cXBMCClient::~cXBMCClient()
 {
+  delete m_scanner;
 }
 
-void cXBMCCallbacks::SetHandle(ADDON_HANDLE handle)
+int cXBMCClient::GetChannelsCount() {
+  int count = XVDR::Connection::GetChannelsCount();
+
+  Lock();
+  bool seen = m_emptyChannelsSeen;
+  Unlock();
+
+  if(count > 0 || seen) {
+    return count;
+  }
+
+  Lock();
+  m_emptyChannelsSeen = true;
+  Unlock();
+
+  if(CGUIDialogYesNo::ShowAndGetInput(GUI, GetLocalizedString(30008).c_str(), GetLocalizedString(30075).c_str(), GetLocalizedString(30076).c_str())) {
+    DialogChannelScan();
+  }
+
+  return count;
+}
+
+void cXBMCClient::SetHandle(ADDON_HANDLE handle)
 {
   m_handle = handle;
 }
 
-void cXBMCCallbacks::OnLog(LOGLEVEL level, const char* msg)
+void cXBMCClient::OnLog(LOGLEVEL level, const char* msg)
 {
   addon_log_t lt;
   switch(level)
@@ -70,7 +97,7 @@ void cXBMCCallbacks::OnLog(LOGLEVEL level, const char* msg)
   XBMC->Log(lt, msg);
 }
 
-void cXBMCCallbacks::OnNotification(LOGLEVEL level, const char* msg)
+void cXBMCClient::OnNotification(LOGLEVEL level, const char* msg)
 {
   queue_msg qm;
   switch(level)
@@ -90,12 +117,12 @@ void cXBMCCallbacks::OnNotification(LOGLEVEL level, const char* msg)
   XBMC->QueueNotification(qm, msg);
 }
 
-void cXBMCCallbacks::Recording(const std::string& line1, const std::string& line2, bool on)
+void cXBMCClient::Recording(const std::string& line1, const std::string& line2, bool on)
 {
   PVR->Recording(line1.c_str(), line2.c_str(), on);
 }
 
-std::string cXBMCCallbacks::GetLanguageCode()
+std::string cXBMCClient::GetLanguageCode()
 {
   std::string code;
 
@@ -112,7 +139,7 @@ std::string cXBMCCallbacks::GetLanguageCode()
   return code;
 }
 
-std::string cXBMCCallbacks::GetLocalizedString(int id)
+std::string cXBMCClient::GetLocalizedString(int id)
 {
   std::string result;
 
@@ -127,22 +154,22 @@ std::string cXBMCCallbacks::GetLocalizedString(int id)
 
 }
 
-void cXBMCCallbacks::TriggerChannelUpdate()
+void cXBMCClient::TriggerChannelUpdate()
 {
   PVR->TriggerChannelUpdate();
 }
 
-void cXBMCCallbacks::TriggerRecordingUpdate()
+void cXBMCClient::TriggerRecordingUpdate()
 {
   PVR->TriggerRecordingUpdate();
 }
 
-void cXBMCCallbacks::TriggerTimerUpdate()
+void cXBMCClient::TriggerTimerUpdate()
 {
   PVR->TriggerTimerUpdate();
 }
 
-void cXBMCCallbacks::TransferChannelEntry(const Channel& channel)
+void cXBMCClient::TransferChannelEntry(const Channel& channel)
 {
   PVR_CHANNEL pvrchannel;
   pvrchannel << channel;
@@ -150,7 +177,7 @@ void cXBMCCallbacks::TransferChannelEntry(const Channel& channel)
   PVR->TransferChannelEntry(m_handle, &pvrchannel);
 }
 
-void cXBMCCallbacks::TransferEpgEntry(const EpgItem& epg)
+void cXBMCClient::TransferEpgEntry(const EpgItem& epg)
 {
   EPG_TAG pvrepg;
   pvrepg << epg;
@@ -158,7 +185,7 @@ void cXBMCCallbacks::TransferEpgEntry(const EpgItem& epg)
   PVR->TransferEpgEntry(m_handle, &pvrepg);
 }
 
-void cXBMCCallbacks::TransferTimerEntry(const Timer& timer)
+void cXBMCClient::TransferTimerEntry(const Timer& timer)
 {
   PVR_TIMER pvrtimer;
   pvrtimer << timer;
@@ -166,7 +193,7 @@ void cXBMCCallbacks::TransferTimerEntry(const Timer& timer)
   PVR->TransferTimerEntry(m_handle, &pvrtimer);
 }
 
-void cXBMCCallbacks::TransferRecordingEntry(const RecordingEntry& rec)
+void cXBMCClient::TransferRecordingEntry(const RecordingEntry& rec)
 {
   PVR_RECORDING pvrrec;
   pvrrec << rec;
@@ -174,7 +201,7 @@ void cXBMCCallbacks::TransferRecordingEntry(const RecordingEntry& rec)
   PVR->TransferRecordingEntry(m_handle, &pvrrec);
 }
 
-void cXBMCCallbacks::TransferChannelGroup(const ChannelGroup& group)
+void cXBMCClient::TransferChannelGroup(const ChannelGroup& group)
 {
   PVR_CHANNEL_GROUP pvrgroup;
   pvrgroup << group;
@@ -182,7 +209,7 @@ void cXBMCCallbacks::TransferChannelGroup(const ChannelGroup& group)
   PVR->TransferChannelGroup(m_handle, &pvrgroup);
 }
 
-void cXBMCCallbacks::TransferChannelGroupMember(const ChannelGroupMember& member)
+void cXBMCClient::TransferChannelGroupMember(const ChannelGroupMember& member)
 {
   PVR_CHANNEL_GROUP_MEMBER pvrmember;
   pvrmember << member;
@@ -190,7 +217,7 @@ void cXBMCCallbacks::TransferChannelGroupMember(const ChannelGroupMember& member
   PVR->TransferChannelGroupMember(m_handle, &pvrmember);
 }
 
-Packet* cXBMCCallbacks::AllocatePacket(int s)
+Packet* cXBMCClient::AllocatePacket(int s)
 {
   DemuxPacket* d = PVR->AllocateDemuxPacket(s);
   if(d == NULL)
@@ -200,7 +227,7 @@ Packet* cXBMCCallbacks::AllocatePacket(int s)
   return (Packet*)d;
 }
 
-void cXBMCCallbacks::SetPacketData(Packet* packet, uint8_t* data, int streamid, uint64_t dts, uint64_t pts)
+void cXBMCClient::SetPacketData(Packet* packet, uint8_t* data, int streamid, uint64_t dts, uint64_t pts)
 {
   if (packet == NULL)
     return;
@@ -216,12 +243,12 @@ void cXBMCCallbacks::SetPacketData(Packet* packet, uint8_t* data, int streamid, 
     memcpy(d->pData, data, d->iSize);
 }
 
-void cXBMCCallbacks::FreePacket(Packet* packet)
+void cXBMCClient::FreePacket(Packet* packet)
 {
   PVR->FreeDemuxPacket((DemuxPacket*)packet);
 }
 
-Packet* cXBMCCallbacks::StreamChange(const StreamProperties& p) {
+Packet* cXBMCClient::StreamChange(const StreamProperties& p) {
   Packet* pkt = AllocatePacket(0);
   if (pkt != NULL)
     SetPacketData(pkt, NULL, DMX_SPECIALID_STREAMCHANGE, 0, 0);
@@ -229,7 +256,7 @@ Packet* cXBMCCallbacks::StreamChange(const StreamProperties& p) {
   return pkt;
 }
 
-Packet* cXBMCCallbacks::ContentInfo(const StreamProperties& p) {
+Packet* cXBMCClient::ContentInfo(const StreamProperties& p) {
   Packet* pkt = AllocatePacket(sizeof(PVR_STREAM_PROPERTIES));
 
   if (pkt != NULL) {
@@ -241,12 +268,12 @@ Packet* cXBMCCallbacks::ContentInfo(const StreamProperties& p) {
   return pkt;
 }
 
-void cXBMCCallbacks::OnDisconnect() {
+void cXBMCClient::OnDisconnect() {
   Log(FAILURE, "%s - connection lost !!!", __FUNCTION__);
   Notification(FAILURE, GetLocalizedString(30044));
 }
 
-void cXBMCCallbacks::OnReconnect() {
+void cXBMCClient::OnReconnect() {
   Log(INFO, "%s - connection restored", __FUNCTION__);
   Notification(INFO, GetLocalizedString(30045));
 
@@ -254,16 +281,23 @@ void cXBMCCallbacks::OnReconnect() {
   TriggerRecordingUpdate();
 }
 
-void cXBMCCallbacks::OnSignalLost() {
+void cXBMCClient::OnSignalLost() {
   Notification(FAILURE, GetLocalizedString(30047));
 }
 
-void cXBMCCallbacks::OnSignalRestored() {
+void cXBMCClient::OnSignalRestored() {
   Notification(INFO, GetLocalizedString(30048));
 }
 
-void cXBMCCallbacks::OnChannelScannerStatus(const XVDR::ChannelScannerStatus& status) {
-  XBMC->QueueNotification(QUEUE_INFO, GetLocalizedString(30038).c_str(), status.progress, status.newChannels);
+void cXBMCClient::OnChannelScannerStatus(const XVDR::ChannelScannerStatus& status) {
+  XBMC->QueueNotification(QUEUE_INFO, GetLocalizedString(30038).c_str(), status.progress, status.numChannels);
+}
+
+void cXBMCClient::DialogChannelScan() {
+  if(!m_scanner->LoadSetup()) {
+    CGUIDialogOk::Show(GUI, GetLocalizedString(30008).c_str(), NULL, GetLocalizedString(30074).c_str());
+  }
+  m_scanner->DoModal();
 }
 
 PVR_CHANNEL& operator<< (PVR_CHANNEL& lhs, const Channel& rhs)

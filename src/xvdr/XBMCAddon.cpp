@@ -24,9 +24,8 @@
  */
 
 #include "XBMCAddon.h"
-#include "XBMCCallbacks.h"
+#include "XBMCClient.h"
 #include "XBMCSettings.h"
-#include "GUIDialogChannelScanner.h"
 
 #include "xvdr/demux.h"
 #include "xvdr/command.h"
@@ -51,10 +50,8 @@ CHelper_libXBMC_gui* GUI = NULL;
 CHelper_libXBMC_pvr* PVR = NULL;
 
 Demux* mDemuxer = NULL;
-Connection* mConnection = NULL;
-cXBMCCallbacks *mCallbacks = NULL;
+cXBMCClient *mClient = NULL;
 XVDR::Mutex addonMutex;
-CGUIDialogChannelScanner* mScanner;
 
 int CurrentChannel = 0;
 
@@ -99,50 +96,49 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
 
   XBMC->Log(LOG_DEBUG, "Creating VDR XVDR PVR-Client");
 
-  PVR_MENUHOOK hook;
-  hook.category = PVR_MENUHOOK_SETTING;
-  hook.iHookId = XVDR_HOOK_SETTINGS_CHANNELSCAN;
-  hook.iLocalizedStringId = 30008;
-  PVR->AddMenuHook(&hook);
-
-  mCallbacks = new cXBMCCallbacks;
-
   cXBMCSettings& s = cXBMCSettings::GetInstance();
   s.load();
 
-  mConnection = new Connection(mCallbacks);
-  mConnection->SetTimeout(s.ConnectTimeout() * 1000);
-  mConnection->SetCompressionLevel(s.Compression() * 3);
-  mConnection->SetAudioType(s.AudioType());
+  mClient = new cXBMCClient;
+  mClient->SetTimeout(s.ConnectTimeout() * 1000);
+  mClient->SetCompressionLevel(s.Compression() * 3);
+  mClient->SetAudioType(s.AudioType());
 
   TimeMs RetryTimeout;
   bool bConnected = false;
 
-  while (!(bConnected = mConnection->Open(s.Hostname())) && RetryTimeout.Elapsed() < (uint32_t)s.ConnectTimeout() * 1000)
+  while (!(bConnected = mClient->Open(s.Hostname())) && RetryTimeout.Elapsed() < (uint32_t)s.ConnectTimeout() * 1000)
 	XVDR::CondWait::SleepMs(100);
 
   if (!bConnected){
-    delete mConnection;
+    delete mClient;
     delete GUI;
     delete PVR;
     delete XBMC;
-    delete mCallbacks;
-    mConnection = NULL;
+    mClient = NULL;
     GUI = NULL;
     PVR = NULL;
     XBMC = NULL;
     return ADDON_STATUS_LOST_CONNECTION;
   }
 
-  if (!mConnection->EnableStatusInterface(s.HandleMessages()))
+  if (!mClient->EnableStatusInterface(s.HandleMessages()))
   {
     return ADDON_STATUS_LOST_CONNECTION;
   }
 
-  mConnection->ChannelFilter(s.FTAChannels(), s.NativeLangOnly(), s.vcaids);
-  mConnection->SetUpdateChannels(s.UpdateChannels());
+  mClient->ChannelFilter(s.FTAChannels(), s.NativeLangOnly(), s.vcaids);
+  mClient->SetUpdateChannels(s.UpdateChannels());
 
-  mScanner = new CGUIDialogChannelScanner(GUI, mConnection);
+  PVR_MENUHOOK hook;
+
+  // add menuhook if scanning is supported
+  if(mClient->SupportChannelScan()) {
+    hook.category = PVR_MENUHOOK_SETTING;
+    hook.iHookId = XVDR_HOOK_SETTINGS_CHANNELSCAN;
+    hook.iLocalizedStringId = 30008;
+    PVR->AddMenuHook(&hook);
+  }
 
   return ADDON_STATUS_OK;
 }
@@ -155,19 +151,15 @@ ADDON_STATUS ADDON_GetStatus()
 void ADDON_Destroy()
 {
   XVDR::MutexLock lock(&addonMutex);
-  delete mScanner;
-  delete mConnection;
+  delete mClient;
   delete GUI;
   delete PVR;
   delete XBMC;
-  delete mCallbacks;
 
-  mConnection = NULL;
+  mClient = NULL;
   GUI = NULL;
   PVR = NULL;
   XBMC = NULL;
-  mCallbacks = NULL;
-  mScanner = NULL;
 }
 
 bool ADDON_HasSettings()
@@ -196,16 +188,16 @@ ADDON_STATUS ADDON_SetSetting(const char *settingName, const void *settingValue)
 
   s.checkValues();
 
-  mConnection->SetTimeout(s.ConnectTimeout() * 1000);
-  mConnection->SetCompressionLevel(s.Compression() * 3);
-  mConnection->SetAudioType(s.AudioType());
+  mClient->SetTimeout(s.ConnectTimeout() * 1000);
+  mClient->SetCompressionLevel(s.Compression() * 3);
+  mClient->SetAudioType(s.AudioType());
 
   if(!bChanged)
     return ADDON_STATUS_OK;
 
-  mConnection->EnableStatusInterface(s.HandleMessages());
-  mConnection->SetUpdateChannels(s.UpdateChannels());
-  mConnection->ChannelFilter(s.FTAChannels(), s.NativeLangOnly(), s.vcaids);
+  mClient->EnableStatusInterface(s.HandleMessages());
+  mClient->SetUpdateChannels(s.UpdateChannels());
+  mClient->ChannelFilter(s.FTAChannels(), s.NativeLangOnly(), s.vcaids);
 
   return ADDON_STATUS_OK;
 }
@@ -230,7 +222,7 @@ PVR_ERROR GetAddonCapabilities(PVR_ADDON_CAPABILITIES* pCapabilities)
   pCapabilities->bSupportsRecordings         = true;
   pCapabilities->bSupportsTimers             = true;
   pCapabilities->bSupportsChannelGroups      = true;
-  pCapabilities->bSupportsChannelScan        = (mConnection && mConnection->SupportChannelScan());
+  pCapabilities->bSupportsChannelScan        = true; //false;
   pCapabilities->bHandlesInputStream         = true;
   pCapabilities->bHandlesDemuxing            = true;
 
@@ -243,16 +235,16 @@ PVR_ERROR GetAddonCapabilities(PVR_ADDON_CAPABILITIES* pCapabilities)
 
 const char * GetBackendName(void)
 {
-  static std::string BackendName = mConnection ? mConnection->GetServerName() : "unknown";
+  static std::string BackendName = mClient ? mClient->GetServerName() : "unknown";
   return BackendName.c_str();
 }
 
 const char * GetBackendVersion(void)
 {
   static std::string BackendVersion;
-  if (mConnection) {
+  if (mClient) {
     std::stringstream format;
-    format << mConnection->GetVersion() << "(Protocol: " << mConnection->GetProtocol() << ")";
+    format << mClient->GetVersion() << "(Protocol: " << mClient->GetProtocol() << ")";
     BackendVersion = format.str();
   }
   return BackendVersion.c_str();
@@ -263,7 +255,7 @@ const char * GetConnectionString(void)
   static std::string ConnectionString;
   std::stringstream format;
 
-  if (mConnection) {
+  if (mClient) {
     format << cXBMCSettings::GetInstance().Hostname();
   }
   else {
@@ -275,15 +267,15 @@ const char * GetConnectionString(void)
 
 PVR_ERROR GetDriveSpace(long long *iTotal, long long *iUsed)
 {
-  if (!mConnection)
+  if (!mClient)
     return PVR_ERROR_SERVER_ERROR;
 
-  return (mConnection->GetDriveSpace(iTotal, iUsed) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
+  return (mClient->GetDriveSpace(iTotal, iUsed) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
 }
 
 PVR_ERROR DialogChannelScan(void)
 {
-  mScanner->DoModal();
+  mClient->DialogChannelScan();
   return PVR_ERROR_NO_ERROR;
 }
 
@@ -292,15 +284,15 @@ PVR_ERROR DialogChannelScan(void)
 
 PVR_ERROR GetEPGForChannel(ADDON_HANDLE handle, const PVR_CHANNEL &channel, time_t iStart, time_t iEnd)
 {
-  if (!mConnection)
+  if (!mClient)
     return PVR_ERROR_SERVER_ERROR;
 
-  mCallbacks->Lock();
+  mClient->Lock();
 
-  mCallbacks->SetHandle(handle);
-  PVR_ERROR rc = (mConnection->GetEPGForChannel(channel.iUniqueId, iStart, iEnd) ? PVR_ERROR_NO_ERROR: PVR_ERROR_SERVER_ERROR);
+  mClient->SetHandle(handle);
+  PVR_ERROR rc = (mClient->GetEPGForChannel(channel.iUniqueId, iStart, iEnd) ? PVR_ERROR_NO_ERROR: PVR_ERROR_SERVER_ERROR);
 
-  mCallbacks->Unlock();
+  mClient->Unlock();
   return rc;
 }
 
@@ -310,24 +302,24 @@ PVR_ERROR GetEPGForChannel(ADDON_HANDLE handle, const PVR_CHANNEL &channel, time
 
 int GetChannelsAmount(void)
 {
-  if (!mConnection)
+  if (!mClient)
     return 0;
 
-  return mConnection->GetChannelsCount();
+  return mClient->GetChannelsCount();
 }
 
 PVR_ERROR GetChannels(ADDON_HANDLE handle, bool bRadio)
 {
-  if (!mConnection)
+  if (!mClient)
     return PVR_ERROR_SERVER_ERROR;
 
-  mCallbacks->Lock();
+  mClient->Lock();
 
-  mCallbacks->SetHandle(handle);
-  PVR_ERROR rc = (mConnection->GetChannelsList(bRadio) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
+  mClient->SetHandle(handle);
+  PVR_ERROR rc = (mClient->GetChannelsList(bRadio) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
 
 
-  mCallbacks->Unlock();
+  mClient->Unlock();
   return rc;
 }
 
@@ -337,40 +329,40 @@ PVR_ERROR GetChannels(ADDON_HANDLE handle, bool bRadio)
 
 int GetChannelGroupsAmount()
 {
-  if (!mConnection)
+  if (!mClient)
     return PVR_ERROR_SERVER_ERROR;
 
-  return mConnection->GetChannelGroupCount(cXBMCSettings::GetInstance().AutoChannelGroups());
+  return mClient->GetChannelGroupCount(cXBMCSettings::GetInstance().AutoChannelGroups());
 }
 
 PVR_ERROR GetChannelGroups(ADDON_HANDLE handle, bool bRadio)
 {
-  if (!mConnection)
+  if (!mClient)
     return PVR_ERROR_SERVER_ERROR;
 
-  mCallbacks->Lock();
+  mClient->Lock();
 
   PVR_ERROR rc = PVR_ERROR_NO_ERROR;
-  mCallbacks->SetHandle(handle);
+  mClient->SetHandle(handle);
 
-  if(mConnection->GetChannelGroupCount(cXBMCSettings::GetInstance().AutoChannelGroups()) > 0)
-    rc = mConnection->GetChannelGroupList(bRadio) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
+  if(mClient->GetChannelGroupCount(cXBMCSettings::GetInstance().AutoChannelGroups()) > 0)
+    rc = mClient->GetChannelGroupList(bRadio) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
 
-  mCallbacks->Unlock();
+  mClient->Unlock();
   return rc;
 }
 
 PVR_ERROR GetChannelGroupMembers(ADDON_HANDLE handle, const PVR_CHANNEL_GROUP &group)
 {
-  if (!mConnection)
+  if (!mClient)
     return PVR_ERROR_SERVER_ERROR;
 
-  mCallbacks->Lock();
+  mClient->Lock();
 
-  mCallbacks->SetHandle(handle);
-  PVR_ERROR rc = (mConnection->GetChannelGroupMembers(group.strGroupName, group.bIsRadio) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
+  mClient->SetHandle(handle);
+  PVR_ERROR rc = (mClient->GetChannelGroupMembers(group.strGroupName, group.bIsRadio) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
 
-  mCallbacks->Unlock();
+  mClient->Unlock();
   return rc;
 }
 
@@ -380,23 +372,23 @@ PVR_ERROR GetChannelGroupMembers(ADDON_HANDLE handle, const PVR_CHANNEL_GROUP &g
 
 int GetTimersAmount(void)
 {
-  if (!mConnection)
+  if (!mClient)
     return 0;
 
-  return mConnection->GetTimersCount();
+  return mClient->GetTimersCount();
 }
 
 PVR_ERROR GetTimers(ADDON_HANDLE handle)
 {
-  if (!mConnection)
+  if (!mClient)
     return PVR_ERROR_SERVER_ERROR;
 
-  mCallbacks->Lock();
+  mClient->Lock();
 
-  mCallbacks->SetHandle(handle);
-  PVR_ERROR rc = (mConnection->GetTimersList() ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
+  mClient->SetHandle(handle);
+  PVR_ERROR rc = (mClient->GetTimersList() ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR);
 
-  mCallbacks->Unlock();
+  mClient->Unlock();
   return rc;
 }
 
@@ -405,18 +397,18 @@ PVR_ERROR AddTimer(const PVR_TIMER &timer)
   Timer xvdrtimer;
   xvdrtimer << timer;
 
-  if (!mConnection)
+  if (!mClient)
     return PVR_ERROR_SERVER_ERROR;
 
-  return mConnection->AddTimer(xvdrtimer) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
+  return mClient->AddTimer(xvdrtimer) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
 }
 
 PVR_ERROR DeleteTimer(const PVR_TIMER &timer, bool bForce)
 {
-  if (!mConnection)
+  if (!mClient)
     return PVR_ERROR_SERVER_ERROR;
 
-  int rc = mConnection->DeleteTimer(timer.iClientIndex, bForce);
+  int rc = mClient->DeleteTimer(timer.iClientIndex, bForce);
 
   if(rc == XVDR_RET_OK)
 	return PVR_ERROR_NO_ERROR;
@@ -428,13 +420,13 @@ PVR_ERROR DeleteTimer(const PVR_TIMER &timer, bool bForce)
 
 PVR_ERROR UpdateTimer(const PVR_TIMER &timer)
 {
-  if (!mConnection)
+  if (!mClient)
     return PVR_ERROR_SERVER_ERROR;
 
   Timer xvdrtimer;
   xvdrtimer << timer;
 
-  return mConnection->UpdateTimer(xvdrtimer) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
+  return mClient->UpdateTimer(xvdrtimer) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
 }
 
 
@@ -443,45 +435,45 @@ PVR_ERROR UpdateTimer(const PVR_TIMER &timer)
 
 int GetRecordingsAmount(void)
 {
-  if (!mConnection)
+  if (!mClient)
     return 0;
 
-  mCallbacks->Lock();
+  mClient->Lock();
 
-  int result = mConnection->GetRecordingsCount();
+  int result = mClient->GetRecordingsCount();
 
-  mCallbacks->Unlock();
+  mClient->Unlock();
   return result;
 }
 
 PVR_ERROR GetRecordings(ADDON_HANDLE handle)
 {
-  if (!mConnection)
+  if (!mClient)
     return PVR_ERROR_SERVER_ERROR;
 
-  mCallbacks->Lock();
+  mClient->Lock();
 
-  mCallbacks->SetHandle(handle);
-  PVR_ERROR rc = mConnection->GetRecordingsList() ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
+  mClient->SetHandle(handle);
+  PVR_ERROR rc = mClient->GetRecordingsList() ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
 
-  mCallbacks->Unlock();
+  mClient->Unlock();
   return rc;
 }
 
 PVR_ERROR RenameRecording(const PVR_RECORDING &recording)
 {
-  if (!mConnection)
+  if (!mClient)
     return PVR_ERROR_SERVER_ERROR;
 
-  return mConnection->RenameRecording(recording.strRecordingId, recording.strTitle) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
+  return mClient->RenameRecording(recording.strRecordingId, recording.strTitle) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
 }
 
 PVR_ERROR DeleteRecording(const PVR_RECORDING &recording)
 {
-  if (!mConnection)
+  if (!mClient)
     return PVR_ERROR_SERVER_ERROR;
 
-  int rc = mConnection->DeleteRecording(recording.strRecordingId);
+  int rc = mClient->DeleteRecording(recording.strRecordingId);
 
   if(rc == XVDR_RET_OK)
     return PVR_ERROR_NO_ERROR;
@@ -500,30 +492,30 @@ void ChannelNotification(Demux::SwitchStatus status)
   {
     // active recording
     case Demux::SC_ACTIVE_RECORDING:
-      mCallbacks->Notification(INFO, mCallbacks->GetLocalizedString(30062));
+      mClient->Notification(INFO, mClient->GetLocalizedString(30062));
       break;
     // all receivers busy
     case Demux::SC_DEVICE_BUSY:
-      mCallbacks->Notification(INFO, mCallbacks->GetLocalizedString(30063));
+      mClient->Notification(INFO, mClient->GetLocalizedString(30063));
       break;
     // encrypted channel
     case Demux::SC_ENCRYPTED:
-      mCallbacks->Notification(INFO, mCallbacks->GetLocalizedString(30066));
+      mClient->Notification(INFO, mClient->GetLocalizedString(30066));
       break;
     // error on switching channel
     case Demux::SC_ERROR:
-      mCallbacks->Notification(INFO, mCallbacks->GetLocalizedString(30064));
+      mClient->Notification(INFO, mClient->GetLocalizedString(30064));
       break;
     // invalid channel
     case Demux::SC_INVALID_CHANNEL:
-      mCallbacks->Notification(FAILURE, mCallbacks->GetLocalizedString(30065), "");
+      mClient->Notification(FAILURE, mClient->GetLocalizedString(30065), "");
       break;
   }
 }
 
 bool OpenLiveStream(const PVR_CHANNEL &channel)
 {
-  mCallbacks->Lock();
+  mClient->Lock();
 
   if (mDemuxer)
   {
@@ -531,7 +523,7 @@ bool OpenLiveStream(const PVR_CHANNEL &channel)
     delete mDemuxer;
   }
 
-  mDemuxer = new Demux(mCallbacks);
+  mDemuxer = new Demux(mClient);
   mDemuxer->SetTimeout(cXBMCSettings::GetInstance().ConnectTimeout() * 1000);
   mDemuxer->SetAudioType(cXBMCSettings::GetInstance().AudioType());
   mDemuxer->SetPriority(priotable[cXBMCSettings::GetInstance().Priority()]);
@@ -543,14 +535,14 @@ bool OpenLiveStream(const PVR_CHANNEL &channel)
   else
     ChannelNotification(status);
 
-  mCallbacks->Unlock();
+  mClient->Unlock();
 
   return (status == Demux::SC_OK);
 }
 
 void CloseLiveStream(void)
 {
-  mCallbacks->Lock();
+  mClient->Lock();
 
   if (mDemuxer)
   {
@@ -559,7 +551,7 @@ void CloseLiveStream(void)
     mDemuxer = NULL;
   }
 
-  mCallbacks->Unlock();
+  mClient->Unlock();
 }
 
 PVR_ERROR GetStreamProperties(PVR_STREAM_PROPERTIES* pProperties)
@@ -606,11 +598,11 @@ int GetCurrentClientChannel(void)
 
 bool SwitchChannel(const PVR_CHANNEL &channel)
 {
-  mCallbacks->Lock();
+  mClient->Lock();
 
   if (mDemuxer == NULL)
   {
-    mCallbacks->Unlock();
+    mClient->Unlock();
     return false;
   }
 
@@ -626,25 +618,25 @@ bool SwitchChannel(const PVR_CHANNEL &channel)
   else
     ChannelNotification(status);
 
-  mCallbacks->Unlock();
+  mClient->Unlock();
 
   return (status == Demux::SC_OK);
 }
 
 PVR_ERROR SignalStatus(PVR_SIGNAL_STATUS &signalStatus)
 {
-  mCallbacks->Lock();
+  mClient->Lock();
 
   if (mDemuxer == NULL)
   {
-    mCallbacks->Unlock();
+    mClient->Unlock();
     return PVR_ERROR_SERVER_ERROR;
   }
 
   mDemuxer->RequestSignalInfo();
   signalStatus << mDemuxer->GetSignalStatus();
 
-  mCallbacks->Unlock();
+  mClient->Unlock();
   return PVR_ERROR_NO_ERROR;
 }
 
@@ -656,51 +648,51 @@ void CloseRecordedStream();
 
 bool OpenRecordedStream(const PVR_RECORDING &recording)
 {
-  if(!mConnection)
+  if(!mClient)
     return false;
 
-  mConnection->CloseRecording();
-  mConnection->SetTimeout(cXBMCSettings::GetInstance().ConnectTimeout() * 1000);
+  mClient->CloseRecording();
+  mClient->SetTimeout(cXBMCSettings::GetInstance().ConnectTimeout() * 1000);
 
-  return mConnection->OpenRecording(recording.strRecordingId);
+  return mClient->OpenRecording(recording.strRecordingId);
 }
 
 void CloseRecordedStream(void)
 {
-  if (!mConnection)
+  if (!mClient)
     return;
 
-  mConnection->CloseRecording();
+  mClient->CloseRecording();
 }
 
 int ReadRecordedStream(unsigned char *pBuffer, unsigned int iBufferSize)
 {
-  if (!mConnection)
+  if (!mClient)
     return -1;
 
-  return mConnection->ReadRecording(pBuffer, iBufferSize);
+  return mClient->ReadRecording(pBuffer, iBufferSize);
 }
 
 long long SeekRecordedStream(long long iPosition, int iWhence /* = SEEK_SET */)
 {
-  if (mConnection)
-    return mConnection->SeekRecording(iPosition, iWhence);
+  if (mClient)
+    return mClient->SeekRecording(iPosition, iWhence);
 
   return -1;
 }
 
 long long PositionRecordedStream(void)
 {
-  if (mConnection)
-    return mConnection->RecordingPosition();
+  if (mClient)
+    return mClient->RecordingPosition();
 
   return 0;
 }
 
 long long LengthRecordedStream(void)
 {
-  if (mConnection)
-    return mConnection->RecordingLength();
+  if (mClient)
+    return mClient->RecordingLength();
 
   return 0;
 }
@@ -712,9 +704,9 @@ bool CanPauseStream()
 
 bool CanSeekStream()
 {
-  mCallbacks->Lock();
+  mClient->Lock();
   bool rc = (mDemuxer == NULL);
-  mCallbacks->Unlock();
+  mClient->Unlock();
 
   return rc;
 }
@@ -741,10 +733,10 @@ const char* GetMininumPVRAPIVersion(void)
 
 PVR_ERROR SetRecordingPlayCount(const PVR_RECORDING &recording, int count)
 {
-  if (!mConnection)
+  if (!mClient)
     return PVR_ERROR_SERVER_ERROR;
 
-  if(!mConnection->SetRecordingPlayCount(recording.strRecordingId, count))
+  if(!mClient->SetRecordingPlayCount(recording.strRecordingId, count))
     return PVR_ERROR_SERVER_ERROR;
 
   return PVR_ERROR_NO_ERROR;
@@ -752,18 +744,18 @@ PVR_ERROR SetRecordingPlayCount(const PVR_RECORDING &recording, int count)
 
 PVR_ERROR SetRecordingLastPlayedPosition(const PVR_RECORDING &recording, int lastplayedposition)
 {
-  if (!mConnection)
+  if (!mClient)
     return PVR_ERROR_SERVER_ERROR;
 
-  return mConnection->SetRecordingLastPosition(recording.strRecordingId, lastplayedposition) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
+  return mClient->SetRecordingLastPosition(recording.strRecordingId, lastplayedposition) ? PVR_ERROR_NO_ERROR : PVR_ERROR_SERVER_ERROR;
 }
 
 int GetRecordingLastPlayedPosition(const PVR_RECORDING &recording)
 {
-  if (!mConnection)
+  if (!mClient)
     return -1;
 
-  return mConnection->GetRecordingLastPosition(recording.strRecordingId);
+  return mClient->GetRecordingLastPosition(recording.strRecordingId);
 }
 
 PVR_ERROR CallMenuHook(const PVR_MENUHOOK &menuhook) {

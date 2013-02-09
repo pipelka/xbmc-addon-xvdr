@@ -25,16 +25,23 @@
 
 #include "XBMCAddon.h"
 #include "xvdr/clientinterface.h"
+#include "xvdr/connection.h"
 
 #include "xbmc_pvr_types.h"
 
-class cXBMCCallbacks : public XVDR::ClientInterface
+namespace XVDR {
+  class CGUIDialogChannelScanner;
+}
+
+class cXBMCClient : public XVDR::ClientInterface, public XVDR::Connection
 {
 public:
 
-  cXBMCCallbacks();
+  cXBMCClient();
 
-  ~cXBMCCallbacks();
+  ~cXBMCClient();
+
+  int GetChannelsCount();
 
   void OnLog(XVDR::LOGLEVEL level, const char* msg);
 
@@ -86,9 +93,24 @@ public:
 
   XVDR::Packet* ContentInfo(const XVDR::StreamProperties& p);
 
+  void Lock() {
+    XVDR::ClientInterface::Lock();
+  }
+
+  void Unlock() {
+    XVDR::ClientInterface::Unlock();
+  }
+
+  void DialogChannelScan();
+
 private:
 
   ADDON_HANDLE m_handle;
+
+  XVDR::CGUIDialogChannelScanner* m_scanner;
+
+  bool m_emptyChannelsSeen;
+
 };
 
 PVR_CHANNEL& operator<< (PVR_CHANNEL& lhs, const XVDR::Channel& rhs);

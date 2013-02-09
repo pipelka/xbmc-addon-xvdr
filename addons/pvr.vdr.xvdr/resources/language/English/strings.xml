@@ -10,8 +10,8 @@
     <string id="30006">Read recordings from directory</string>
     <string id="30007">VDR recordings directory</string>
     <string id="30008">XVDR Channel Scanner</string>
-    <string id="30009">Channel search - Settings</string>
-    <string id="30010">Start / Stop Scanner</string>
+    <string id="30009">Stop</string>
+    <string id="30010">Start</string>
     <string id="30011">Source Type</string>
     <string id="30012">TV channels</string>
     <string id="30013">Radio channels</string>
@@ -39,7 +39,7 @@
     <string id="30035">New channels</string>
     <string id="30036">Channel search - Finished</string>
     <string id="30037">No device available - exiting</string>
-    <string id="30038">%i%% done / %i new channels</string>
+    <string id="30038">%i%% done / %i channels</string>
     <string id="30039">Running</string>
     <string id="30040">Stopped</string>
     <string id="30041">Finished</string>
@@ -73,4 +73,9 @@
     <string id="30069">Native language only</string>
     <string id="30070">Supported CaIDs</string>
     <string id="30071">Encrypted channels</string>
+    <string id="30072">Channelscan started</string>
+    <string id="30073">Stopping channelscan ...</string>
+    <string id="30074">Failed to load scanner setup !</string>
+    <string id="30075">Your TV channel list is currently empty.</string>
+    <string id="30076">Do you want to start a channel scan ?</string>
 </strings>
