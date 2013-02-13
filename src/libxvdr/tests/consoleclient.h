@@ -53,7 +53,7 @@ public:
   XVDR::Packet* StreamChange(const XVDR::StreamProperties& streams);
 
   XVDR::Packet* AllocatePacket(int length);
-  void SetPacketData(XVDR::Packet* packet, uint8_t* data, int index, uint64_t pts, uint64_t dts);
+  void SetPacketData(XVDR::Packet* packet, uint8_t* data, int index, uint64_t pts, uint64_t dts, uint32_t duration);
   void FreePacket(XVDR::Packet* packet);
 
   std::map<int, XVDR::Channel> m_channels;
@@ -63,6 +63,7 @@ public:
 
     uint64_t pts;
     uint64_t dts;
+    uint32_t duration;
     int index;
     int pid;
     uint8_t* data;

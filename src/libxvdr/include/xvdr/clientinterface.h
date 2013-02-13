@@ -108,7 +108,7 @@ public:
 
   virtual Packet* AllocatePacket(int length) = 0;
 
-  virtual void SetPacketData(Packet* packet, uint8_t* data = NULL, int streamid = 0, uint64_t dts = 0, uint64_t pts = 0) = 0;
+  virtual void SetPacketData(Packet* packet, uint8_t* data = NULL, int streamid = 0, uint64_t dts = 0, uint64_t pts = 0, uint32_t duration = 0) = 0;
 
   virtual void FreePacket(Packet* p) = 0;
 

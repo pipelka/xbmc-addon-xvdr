@@ -69,11 +69,12 @@ XVDR::Packet* ConsoleClient::AllocatePacket(int length) {
   return (XVDR::Packet*)p;
 }
 
-void ConsoleClient::SetPacketData(XVDR::Packet* packet, uint8_t* data, int index, uint64_t pts, uint64_t dts) {
+void ConsoleClient::SetPacketData(XVDR::Packet* packet, uint8_t* data, int index, uint64_t pts, uint64_t dts, uint32_t duration) {
   Packet* p = (Packet*)packet;
 
   p->pts = pts;
   p->dts = dts;
+  p->duration = duration;
   p->index = index;
 
   memcpy(p->data, data, p->length);

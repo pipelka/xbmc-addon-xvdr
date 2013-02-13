@@ -240,7 +240,7 @@ Packet* cXBMCClient::AllocatePacket(int s)
   return (Packet*)d;
 }
 
-void cXBMCClient::SetPacketData(Packet* packet, uint8_t* data, int streamid, uint64_t dts, uint64_t pts)
+void cXBMCClient::SetPacketData(Packet* packet, uint8_t* data, int streamid, uint64_t dts, uint64_t pts, uint32_t duration)
 {
   if (packet == NULL)
     return;
@@ -248,7 +248,7 @@ void cXBMCClient::SetPacketData(Packet* packet, uint8_t* data, int streamid, uin
   DemuxPacket* d = static_cast<DemuxPacket*>(packet);
 
   d->iStreamId = streamid;
-  d->duration  = 0;
+  d->duration  = duration;
   d->dts       = (double)dts * DVD_TIME_BASE / 1000000;
   d->pts       = (double)pts * DVD_TIME_BASE / 1000000;
 

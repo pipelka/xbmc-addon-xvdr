@@ -86,7 +86,7 @@ public:
 
   XVDR::Packet* AllocatePacket(int length);
 
-  void SetPacketData(XVDR::Packet* packet, uint8_t* data = NULL, int streamid = 0, uint64_t dts = 0, uint64_t pts = 0);
+  void SetPacketData(XVDR::Packet* packet, uint8_t* data = NULL, int streamid = 0, uint64_t dts = 0, uint64_t pts = 0, uint32_t duration = 0);
 
   void FreePacket(XVDR::Packet* packet);
 

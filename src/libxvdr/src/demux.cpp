@@ -185,7 +185,7 @@ void Demux::OnResponsePacket(MsgPacket *resp) {
         }
         else {
           pkt = m_client->AllocatePacket(length);
-          m_client->SetPacketData(pkt, payload, stream.Index, dts, pts);
+          m_client->SetPacketData(pkt, payload, stream.Index, dts, pts, duration);
         }
       }
       break;
