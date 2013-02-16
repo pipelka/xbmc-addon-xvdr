@@ -68,8 +68,11 @@ case $host in
     ISAPPLE=true
     ;;
   *-androideabi)
-    AC_SUBST(ARCH_DEFINES, "-DANDROID")
-    ADDONNAME=libXBMC_VDR_xvdr.so
+    AC_MSG_ERROR([for Android please use the "xvdr-addon-android" repository !
+
+You may clone the repository with:
+git clone --recursive git://github.com/pipelka/xvdr-addon-android.git
+]);
     ;;
 esac
 
