@@ -151,7 +151,7 @@ void Demux::OnResponsePacket(MsgPacket *resp) {
   switch (resp->getMsgID())
   {
     case XVDR_STREAM_DETACH:
-      m_client->Log(INFO, "received detach command. aborting session ...");
+      m_client->OnDetach();
       Abort();
       break;
 

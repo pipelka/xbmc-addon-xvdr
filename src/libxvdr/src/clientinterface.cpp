@@ -108,6 +108,10 @@ void ClientInterface::OnSignalRestored() {
   Log(INFO, "signal restored.");
 }
 
+void ClientInterface::OnDetach() {
+  Log(INFO, "received detach command. aborting session ...");
+}
+
 void ClientInterface::OnChannelScannerStatus(const ChannelScannerStatus& status) {
   Log(INFO, "Scanner: %i%% done (%i new channels)", status.progress, status.newChannels);
 }

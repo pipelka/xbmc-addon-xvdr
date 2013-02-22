@@ -70,6 +70,10 @@ public:
 
   virtual void OnSignalRestored();
 
+  // server detach
+
+  virtual void OnDetach();
+
   // scanner status
 
   virtual void OnChannelScannerStatus(const ChannelScannerStatus& status);
