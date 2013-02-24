@@ -258,8 +258,6 @@ Stream::Stream() {
   Index = 0;
   Identifier = 0;
   PhysicalId = 0;
-  CodecId = 0;
-  CodecType = 0;
   FpsScale = 0;
   FpsRate = 0;
   Aspect = 0.0;
@@ -278,8 +276,7 @@ bool XVDR::operator==(Stream const& lhs, Stream const& rhs) {
     lhs.Index == rhs.Index &&
     lhs.Identifier == rhs.Identifier &&
     lhs.PhysicalId == rhs.PhysicalId &&
-    lhs.CodecId == rhs.CodecId &&
-    lhs.CodecType == rhs.CodecType &&
+    lhs.Type == rhs.Type &&
     lhs.Language == rhs.Language &&
     lhs.FpsScale == rhs.FpsScale &&
     lhs.FpsRate == rhs.FpsRate &&

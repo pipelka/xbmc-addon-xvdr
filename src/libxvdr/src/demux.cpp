@@ -28,7 +28,6 @@
 #include <limits.h>
 #include <string.h>
 
-#include "avcodec.h"
 #include "xvdr/demux.h"
 #include "xvdr/msgpacket.h"
 #include "xvdr/command.h"
@@ -268,43 +267,33 @@ SignalStatus Demux::GetSignalStatus()
   return m_signal;
 }
 
-void Demux::GetContentFromType(const std::string& type, int& codecid, int& codectype)
-{
+void Demux::GetContentFromType(const std::string& type, std::string& content) {
   if(type == "AC3") {
-    codectype = AVMEDIA_TYPE_AUDIO;
-    codecid = CODEC_ID_AC3;
+    content = "AUDIO";
   }
   else if(type == "MPEG2AUDIO") {
-    codectype = AVMEDIA_TYPE_AUDIO;
-    codecid = CODEC_ID_MP2;
+    content = "AUDIO";
   }
   else if(type == "AAC") {
-    codectype = AVMEDIA_TYPE_AUDIO;
-    codecid = CODEC_ID_AAC;
+    content = "AUDIO";
   }
   else if(type == "EAC3") {
-    codectype = AVMEDIA_TYPE_AUDIO;
-    codecid = CODEC_ID_AC3;
+    content = "AUDIO";
   }
   else if(type == "MPEG2VIDEO") {
-    codectype = AVMEDIA_TYPE_VIDEO;
-    codecid = CODEC_ID_MPEG2VIDEO;
+    content = "VIDEO";
   }
   else if(type == "H264") {
-    codectype = AVMEDIA_TYPE_VIDEO;
-    codecid = CODEC_ID_H264;
+    content = "VIDEO";
   }
   else if(type == "DVBSUB") {
-    codectype = AVMEDIA_TYPE_SUBTITLE;
-    codecid = CODEC_ID_DVB_SUBTITLE;
+    content = "SUBTITLE";
   }
   else if(type == "TELETEXT") {
-    codectype = AVMEDIA_TYPE_SUBTITLE;
-    codecid = CODEC_ID_DVB_TELETEXT;
+    content = "TELETEXT";
   }
   else {
-    codectype = AVMEDIA_TYPE_UNKNOWN;
-    codecid = CODEC_ID_NONE;
+    content = "UNKNOWN";
   }
 }
 
@@ -325,36 +314,30 @@ void Demux::StreamChange(MsgPacket *resp)
     stream.PhysicalId = resp->get_U32();
     stream.Type = resp->get_String();
 
-    GetContentFromType(stream.Type, stream.CodecId, stream.CodecType);
+    GetContentFromType(stream.Type, stream.Content);
 
     stream.Identifier = -1;
 
-    switch(stream.CodecType) {
-      case AVMEDIA_TYPE_AUDIO:
-        stream.Language = resp->get_String();
-        stream.Channels = resp->get_U32();
-        stream.SampleRate = resp->get_U32();
-        stream.BlockAlign = resp->get_U32();
-        stream.BitRate = resp->get_U32();
-        stream.BitsPerSample = resp->get_U32();
-        break;
-
-      case AVMEDIA_TYPE_VIDEO:
-        stream.FpsScale = resp->get_U32();
-        stream.FpsRate = resp->get_U32();
-        stream.Height = resp->get_U32();
-        stream.Width = resp->get_U32();
-        stream.Aspect = (double)resp->get_S64() / 10000.0;
-        break;
-
-      case AVMEDIA_TYPE_SUBTITLE:
-        if(stream.CodecId == CODEC_ID_DVB_SUBTITLE) {
-          stream.Language = resp->get_String();
-          composition_id = resp->get_U32();
-          ancillary_id   = resp->get_U32();
-          stream.Identifier = (composition_id & 0xffff) | ((ancillary_id & 0xffff) << 16);
-        }
-        break;
+    if(stream.Content == "AUDIO") {
+      stream.Language = resp->get_String();
+      stream.Channels = resp->get_U32();
+      stream.SampleRate = resp->get_U32();
+      stream.BlockAlign = resp->get_U32();
+      stream.BitRate = resp->get_U32();
+      stream.BitsPerSample = resp->get_U32();
+    }
+    else if(stream.Content == "VIDEO") {
+      stream.FpsScale = resp->get_U32();
+      stream.FpsRate = resp->get_U32();
+      stream.Height = resp->get_U32();
+      stream.Width = resp->get_U32();
+      stream.Aspect = (double)resp->get_S64() / 10000.0;
+    }
+    else if(stream.Content == "SUBTITLE") {
+      stream.Language = resp->get_String();
+      composition_id = resp->get_U32();
+      ancillary_id   = resp->get_U32();
+      stream.Identifier = (composition_id & 0xffff) | ((ancillary_id & 0xffff) << 16);
     }
 
     if (index > 16)

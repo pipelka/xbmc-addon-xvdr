@@ -89,9 +89,9 @@ protected:
   void StreamStatus(MsgPacket *resp);
   void StreamSignalInfo(MsgPacket *resp);
 
-  void GetContentFromType(const std::string& type, int& codecid, int& codectype);
-
 private:
+
+  void GetContentFromType(const std::string& type, std::string& content);
 
   void CleanupPacketQueue();
 

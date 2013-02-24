@@ -176,8 +176,6 @@ public:
   int         Index;
   int         Identifier;
   uint32_t    PhysicalId;
-  int         CodecId;
-  int         CodecType;
   std::string Language;
   uint32_t    FpsScale;
   uint32_t    FpsRate;
@@ -190,6 +188,7 @@ public:
   uint32_t    BitRate;
   uint32_t    BitsPerSample;
   std::string Type;
+  std::string Content;
 };
 
 class StreamProperties : public std::map<uint32_t, Stream> {

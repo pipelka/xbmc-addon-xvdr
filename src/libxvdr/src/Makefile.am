@@ -8,7 +8,6 @@
 SOURCEFILES = \
 	os-config.cpp \
 	os-config.h \
-	avcodec.h \
 	iso639.cpp \
 	iso639.h \
 	clientinterface.cpp \
