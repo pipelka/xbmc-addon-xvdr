@@ -54,7 +54,7 @@ int cXBMCClient::GetChannelsCount() {
   bool seen = m_emptyChannelsSeen;
   Unlock();
 
-  if(count > 0 || seen) {
+  if(!SupportChannelScan() || count > 0 || seen) {
     return count;
   }
 
