@@ -210,6 +210,10 @@ void ADDON_FreeSettings()
 {
 }
 
+void ADDON_Announce(const char *flag, const char *sender, const char *message, const void *data)
+{
+}
+
 /***********************************************************
  * PVR Client AddOn specific public library functions
  ***********************************************************/
@@ -731,6 +735,18 @@ const char* GetMininumPVRAPIVersion(void)
   return strMinApiVersion;
 }
 
+const char* GetGUIAPIVersion(void)
+{
+  static const char *strApiVersion = XBMC_GUI_API_VERSION;
+  return strApiVersion;
+}
+
+const char* GetMininumGUIAPIVersion(void)
+{
+  static const char *strMinApiVersion = XBMC_GUI_MIN_API_VERSION;
+  return strMinApiVersion;
+}
+
 PVR_ERROR SetRecordingPlayCount(const PVR_RECORDING &recording, int count)
 {
   if (!mClient)
@@ -782,4 +798,5 @@ const char * GetLiveStreamURL(const PVR_CHANNEL &channel) { return ""; }
 unsigned int GetChannelSwitchDelay(void) { return 0; }
 bool SeekTime(int time, bool backwards, double *startpts) { return false; }
 void SetSpeed(int speed) {};
+PVR_ERROR GetRecordingEdl(const PVR_RECORDING&, PVR_EDL_ENTRY edl[], int *size) { return PVR_ERROR_NOT_IMPLEMENTED; }
 }
