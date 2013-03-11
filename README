@@ -39,6 +39,21 @@ VDR Versions older as 1.7.22 are not supported by this addon and the VDR plugin.
 
 
 ---------------------------------------------
+BRANCHES
+
+Unfortunately XBMC PVR ABI versions aren't backward compatible.
+So we need to maintain different addon versions for XBMC.
+
+Currently there are the following branches:
+
+master        XBMC development version (currently 13)
+xbmc-frodo    XBMC frodo (12.x)
+
+Please check that you are using the correct addon version matching
+your XBMC version !
+
+
+---------------------------------------------
 ADDON COMPILATION & INSTALLATION INSTRUCTIONS
 
 IMPORTANT:
