@@ -27,6 +27,7 @@
 #include <string>
 #include <sstream>
 #include <map>
+#include <list>
 
 class MsgPacket;
 
@@ -122,6 +123,26 @@ public:
 };
 
 RecordingEntry& operator<< (RecordingEntry& lhs, MsgPacket* rhs);
+
+
+class RecordingCutMark {
+public:
+
+  RecordingCutMark();
+  RecordingCutMark(MsgPacket* p);
+
+  double      Fps;
+  uint64_t    FrameBegin;
+  uint64_t    FrameEnd;
+  std::string Type;
+  std::string Description;
+};
+
+RecordingCutMark& operator<< (RecordingCutMark& lhs, MsgPacket* rhs);
+
+
+class RecordingEdl : public std::list<RecordingCutMark> {
+};
 
 
 class ChannelGroup {

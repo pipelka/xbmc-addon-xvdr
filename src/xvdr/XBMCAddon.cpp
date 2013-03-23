@@ -232,6 +232,7 @@ PVR_ERROR GetAddonCapabilities(PVR_ADDON_CAPABILITIES* pCapabilities)
 
   pCapabilities->bSupportsRecordingFolders   = true;
   pCapabilities->bSupportsRecordingPlayCount = true;
+  pCapabilities->bSupportsRecordingEdl       = true;
   pCapabilities->bSupportsLastPlayedPosition = true;
 
   return PVR_ERROR_NO_ERROR;
@@ -784,6 +785,53 @@ PVR_ERROR CallMenuHook(const PVR_MENUHOOK &menuhook) {
   return PVR_ERROR_NOT_IMPLEMENTED;
 }
 
+PVR_ERROR GetRecordingEdl(const PVR_RECORDING& recording, PVR_EDL_ENTRY edl[], int *size) {
+  if (!mClient)
+    return PVR_ERROR_SERVER_ERROR;
+
+  RecordingEdl list;
+
+  if(!mClient->LoadRecordingEdl(recording.strRecordingId, list)) {
+    XBMC->Log(LOG_DEBUG, "unable to load edl !");
+    *size = 0;
+    return PVR_ERROR_NO_ERROR;
+  }
+
+  int maxsize = *size;
+  *size = 0;
+
+  int64_t start = 0;
+  int64_t end = 0;
+
+  for(RecordingEdl::iterator i = list.begin(); i != list.end(); i++) {
+    if(*size == maxsize) {
+      break;
+    }
+
+    // convert in/out marks (scene) into cut marks
+    end = (int64_t)((double)(i->FrameBegin * 1000) / i->Fps);
+
+    if(start < end) {
+      edl[*size].type = PVR_EDL_TYPE_CUT;
+      edl[*size].start = start;
+      edl[*size].end = end;
+      (*size)++;
+    }
+
+    start = (int64_t)((double)(i->FrameEnd * 1000) / i->Fps);
+  }
+
+  // add last part
+  if(*size > 0) {
+    edl[*size].type = PVR_EDL_TYPE_CUT;
+    edl[*size].start = start;
+    edl[*size].end = 1000 * 60 * 60 * 24;
+    (*size)++;
+  }
+
+  return PVR_ERROR_NO_ERROR;
+}
+
 /** UNUSED API FUNCTIONS */
 PVR_ERROR DeleteChannel(const PVR_CHANNEL &channel) { return PVR_ERROR_NOT_IMPLEMENTED; }
 PVR_ERROR RenameChannel(const PVR_CHANNEL &channel) { return PVR_ERROR_NOT_IMPLEMENTED; }
@@ -798,5 +846,5 @@ const char * GetLiveStreamURL(const PVR_CHANNEL &channel) { return ""; }
 unsigned int GetChannelSwitchDelay(void) { return 0; }
 bool SeekTime(int time, bool backwards, double *startpts) { return false; }
 void SetSpeed(int speed) {};
-PVR_ERROR GetRecordingEdl(const PVR_RECORDING&, PVR_EDL_ENTRY edl[], int *size) { return PVR_ERROR_NOT_IMPLEMENTED; }
+
 }

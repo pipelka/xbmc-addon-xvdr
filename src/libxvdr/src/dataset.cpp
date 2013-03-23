@@ -204,6 +204,26 @@ RecordingEntry& XVDR::operator<< (RecordingEntry& lhs, MsgPacket* rhs) {
   return lhs;
 }
 
+RecordingCutMark::RecordingCutMark() {
+  Fps = 0;
+  FrameBegin = 0;
+  FrameEnd = 0;
+}
+
+RecordingCutMark::RecordingCutMark(MsgPacket* p) {
+  (*this) << p;
+}
+
+RecordingCutMark& XVDR::operator<< (RecordingCutMark& lhs, MsgPacket* rhs) {
+  lhs.Type = rhs->get_String();
+  lhs.FrameBegin = rhs->get_U64();
+  lhs.FrameEnd = rhs->get_U64();
+  lhs.Description = rhs->get_String();
+
+  return lhs;
+}
+
+
 ChannelGroup::ChannelGroup() : IsRadio(false) {
 }
 

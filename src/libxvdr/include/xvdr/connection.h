@@ -99,6 +99,7 @@ public:
   long long SeekRecording(long long pos, uint32_t whence);
   long long RecordingPosition(void);
   long long RecordingLength(void);
+  bool LoadRecordingEdl(const std::string& recid, RecordingEdl& edl);
 
   // Channelscanner
 

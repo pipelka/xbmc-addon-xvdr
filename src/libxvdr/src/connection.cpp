@@ -908,6 +908,34 @@ long long Connection::RecordingLength(void)
   return m_currentPlayingRecordBytes;
 }
 
+bool Connection::LoadRecordingEdl(const std::string& recid, RecordingEdl& edl)
+{
+  MsgPacket vrp(XVDR_RECORDINGS_GETMARKS);
+  vrp.put_String(recid.c_str());
+
+  MsgPacket* vresp = ReadResult(&vrp);
+
+  if (vresp == NULL || vresp->eop()) {
+    delete vresp;
+    return false;
+  }
+
+  if(vresp->get_U32() != XVDR_RET_OK) {
+    delete vresp;
+    return false;
+  }
+
+  double fps = (double)vresp->get_U64() / 10000.0;
+
+  while(!vresp->eop()) {
+    RecordingCutMark mark(vresp);
+    mark.Fps = fps;
+    edl.push_back(mark);
+  }
+
+  return true;
+}
+
 bool Connection::TryReconnect() {
   if(!Open(m_hostname))
     return false;
