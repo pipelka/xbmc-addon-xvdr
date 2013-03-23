@@ -95,6 +95,7 @@ bool CGUIDialogBase::OnClick(int controlId) {
 bool CGUIDialogBase::OnAction(int actionId) {
   if (actionId == ADDON_ACTION_CLOSE_DIALOG || actionId == ADDON_ACTION_PREVIOUS_MENU) {
     Close();
+    return true;
   }
-  return true;
+  return false;
 }
