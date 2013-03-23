@@ -776,7 +776,7 @@ bool Connection::OpenRecording(const std::string& recid)
   uint32_t returnCode = vresp->get_U32();
   if (returnCode == XVDR_RET_OK)
   {
-    m_currentPlayingRecordFrames    = vresp->get_U32();
+    vresp->get_U32(); // number of frames is unused
     m_currentPlayingRecordBytes     = vresp->get_U64();
     m_currentPlayingRecordPosition  = 0;
     m_recid = recid;
@@ -823,14 +823,12 @@ int Connection::ReadRecording(unsigned char* buf, uint32_t buf_size)
   MsgPacket vrp1(XVDR_RECSTREAM_UPDATE);
   if ((vresp = ReadResult(&vrp1)) != NULL)
   {
-    uint32_t frames = vresp->get_U32();
+    vresp->get_U32(); // number of frames is unused
     uint64_t bytes  = vresp->get_U64();
 
-    if(frames != m_currentPlayingRecordFrames || bytes != m_currentPlayingRecordBytes)
-    {
-      m_currentPlayingRecordFrames = frames;
+    if(bytes != m_currentPlayingRecordBytes) {
       m_currentPlayingRecordBytes  = bytes;
-      m_client->Log(DEBUG, "Size of recording changed: %lu bytes (%u frames)", bytes, frames);
+      m_client->Log(DEBUG, "Size of recording changed: %lu bytes", bytes);
     }
     delete vresp;
   }

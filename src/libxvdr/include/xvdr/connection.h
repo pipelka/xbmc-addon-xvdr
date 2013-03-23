@@ -146,7 +146,6 @@ private:
 
   std::string m_recid;
   uint64_t m_currentPlayingRecordBytes;
-  uint32_t m_currentPlayingRecordFrames;
   uint64_t m_currentPlayingRecordPosition;
 
   std::string m_server;
