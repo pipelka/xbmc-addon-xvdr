@@ -31,6 +31,7 @@
 #include "xvdr/connection.h"
 #include "xvdr/dataset.h"
 #include "xvdr/command.h"
+#include "xvdr/packetbuffer.h"
 
 class MsgPacket;
 
@@ -54,7 +55,7 @@ public:
 
 public:
 
-  Demux(ClientInterface* client);
+  Demux(ClientInterface* client, PacketBuffer* buffer);
   ~Demux();
 
   SwitchStatus OpenChannel(const std::string& hostname, uint32_t channeluid);
@@ -78,12 +79,16 @@ public:
 
   void RequestSignalInfo();
 
+  bool CanSeekStream();
+
+  bool SeekTime(int time, bool backwards, double *startpts);
+
 protected:
 
   void OnDisconnect();
   void OnReconnect();
 
-  void OnResponsePacket(MsgPacket *resp);
+  bool OnResponsePacket(MsgPacket *resp);
 
   void StreamChange(MsgPacket *resp);
   void StreamStatus(MsgPacket *resp);
@@ -100,6 +105,7 @@ private:
   int m_priority;
   uint32_t m_channeluid;
   std::queue<Packet*> m_queue;
+  PacketBuffer* m_buffer;
   Mutex m_lock;
   CondWait m_cond;
   bool m_queuelocked;

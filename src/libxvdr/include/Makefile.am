@@ -8,7 +8,8 @@ libxvdrinclude_HEADERS = \
 	xvdr/demux.h \
 	xvdr/msgpacket.h \
 	xvdr/session.h \
-	xvdr/thread.h
+	xvdr/thread.h \
+	xvdr/packetbuffer.h
 
 EXTRA_DIST = \
 	$(libxvdrinclude_HEADERS)

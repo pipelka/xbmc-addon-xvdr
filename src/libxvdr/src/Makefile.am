@@ -16,7 +16,8 @@ SOURCEFILES = \
 	demux.cpp \
 	msgpacket.cpp \
 	session.cpp \
-	thread.cpp
+	thread.cpp \
+	packetbuffer.cpp
 
 
 noinst_LTLIBRARIES = libxvdrstatic.la

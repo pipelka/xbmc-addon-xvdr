@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
 
   Channel c = client.m_channels[channel_number];
 
-  Demux demux(&client);
+  Demux demux(&client, NULL);
 
   TimeMs t;
   client.Log(INFO, "Opening channel #%i (%s)", channel_number, c.Name.c_str());

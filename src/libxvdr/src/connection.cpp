@@ -593,8 +593,9 @@ int Connection::DeleteRecording(const std::string& recid)
   return returnCode;
 }
 
-void Connection::OnResponsePacket(MsgPacket* pkt)
+bool Connection::OnResponsePacket(MsgPacket* pkt)
 {
+  return false;
 }
 
 void Connection::Action()
@@ -683,12 +684,10 @@ void Connection::Action()
 
     // OTHER CHANNELID
 
-    else
+    else if (!OnResponsePacket(vresp))
     {
-      OnResponsePacket(vresp);
+      delete vresp;
     }
-
-    delete vresp;
   }
 }
 

@@ -34,7 +34,8 @@
 
 using namespace XVDR;
 
-Demux::Demux(ClientInterface* client) : Connection(client), m_priority(50), m_queuelocked(false), m_paused(false), m_timeshiftmode(false)
+Demux::Demux(ClientInterface* client, PacketBuffer* buffer) : Connection(client), m_priority(50),
+    m_queuelocked(false), m_paused(false), m_timeshiftmode(false), m_channeluid(0), m_buffer(buffer)
 {
 }
 
@@ -42,6 +43,10 @@ Demux::~Demux()
 {
   // wait for pending requests
   MutexLock lock(&m_lock);
+
+  if (m_buffer != NULL) {
+    delete m_buffer;
+  }
 }
 
 Demux::SwitchStatus Demux::OpenChannel(const std::string& hostname, uint32_t channeluid)
@@ -67,6 +72,11 @@ StreamProperties Demux::GetStreamProperties()
 void Demux::CleanupPacketQueue()
 {
   MutexLock lock(&m_lock);
+
+  if (m_buffer != NULL) {
+    m_buffer->clear();
+  }
+
   Packet* p = NULL;
 
   while(!m_queue.empty())
@@ -92,11 +102,59 @@ Packet* Demux::Read()
   }
 
   Packet* p = NULL;
+  MsgPacket* pkt = NULL;
   m_lock.Lock();
 
   if(m_queuelocked) {
       m_lock.Unlock();
       return m_client->AllocatePacket(0);
+  }
+
+  if (m_buffer != NULL) {
+    pkt = m_buffer->read_next();
+
+    if (pkt == NULL) {
+      m_lock.Unlock();
+      m_cond.Wait(1000);
+      m_lock.Lock();
+      pkt = m_buffer->read_next();
+    }
+
+    if (pkt != NULL) {
+      pkt->rewind();
+
+      switch (pkt->getMsgID()) {
+      case XVDR_STREAM_MUXPKT: {
+        uint16_t id = pkt->get_U16();
+        int64_t pts = pkt->get_S64();
+        int64_t dts = pkt->get_S64();
+        uint32_t duration = pkt->get_U32();
+        uint32_t length = pkt->get_U32();
+        uint8_t* payload = pkt->consume(length);
+        Stream& stream = m_streams[id];
+
+        if (stream.PhysicalId != id) {
+          m_client->Log(DEBUG, "stream id %i not found", id);
+        } else {
+          p = m_client->AllocatePacket(length);
+          m_client->SetPacketData(p, payload, stream.Index, dts, pts, duration);
+        }
+        break;
+      }
+      case XVDR_STREAM_CHANGE: {
+        StreamChange(pkt);
+        p = m_client->StreamChange(m_streams);
+        break;
+      }
+      }
+    }
+
+    if (p == NULL) {
+      p = m_client->AllocatePacket(0);
+    }
+
+    m_lock.Unlock();
+    return p;
   }
 
   bool bEmpty = m_queue.empty();
@@ -134,15 +192,15 @@ Packet* Demux::Read()
   return p;
 }
 
-void Demux::OnResponsePacket(MsgPacket *resp) {
+bool Demux::OnResponsePacket(MsgPacket *resp) {
   {
     MutexLock lock(&m_lock);
     if(m_queuelocked)
-      return;
+      return false;
   }
 
   if (resp->getType() != XVDR_CHANNEL_STREAM)
-    return;
+    return false;
 
   Packet* pkt = NULL;
   int iStreamId = -1;
@@ -155,6 +213,14 @@ void Demux::OnResponsePacket(MsgPacket *resp) {
       break;
 
     case XVDR_STREAM_CHANGE:
+      if (m_buffer != NULL) {
+        m_lock.Lock();
+        m_buffer->write(resp);
+        m_lock.Unlock();
+        m_cond.Signal();
+        return true;
+      }
+
       StreamChange(resp);
       pkt = m_client->StreamChange(m_streams);
       break;
@@ -171,18 +237,22 @@ void Demux::OnResponsePacket(MsgPacket *resp) {
       {
         // figure out the stream for this packet
         uint16_t id = resp->get_U16();
-        int64_t pts = resp->get_S64();
-        int64_t dts = resp->get_S64();
-        uint32_t duration = resp->get_U32();
-        uint32_t length = resp->get_U32();
-        uint8_t* payload = resp->consume(length);
-
         Stream& stream = m_streams[id];
 
         if(stream.PhysicalId != id) {
             m_client->Log(DEBUG, "stream id %i not found", id);
-        }
-        else {
+        } if (m_buffer != NULL) {
+          m_lock.Lock();
+          m_buffer->write(resp);
+          m_lock.Unlock();
+          m_cond.Signal();
+          return true;
+        } else {
+          int64_t pts = resp->get_S64();
+          int64_t dts = resp->get_S64();
+          uint32_t duration = resp->get_U32();
+          uint32_t length = resp->get_U32();
+          uint8_t* payload = resp->consume(length);
           pkt = m_client->AllocatePacket(length);
           m_client->SetPacketData(pkt, payload, stream.Index, dts, pts, duration);
         }
@@ -192,7 +262,7 @@ void Demux::OnResponsePacket(MsgPacket *resp) {
     // discard unknown packet types
     default:
       pkt = NULL;
-      return;
+      return false;
   }
 
   if(pkt != NULL) {
@@ -203,7 +273,7 @@ void Demux::OnResponsePacket(MsgPacket *resp) {
 	    if(m_queue.size() > 200)
 	    {
 	      m_client->FreePacket(pkt);
-	      return;
+	      return false;
 	    }
 
       m_queue.push(pkt);
@@ -211,7 +281,7 @@ void Demux::OnResponsePacket(MsgPacket *resp) {
 	  m_cond.Signal();
   }
 
-  return;
+  return false;
 }
 
 Demux::SwitchStatus Demux::SwitchChannel(uint32_t channeluid)
@@ -390,6 +460,10 @@ void Demux::SetPriority(int priority)
 
 void Demux::Pause(bool on)
 {
+  if (m_buffer != NULL) {
+    return;
+  }
+
   MsgPacket req(XVDR_CHANNELSTREAM_PAUSE);
   req.put_U32(on);
 
@@ -418,4 +492,70 @@ void Demux::RequestSignalInfo()
 
   // signal status timeout
   m_lastsignal.Set(5000);
+}
+
+bool Demux::CanSeekStream() {
+  return m_buffer != NULL;
+}
+
+bool Demux::SeekTime(int time, bool backwards, double *startpts) {
+  if (m_buffer == NULL) {
+    return false;
+  }
+
+  int64_t pts;
+  MsgPacket* p = NULL;
+  MsgPacket* prev = NULL;
+  int64_t t = (int64_t) time * 1000;
+  MutexLock lock(&m_lock);
+
+  if (backwards) {
+    while ((p = m_buffer->read_prev()) != NULL) {
+      if (p->getMsgID() == XVDR_STREAM_MUXPKT) {
+        p->rewind();
+        p->get_U16();
+        pts = p->get_S64();
+
+        if (t >= pts) {
+          *startpts = pts;
+          return true;
+        } else {
+          prev = p;
+        }
+      }
+    }
+  } else {
+    while ((p = m_buffer->read_next()) != NULL) {
+      if (p->getMsgID() == XVDR_STREAM_MUXPKT) {
+        p->rewind();
+        p->get_U16();
+        pts = p->get_S64();
+
+        if (t <= pts) {
+          *startpts = pts;
+          return true;
+        } else {
+          prev = p;
+        }
+      }
+    }
+    if (prev == NULL) { // End of buffer
+      for (prev = m_buffer->read_prev(); (prev != NULL);) {
+        if (prev->getMsgID() == XVDR_STREAM_MUXPKT) {
+          break;
+        } else {
+          prev = m_buffer->read_prev();
+        }
+      }
+    }
+  }
+
+  if (prev != NULL) {
+    prev->rewind();
+    prev->get_U16();
+    *startpts = prev->get_S64();
+    return true;
+  } else {
+    return false;
+  }
 }
