@@ -161,3 +161,6 @@ private:
   void ReadCaIDs(const char* buffer, std::vector<int>& array);
 
 };
+
+template<> bool cXBMCConfigParameter<std::string>::set(const void* value);
+template<> bool cXBMCConfigParameter<std::string>::load();
