@@ -1,8 +1,9 @@
+#pragma once
 /*
  *      xbmc-addon-xvdr - XVDR addon for XBMC
  *
- *      Copyright (C) 2010 Alwin Esch (Team XBMC)
- *      Copyright (C) 2012 Alexander Pipelka
+ *      Copyright (C) 2013 Andrey Pavlenko
+ *      Copyright (C) 2013 Alexander Pipelka
  *
  *      https://github.com/pipelka/xbmc-addon-xvdr
  *
@@ -23,10 +24,12 @@
  *
  */
 
-#ifndef PACKETBUFFER_H_
-#define PACKETBUFFER_H_
+#ifndef XVDR_PACKETBUFFER_H
+#define XVDR_PACKETBUFFER_H
 
 #include "xvdr/msgpacket.h"
+
+namespace XVDR {
 
 class PacketBuffer {
 
@@ -39,39 +42,44 @@ public:
    *
    * @param max_size  Maximum buffer size in bytes.
    * @param file      Path to a file to store buffer data in.
-   *                  If NULL - in-memory storage will be used.
+   *                  If omitted or empty - in-memory storage will be used.
    */
-  static PacketBuffer* create(size_t max_size, char* file);
+  static PacketBuffer* create(size_t max_size, const std::string& file = "");
 
   /**
-   * Write packet to the buffer.
+   * Put packet into the buffer.
    */
-  virtual void write(MsgPacket* p) =0;
+  virtual void put(MsgPacket* p) = 0;
 
   /**
-   * Read next packet from the buffer,
+   * Get next packet from the buffer,
    */
-  virtual MsgPacket* read_next() =0;
+  virtual MsgPacket* get() = 0;
 
   /**
-   * Read previous packet from the buffer.
+   * Signal the buffer that this packet isn't needed currently
    */
-  virtual MsgPacket* read_prev() =0;
+  virtual void release(MsgPacket* packet) {}
+
+  /**
+   * Try to seek to a position in the buffer
+   */
+  virtual bool seek(int time, bool backwards, double* startpts) = 0;
 
   /**
    * Clear the buffer.
    */
-  virtual void clear() =0;
+  virtual void clear() = 0;
 
   /**
    * Returns buffer's size in bytes.
    */
-  virtual size_t size() =0;
+  virtual size_t size() = 0;
 
   /**
    * Returns number of packets in the buffer.
    */
-  virtual size_t count() =0;
+  virtual size_t count() = 0;
 
   /**
    * Set maximum buffer size in bytes.
@@ -96,4 +104,6 @@ protected:
 
 };
 
-#endif /* PACKETBUFFER_H_ */
+} // namespace XVDR
+
+#endif // XVDR_PACKETBUFFER_H

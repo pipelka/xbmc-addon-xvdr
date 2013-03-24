@@ -1,8 +1,8 @@
 /*
  *      xbmc-addon-xvdr - XVDR addon for XBMC
  *
- *      Copyright (C) 2010 Alwin Esch (Team XBMC)
- *      Copyright (C) 2012 Alexander Pipelka
+ *      Copyright (C) 2013 Andrey Pavlenko
+ *      Copyright (C) 2013 Alexander Pipelka
  *
  *      https://github.com/pipelka/xbmc-addon-xvdr
  *
@@ -24,144 +24,235 @@
  */
 
 #include <cstddef>
-#include "xvdr/packetbuffer.h"
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 
-class Node {
+#include <set>
+
+#include "packetbuffermodel.h"
+
+template<class PBufferType>
+class FileNode : public Node {
+protected:
+
+  int64_t m_offset;
+  PBufferType m_buffer;
+  size_t m_size;
+  uint8_t m_frametype;
+  int64_t m_pts;
+  int64_t m_dts;
+
 public:
-  MsgPacket* _packet;
-  Node* _next;
-  Node* _prev;
 
-  Node(MsgPacket* packet) {
-    _packet = packet;
-    _prev = NULL;
-    _next = NULL;
+  FileNode(MsgPacket* packet, PacketBuffer* buffer) :
+  Node(packet, buffer),
+  m_offset(0),
+  m_buffer((PBufferType)buffer),
+  m_pts(0),
+  m_dts(0) {
+    m_frametype = packet->getClientID() & 0xFF;
+    m_size = packet->getPacketLength();
+
+    if(packet->getMsgID() == XVDR_STREAM_MUXPKT) {
+      packet->rewind();
+      packet->get_U16();
+      m_pts = packet->get_S64();
+      m_dts = packet->get_S64();
+      packet->rewind();
+    }
+
+    // get offset
+    if(m_buffer->tail() != NULL) {
+      m_offset = m_buffer->tail()->m_offset + m_buffer->tail()->size();
+    }
+
+    // check for ring-buffer wrap
+    if(m_offset > m_buffer->get_max_size()) {
+      m_offset = 0;
+    }
+
+    // set file position
+    if(lseek(m_buffer->fd(), m_offset, SEEK_SET) == -1) {
+      return;
+    }
+
+    // write packet to buffer
+    packet->write(m_buffer->fd(), m_buffer->timeout());
+    release();
   }
 
-  ~Node() {
+  MsgPacket* packet() {
+    if(_packet == NULL) {
+      if(lseek(m_buffer->fd(), m_offset, SEEK_SET) == -1) {
+        return NULL;
+      }
+      _packet = MsgPacket::read(m_buffer->fd(), m_buffer->timeout());
+    }
+
+    return _packet;
+  }
+
+  void release() {
     delete _packet;
+    _packet = NULL;
   }
 
-  inline size_t size() {
-    return _packet->getPacketLength() + sizeof(Node);
+  size_t size() {
+      return m_size;
   }
+
+  uint8_t frametype() {
+    return m_frametype;
+  }
+
+  int64_t pts() {
+    return m_pts;
+  }
+
+  int64_t dts() {
+    return m_dts;
+  }
+
 };
 
-class MemPacketBuffer: public PacketBuffer {
 
+class DiskPacketBuffer;
+typedef FileNode<DiskPacketBuffer*> DiskNode;
+
+class DiskPacketBuffer : public PacketBufferModel<DiskNode> {
 public:
 
-  MemPacketBuffer(size_t max_size) {
-    _size = 0;
-    _count = 0;
-    _head = NULL;
-    _tail = NULL;
-    _current = NULL;
-    _max_size = max_size;
+  DiskPacketBuffer(size_t max_mem, const std::string& file, int timeout_ms = 3000) :
+  PacketBufferModel<DiskNode>::PacketBufferModel(max_mem),
+  m_fd(-1),
+  m_timeout(timeout_ms) {
+    m_filename = file;
+    m_fd = open(m_filename.c_str(), O_CREAT | O_TRUNC | O_RDWR, 0644);
   }
 
-  ~MemPacketBuffer() {
-    clear();
+  virtual ~DiskPacketBuffer() {
+    if(m_fd != -1) {
+      close(m_fd);
+      unlink(m_filename.c_str());
+    }
   }
 
-  void write(MsgPacket* p) {
-    Node* n = new Node(p);
-    size_t size = n->size();
-    ensure_size(size);
+  MsgPacket* get() {
+    DiskNode* n = current();
+    MsgPacket* p = PacketBufferModel<DiskNode>::get();
 
-    if (_tail == NULL) {
-      _head = _tail = _current = n;
-    } else {
-      n->_prev = _tail;
-      _tail->_next = n;
-      _tail = n;
+    if(p != NULL) {
+      m_used.insert(n);
+    }
 
-      if (_current == NULL) {
-        _current = n;
+    return p;
+  }
+
+  void release(MsgPacket* p) {
+    std::set<DiskNode*>::iterator i = m_used.begin();
+    while(i != m_used.end()) {
+      if((*i)->packet() == p) {
+        (*i)->release();
+        m_used.erase(i);
+        return;
       }
     }
-
-    _count++;
-    _size += size;
   }
 
-  MsgPacket* read_next() {
-    if (_current != NULL) {
-      MsgPacket* p = _current->_packet;
-      _current = _current->_next;
-      return p;
-    }
-    return NULL;
+  inline int fd() {
+    return m_fd;
   }
 
-  MsgPacket* read_prev() {
-    if (_current != NULL) {
-      if (_current != _head) {
-        _current = _current->_prev;
-        return _current->_packet;
-      }
-    } else if (_tail != NULL) {
-      _current = _tail;
-      return _current->_packet;
-    }
-    return NULL;
-  }
-
-  void clear() {
-    for (Node* n = _head; n != NULL;) {
-      Node* next = n->_next;
-      delete n;
-      n = next;
-    }
-
-    _size = _count = 0;
-    _head = _tail = _current = NULL;
-  }
-
-  inline size_t size() {
-    return _size;
-  }
-
-  inline size_t count() {
-    return _count;
+  inline int timeout() {
+    return m_timeout;
   }
 
 private:
-  size_t _size;
-  size_t _count;
-  Node* _head;
-  Node* _tail;
-  Node* _current;
 
-  void ensure_size(uint32_t size) {
-    size_t max = get_max_size();
+  std::string m_filename;
 
-    for (Node* n = _head; (n != NULL) && (_size + size) > max; n = _head) {
-      size_t node_size = n->size();
-      _head = n->_next;
+  int m_fd;
 
-      if (_current == n) {
-        _current = _head;
-      }
-      if (_tail == n) {
-        _tail = _head;
-      }
-      if (_head != NULL) {
-        _head->_prev = NULL;
-      }
+  int m_timeout;
 
-      delete n;
-      _count--;
-      _size -= node_size;
+  std::set<DiskNode*> m_used;
+};
+
+
+class MemNode : public Node {
+public:
+
+  MemNode(MsgPacket* packet, PacketBuffer* buffer) : Node(packet, buffer) {}
+
+  size_t size() {
+    if(_packet == NULL) {
+      return 0;
     }
+    return _packet->getPacketLength();
+  }
+
+  uint8_t frametype() {
+    if(_packet == NULL) {
+      return 0;
+    }
+    return _packet->getClientID() && 0xFF;
+  }
+
+  int64_t pts() {
+    if(_packet == NULL) {
+      return 0;
+    }
+
+    if(_packet->getMsgID() == XVDR_STREAM_MUXPKT) {
+      _packet->rewind();
+      _packet->get_U16();
+      int64_t pts = _packet->get_S64();
+      _packet->rewind();
+      return pts;
+    }
+
+    return 0;
+  }
+
+  int64_t dts() {
+    if(_packet == NULL) {
+      return 0;
+    }
+
+    if(_packet->getMsgID() == XVDR_STREAM_MUXPKT) {
+      _packet->rewind();
+      _packet->get_U16();
+      _packet->get_S64();
+      int64_t dts = _packet->get_S64();
+      _packet->rewind();
+      return dts;
+    }
+
+    return 0;
   }
 };
 
-PacketBuffer* PacketBuffer::create(size_t max_size, char* file) {
-  if (file != NULL) {
-    // Todo: implement
-    return NULL;
+class MemPacketBuffer : public PacketBufferModel<MemNode> {
+public:
+  MemPacketBuffer(size_t max_mem) : PacketBufferModel<MemNode>::PacketBufferModel(max_mem) {};
+};
+
+
+namespace XVDR {
+
+PacketBuffer* PacketBuffer::create(size_t max_size, const std::string& file) {
+  PacketBuffer* buf = NULL;
+
+  if (!file.empty()) {
+    buf = new DiskPacketBuffer(max_size, file);
   } else {
-    return new MemPacketBuffer(max_size);
+    buf = new MemPacketBuffer(max_size);
   }
+
+  return buf;
 }
+
+} // namespace XVDR
