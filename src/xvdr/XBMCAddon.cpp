@@ -529,11 +529,40 @@ bool OpenLiveStream(const PVR_CHANNEL &channel)
     delete mDemuxer;
   }
 
-  cXBMCSettings s = cXBMCSettings::GetInstance();
-  int size;
-  PacketBuffer* buf = XBMC->GetSetting("tsbuffersize", &size) && (size > 0) ?
-                      PacketBuffer::create(size * 1024 * 1024, NULL) : NULL;
-  XBMC->Log(LOG_NOTICE, "TS buffer size: %i Mb", size);
+  cXBMCSettings& s = cXBMCSettings::GetInstance();
+  PacketBuffer* buf = NULL;
+
+  // simple timeshift
+  if(s.TSMethod() == 0) {
+    XBMC->Log(LOG_NOTICE, "doing simple server-side timeshift");
+  }
+
+  // full-timeshift (ram)
+  else if(s.TSMethod() == 1) {
+    buf = (s.TSBufferSize() > 0) ? PacketBuffer::create(s.TSBufferSize() * 1024 * 1024) : NULL;
+    if(buf != NULL) {
+      XBMC->Log(LOG_NOTICE, "doing timeshift in memory using %i Mb RAM", s.TSBufferSize());
+    }
+  }
+
+  // full-timeshift (hdd)
+  else if(s.TSMethod() == 2) {
+    std::string tsfile = s.TSFolder();
+
+    // use temp folder if tsfolder is empty
+    if(tsfile.empty()) {
+      XVDR::ClientInterface::GetTempFolder(tsfile);
+    }
+
+    XVDR::ClientInterface::TrimPath(tsfile, true);
+    tsfile += "xvdr-timeshift.dat";
+
+    buf = (s.TSBufferSizeHDD() > 0) ? PacketBuffer::create(s.TSBufferSizeHDD() * 1024 * 1024, tsfile) : NULL;
+    if(buf != NULL) {
+      XBMC->Log(LOG_NOTICE, "doing timeshift on hdd at '%s' using %f Mb", tsfile.c_str(), s.TSBufferSizeHDD());
+    }
+  }
+
   mDemuxer = new Demux(mClient, buf);
   mDemuxer->SetTimeout(cXBMCSettings::GetInstance().ConnectTimeout() * 1000);
   mDemuxer->SetAudioType(cXBMCSettings::GetInstance().AudioType());

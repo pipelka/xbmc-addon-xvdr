@@ -136,6 +136,10 @@ public:
   cXBMCConfigParameter<bool> EncryptedChannels;
   cXBMCConfigParameter<std::string> caids;
   cXBMCConfigParameter<std::string> PiconPath;
+  cXBMCConfigParameter<int> TSBufferSize;
+  cXBMCConfigParameter<int> TSBufferSizeHDD;
+  cXBMCConfigParameter<int> TSMethod;
+  cXBMCConfigParameter<std::string> TSFolder;
   std::vector<int> vcaids;
 
 protected:
@@ -153,7 +157,11 @@ protected:
   NativeLangOnly("nativelangonly", false),
   EncryptedChannels("encryptedchannels", true),
   caids("caids"),
-  PiconPath("piconpath")
+  PiconPath("piconpath"),
+  TSBufferSize("tsbuffersize"),
+  TSMethod("tsmethod"),
+  TSBufferSizeHDD("tsbuffersizehdd"),
+  TSFolder("tsfolder")
   {}
 
 private:
