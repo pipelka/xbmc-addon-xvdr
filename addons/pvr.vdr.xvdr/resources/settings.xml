@@ -24,4 +24,11 @@
         <setting id="encryptedchannels" type="bool" label="30071" default="true" />
         <setting id="caids" type="text" label="30070" default="" />
     </category>
+
+    <!-- Time Shifting -->
+    <category label="30078">
+        <setting id="tsbuffersize" type="number" label="30079" default="0" />
+        <!-- Not implemented -->
+        <!-- setting id="tsfolder" type="folder" label="30080" default="" / -->
+    </category>
 </settings>

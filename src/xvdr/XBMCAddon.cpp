@@ -30,6 +30,7 @@
 #include "xvdr/demux.h"
 #include "xvdr/command.h"
 #include "xvdr/connection.h"
+#include "xvdr/packetbuffer.h"
 
 #include "xbmc_pvr_dll.h"
 #include "xbmc_addon_types.h"
@@ -528,7 +529,12 @@ bool OpenLiveStream(const PVR_CHANNEL &channel)
     delete mDemuxer;
   }
 
-  mDemuxer = new Demux(mClient);
+  cXBMCSettings s = cXBMCSettings::GetInstance();
+  int size;
+  PacketBuffer* buf = XBMC->GetSetting("tsbuffersize", &size) && (size > 0) ?
+                      PacketBuffer::create(size * 1024 * 1024, NULL) : NULL;
+  XBMC->Log(LOG_NOTICE, "TS buffer size: %i Mb", size);
+  mDemuxer = new Demux(mClient, buf);
   mDemuxer->SetTimeout(cXBMCSettings::GetInstance().ConnectTimeout() * 1000);
   mDemuxer->SetAudioType(cXBMCSettings::GetInstance().AudioType());
   mDemuxer->SetPriority(priotable[cXBMCSettings::GetInstance().Priority()]);
@@ -710,7 +716,7 @@ bool CanPauseStream()
 bool CanSeekStream()
 {
   mClient->Lock();
-  bool rc = (mDemuxer == NULL);
+  bool rc = (mDemuxer != NULL) && mDemuxer->CanSeekStream();
   mClient->Unlock();
 
   return rc;
@@ -718,10 +724,20 @@ bool CanSeekStream()
 
 void PauseStream(bool bPaused)
 {
-  if(mDemuxer == NULL)
-    return;
+  mClient->Lock();
 
-  mDemuxer->Pause(bPaused);
+  if(mDemuxer != NULL)
+    mDemuxer->Pause(bPaused);
+
+  mClient->Unlock();
+}
+
+bool SeekTime(int time, bool backwards, double *startpts)
+{
+  mClient->Lock();
+  bool rc = (mDemuxer != NULL) && mDemuxer->SeekTime(time, backwards, startpts);
+  mClient->Unlock();
+  return rc;
 }
 
 const char* GetPVRAPIVersion(void)
@@ -844,7 +860,6 @@ long long PositionLiveStream(void) { return -1; }
 long long LengthLiveStream(void) { return -1; }
 const char * GetLiveStreamURL(const PVR_CHANNEL &channel) { return ""; }
 unsigned int GetChannelSwitchDelay(void) { return 0; }
-bool SeekTime(int time, bool backwards, double *startpts) { return false; }
 void SetSpeed(int speed) {};
 
 }
