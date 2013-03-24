@@ -541,7 +541,7 @@ bool OpenLiveStream(const PVR_CHANNEL &channel)
   else if(s.TSMethod() == 1) {
     buf = (s.TSBufferSize() > 0) ? PacketBuffer::create(s.TSBufferSize() * 1024 * 1024) : NULL;
     if(buf != NULL) {
-      XBMC->Log(LOG_NOTICE, "doing timeshift in memory using %i Mb RAM", s.TSBufferSize());
+      XBMC->Log(LOG_NOTICE, "doing timeshift in memory using %f Mb RAM", s.TSBufferSize());
     }
   }
 

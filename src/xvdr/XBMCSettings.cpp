@@ -155,3 +155,16 @@ bool cXBMCConfigParameter<std::string>::set(const void* value)
   m_value = str;
   return true;
 }
+
+template<>
+bool cXBMCConfigParameter<float>::load() {
+  int intvalue;
+
+  if (XBMC->GetSetting(m_setting.c_str(), &intvalue)) {
+    m_value = intvalue;
+    return true;
+  }
+
+  m_value = m_default;
+  return true;
+}

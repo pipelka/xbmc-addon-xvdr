@@ -136,8 +136,8 @@ public:
   cXBMCConfigParameter<bool> EncryptedChannels;
   cXBMCConfigParameter<std::string> caids;
   cXBMCConfigParameter<std::string> PiconPath;
-  cXBMCConfigParameter<int> TSBufferSize;
-  cXBMCConfigParameter<int> TSBufferSizeHDD;
+  cXBMCConfigParameter<float> TSBufferSize;
+  cXBMCConfigParameter<float> TSBufferSizeHDD;
   cXBMCConfigParameter<int> TSMethod;
   cXBMCConfigParameter<std::string> TSFolder;
   std::vector<int> vcaids;
@@ -172,3 +172,4 @@ private:
 
 template<> bool cXBMCConfigParameter<std::string>::set(const void* value);
 template<> bool cXBMCConfigParameter<std::string>::load();
+template<> bool cXBMCConfigParameter<float>::load();
