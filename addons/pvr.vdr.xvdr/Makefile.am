@@ -14,11 +14,11 @@ $(ADDONNAME):
 	make -C ../../src
 
 install-data-hook: $(ADDONNAME)
-	-cp -Rf $(srcdir)/resources $(DESTDIR)$(addondir)
-	chmod -R +w $(DESTDIR)$(addondir)/resources
+	cp -Rf "$(srcdir)/resources" "$(DESTDIR)$(addondir)"
+	chmod -R +w "$(DESTDIR)$(addondir)/resources"
 
 uninstall-hook:
-	rm -Rf $(DESTDIR)$(addondir)/resources
+	rm -Rf "$(DESTDIR)$(addondir)/resources"
 
 EXTRA_DIST = \
 	resources \
