@@ -24,6 +24,8 @@
 
 #include "os-config.h"
 #include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 // WINDOWS
 
@@ -176,3 +178,24 @@ int socketread(int fd, uint8_t* data, int datalen, int timeout_ms) {
         return 0;
 }
 
+const char* os_gettempfolder() {
+  char* temp = NULL;
+
+#if defined(WIN32)
+  temp = getenv("APPDATA");
+  if(temp == NULL) {
+    temp = getenv("TEMP");
+  }
+
+#elseif defined(__APPLE__) || defined(__FreeBSD__)
+  temp = getenv("TMPDIR");
+  if(temp == NULL) {
+    temp = getenv("DARWIN_USER_TEMP_DIR");
+  }
+
+#else
+  temp = P_tmpdir;
+#endif
+
+  return temp;
+}

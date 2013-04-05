@@ -41,6 +41,8 @@
 #define MSG_DONTWAIT 0
 #define MSG_NOSIGNAL 0
 
+#define OS_PATH_SEPARATOR '\\'
+
 #include <iostream>
 #include <winsock2.h>
 #include <ws2spi.h>
@@ -57,6 +59,8 @@ uint16_t be16toh(uint16_t u);
 
 // LINUX / OTHER
 #else
+
+#define OS_PATH_SEPARATOR '/'
 
 #ifdef __FreeBSD__
 #include <sys/types.h>
@@ -110,3 +114,4 @@ bool pollfd(int fd, int timeout_ms, bool in);
 bool setsock_nonblock(int fd, bool nonblock = true);
 void setsock_keepalive(int fd);
 int socketread(int fd, uint8_t* data, int datalen, int timeout_ms);
+const char* os_gettempfolder();

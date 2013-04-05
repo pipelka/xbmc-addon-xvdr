@@ -24,6 +24,7 @@
 
 #include <stdarg.h>
 #include "xvdr/clientinterface.h"
+#include "os-config.h"
 
 using namespace XVDR;
 
@@ -120,3 +121,31 @@ void ClientInterface::Unlock() {
   m_mutex.Unlock();
 }
 
+char ClientInterface::GetPathSeparator() {
+  return OS_PATH_SEPARATOR;
+}
+
+void ClientInterface::TrimPath(std::string& path, bool addseparator) {
+  // remove separators at the end
+  if(!addseparator) {
+    while(path.size() > 1 && path[path.size() - 1] == GetPathSeparator()) {
+      path = path.substr(0, path.size() - 1);
+    }
+
+    return;
+  }
+
+  TrimPath(path, false);
+  path += GetPathSeparator();
+}
+
+bool ClientInterface::GetTempFolder(std::string& tempfolder) {
+  const char* temp = os_gettempfolder();
+
+  if(temp == NULL) {
+    return false;
+  }
+
+  tempfolder = temp;
+  return true;
+}

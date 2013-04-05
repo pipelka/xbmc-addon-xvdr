@@ -120,6 +120,14 @@ public:
 
   void Unlock();
 
+  // filepath functions
+
+  static char GetPathSeparator();
+
+  static void TrimPath(std::string& path, bool addseparator = false);
+
+  static bool GetTempFolder(std::string& path);
+
 protected:
 
   virtual void OnLog(LOGLEVEL level, const char* msg);
