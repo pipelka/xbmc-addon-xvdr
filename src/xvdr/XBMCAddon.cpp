@@ -568,6 +568,10 @@ bool OpenLiveStream(const PVR_CHANNEL &channel)
   mDemuxer->SetAudioType(cXBMCSettings::GetInstance().AudioType());
   mDemuxer->SetPriority(priotable[cXBMCSettings::GetInstance().Priority()]);
 
+  if(!channel.bIsRadio) {
+    mDemuxer->SetStartWithIFrame(cXBMCSettings::GetInstance().StartWithIFrame());
+  }
+
   Demux::SwitchStatus status = mDemuxer->OpenChannel(cXBMCSettings::GetInstance().Hostname(), channel.iUniqueId);
 
   if (status == Demux::SC_OK)
@@ -650,6 +654,10 @@ bool SwitchChannel(const PVR_CHANNEL &channel)
   mDemuxer->SetTimeout(cXBMCSettings::GetInstance().ConnectTimeout() * 1000);
   mDemuxer->SetAudioType(cXBMCSettings::GetInstance().AudioType());
   mDemuxer->SetPriority(priotable[cXBMCSettings::GetInstance().Priority()]);
+
+  if(!channel.bIsRadio) {
+    mDemuxer->SetStartWithIFrame(cXBMCSettings::GetInstance().StartWithIFrame());
+  }
 
   Demux::SwitchStatus status = mDemuxer->SwitchChannel(channel.iUniqueId);
 

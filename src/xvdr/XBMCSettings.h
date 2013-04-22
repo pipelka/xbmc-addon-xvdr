@@ -131,6 +131,7 @@ public:
   cXBMCConfigParameter<bool> AutoChannelGroups;
   cXBMCConfigParameter<int> AudioType;
   cXBMCConfigParameter<int> UpdateChannels;
+  cXBMCConfigParameter<bool> StartWithIFrame;
   cXBMCConfigParameter<bool> FTAChannels;
   cXBMCConfigParameter<bool> NativeLangOnly;
   cXBMCConfigParameter<bool> EncryptedChannels;
@@ -153,6 +154,7 @@ protected:
   AutoChannelGroups("autochannelgroups", false),
   AudioType("audiotype", 0),
   UpdateChannels("updatechannels", 3),
+  StartWithIFrame("iframe", false),
   FTAChannels("ftachannels", true),
   NativeLangOnly("nativelangonly", false),
   EncryptedChannels("encryptedchannels", true),
