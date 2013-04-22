@@ -71,6 +71,7 @@ public:
 
   SwitchStatus SwitchChannel(uint32_t channeluid);
   void SetPriority(int priority);
+  void SetStartWithIFrame(bool on);
 
   StreamProperties GetStreamProperties();
   SignalStatus GetSignalStatus();
@@ -112,6 +113,7 @@ private:
   bool m_paused;
   bool m_timeshiftmode;
   TimeMs m_lastsignal;
+  bool m_iframestart;
 };
 
 } // namespace XVDR
