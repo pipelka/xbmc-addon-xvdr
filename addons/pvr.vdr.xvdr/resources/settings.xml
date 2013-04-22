@@ -15,6 +15,7 @@
         <setting id="autochannelgroups" type="bool" label="30046" default="false" />
         <setting id="audiotype" type="enum" label="30049" values="NONE|MP2|AC3|EAC3|AAC|LATM" default="1" />
         <setting id="updatechannels" type="enum" label="30052" lvalues="30053|30054|30055|30056|30057|30058" default="3" />
+        <setting id="iframe" type="bool" label="30086" default="false" />
     </category>
 
     <!-- ChannelFilter -->
