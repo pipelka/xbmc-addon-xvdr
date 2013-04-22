@@ -35,7 +35,8 @@
 
 using namespace XVDR;
 
-Demux::Demux(ClientInterface* client) : Connection(client), m_priority(50), m_queuelocked(false), m_paused(false), m_timeshiftmode(false)
+Demux::Demux(ClientInterface* client) : Connection(client), m_priority(50), m_queuelocked(false), m_paused(false), 
+    m_timeshiftmode(false), m_iframestart(false)
 {
 }
 
@@ -230,6 +231,7 @@ Demux::SwitchStatus Demux::SwitchChannel(uint32_t channeluid)
   MsgPacket vrp(XVDR_CHANNELSTREAM_OPEN);
   vrp.put_U32(channeluid);
   vrp.put_S32(m_priority);
+  vrp.put_U8(m_iframestart);
 
   MsgPacket* vresp = ReadResult(&vrp);
 
@@ -436,3 +438,8 @@ void Demux::RequestSignalInfo()
   // signal status timeout
   m_lastsignal.Set(5000);
 }
+
+void Demux::SetStartWithIFrame(bool on) {
+  m_iframestart = on;
+}
+
