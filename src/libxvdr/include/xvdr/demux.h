@@ -58,7 +58,7 @@ public:
   Demux(ClientInterface* client, PacketBuffer* buffer);
   ~Demux();
 
-  SwitchStatus OpenChannel(const std::string& hostname, uint32_t channeluid);
+  SwitchStatus OpenChannel(const std::string& hostname, uint32_t channeluid, const std::string& clientname = "");
   void CloseChannel();
 
   void Abort();

@@ -50,9 +50,9 @@ Demux::~Demux()
   }
 }
 
-Demux::SwitchStatus Demux::OpenChannel(const std::string& hostname, uint32_t channeluid)
+Demux::SwitchStatus Demux::OpenChannel(const std::string& hostname, uint32_t channeluid, const std::string& clientname)
 {
-  if(!Open(hostname))
+  if(!Open(hostname, clientname))
     return SC_ERROR;
 
   m_paused = false;
