@@ -88,4 +88,5 @@
     <string id="30084">Full timeshift (HDD)</string>
     <string id="30085">HDD Buffer size (Mb)</string>
     <string id="30086">Start with I-Frame (Raspberry Pi)</string>
+    <string id="30087">Clientname</string>
 </strings>

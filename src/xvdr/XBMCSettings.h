@@ -96,7 +96,7 @@ public:
     return true;
   }
 
-  T& operator()()
+  const T& operator()() const
   {
     return m_value;
   }
@@ -141,6 +141,7 @@ public:
   cXBMCConfigParameter<float> TSBufferSizeHDD;
   cXBMCConfigParameter<int> TSMethod;
   cXBMCConfigParameter<std::string> TSFolder;
+  cXBMCConfigParameter<std::string> ClientName;
   std::vector<int> vcaids;
 
 protected:
@@ -163,7 +164,8 @@ protected:
   TSBufferSize("tsbuffersize"),
   TSMethod("tsmethod"),
   TSBufferSizeHDD("tsbuffersizehdd"),
-  TSFolder("tsfolder")
+  TSFolder("tsfolder"),
+  ClientName("clientname")
   {}
 
 private:

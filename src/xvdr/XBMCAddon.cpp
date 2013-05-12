@@ -572,7 +572,8 @@ bool OpenLiveStream(const PVR_CHANNEL &channel)
     mDemuxer->SetStartWithIFrame(cXBMCSettings::GetInstance().StartWithIFrame());
   }
 
-  Demux::SwitchStatus status = mDemuxer->OpenChannel(cXBMCSettings::GetInstance().Hostname(), channel.iUniqueId);
+  const cXBMCSettings& settings = cXBMCSettings::GetInstance();
+  Demux::SwitchStatus status = mDemuxer->OpenChannel(settings.Hostname(), channel.iUniqueId, settings.ClientName());
 
   if (status == Demux::SC_OK)
     CurrentChannel = channel.iChannelNumber;
