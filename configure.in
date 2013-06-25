@@ -52,6 +52,7 @@ case $host in
     ISMINGW32=true
     ADDONNAME=XBMC_VDR_xvdr_WIN32.pvr
     SOEXT=dll
+    AC_DEFINE(TARGET_WINDOWS, 1)
     ;;
   arm*-*-linux-gnu*)
     AC_SUBST(ARCH_DEFINES, "-D_ARMEL")
