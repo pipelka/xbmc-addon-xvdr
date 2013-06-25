@@ -828,7 +828,7 @@ int GetRecordingLastPlayedPosition(const PVR_RECORDING &recording)
   return mClient->GetRecordingLastPosition(recording.strRecordingId);
 }
 
-PVR_ERROR CallMenuHook(const PVR_MENUHOOK &menuhook) {
+PVR_ERROR CallMenuHook(const PVR_MENUHOOK &menuhook, const PVR_MENUHOOK_DATA &item) {
   switch(menuhook.iHookId) {
     case XVDR_HOOK_SETTINGS_CHANNELSCAN:
       DialogChannelScan();
