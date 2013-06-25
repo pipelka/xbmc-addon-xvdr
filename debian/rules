@@ -7,13 +7,14 @@
 	dh $@
 
 override_dh_auto_configure:
+	sh autogen.sh
 	dh_auto_configure -- --prefix=/usr/lib/xbmc
 
 override_dh_auto_build:
 	dh_auto_build -- all $(MAKE_OPTIONS)
 
 override_dh_auto_clean:
-	$(MAKE) -o .dependencies clean $(MAKE_OPTIONS)
+	$(MAKE) -o .dependencies clean $(MAKE_OPTIONS) ||:
 
 override_dh_shlibdeps:
 	dpkg-shlibdeps -Tdebian/xbmc-addon-xvdr.substvars $(CURDIR)/debian/xbmc-addon-xvdr/usr/lib/xbmc/addons/pvr.vdr.xvdr/XBMC_VDR_xvdr.pvr
