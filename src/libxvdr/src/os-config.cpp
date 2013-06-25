@@ -29,7 +29,7 @@
 
 // WINDOWS
 
-#ifdef WIN32
+#ifdef TARGET_WINDOWS
 
 #if !defined(SIO_KEEPALIVE_VALS)
 #define SIO_KEEPALIVE_VALS  _WSAIOW(IOC_VENDOR,4)
@@ -139,7 +139,7 @@ void setsock_keepalive(int sock) {
 // GENERAL
 
 bool setsock_nonblock(int fd, bool nonblock) {
-#ifdef WIN32
+#ifdef TARGET_WINDOWS
 	u_long sval = nonblock;
 	return (ioctlsocket(fd, FIONBIO, &sval) == 0);
 #else
@@ -181,13 +181,13 @@ int socketread(int fd, uint8_t* data, int datalen, int timeout_ms) {
 const char* os_gettempfolder() {
   char* temp = NULL;
 
-#if defined(WIN32)
+#if defined(TARGET_WINDOWS)
   temp = getenv("APPDATA");
   if(temp == NULL) {
     temp = getenv("TEMP");
   }
 
-#elseif defined(__APPLE__) || defined(__FreeBSD__)
+#elif defined(__APPLE__) || defined(__FreeBSD__)
   temp = getenv("TMPDIR");
   if(temp == NULL) {
     temp = getenv("DARWIN_USER_TEMP_DIR");
