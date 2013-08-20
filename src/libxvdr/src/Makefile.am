@@ -17,7 +17,8 @@ SOURCEFILES = \
 	msgpacket.cpp \
 	session.cpp \
 	thread.cpp \
-	packetbuffer.cpp
+	packetbuffer.cpp \
+	packetbuffermodel.h
 
 
 noinst_LTLIBRARIES = libxvdrstatic.la
