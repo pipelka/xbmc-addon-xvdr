@@ -20,4 +20,5 @@ INCLUDES = \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/src/libxvdr/include \
 	-I$(srcdir)/.. \
-	-I$(srcdir)/../include
+	-I$(srcdir)/../include \
+	-I$(top_srcdir)/addons/library.xbmc.addon

@@ -51,6 +51,8 @@ INCLUDES = \
 	-I$(srcdir)/dialogs \
 	-I$(top_srcdir)/src/libxvdr/include \
 	-I$(top_srcdir) -I$(srcdir)/include \
+	-I$(top_srcdir)/addons/library.xbmc.addon \
+	-I$(top_srcdir)/addons/library.xbmc.codec \
 	-DUSE_DEMUX
 
 EXTRA_DIST = \

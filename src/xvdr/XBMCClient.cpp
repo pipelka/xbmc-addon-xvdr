@@ -31,51 +31,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "DVDDemuxPacket.h"
-#include "avcodec.h"
+#include "xbmc_pvr_types.h"
+#include "libXBMC_codec.h"
 
 using namespace ADDON;
 using namespace XVDR;
 
 #define MSG_MAXLEN 512
 
-static void GetContentFromType(const std::string& type, unsigned int& codecid, unsigned int& codectype)
+static void GetContentFromType(const std::string& type, xbmc_codec_id_t& codecid, xbmc_codec_type_t& codectype)
 {
-  if(type == "AC3") {
-    codectype = AVMEDIA_TYPE_AUDIO;
-    codecid = CODEC_ID_AC3;
-  }
-  else if(type == "MPEG2AUDIO") {
-    codectype = AVMEDIA_TYPE_AUDIO;
-    codecid = CODEC_ID_MP2;
-  }
-  else if(type == "AAC") {
-    codectype = AVMEDIA_TYPE_AUDIO;
-    codecid = CODEC_ID_AAC;
-  }
-  else if(type == "EAC3") {
-    codectype = AVMEDIA_TYPE_AUDIO;
-    codecid = CODEC_ID_AC3;
-  }
-  else if(type == "MPEG2VIDEO") {
-    codectype = AVMEDIA_TYPE_VIDEO;
-    codecid = CODEC_ID_MPEG2VIDEO;
-  }
-  else if(type == "H264") {
-    codectype = AVMEDIA_TYPE_VIDEO;
-    codecid = CODEC_ID_H264;
-  }
-  else if(type == "DVBSUB") {
-    codectype = AVMEDIA_TYPE_SUBTITLE;
-    codecid = CODEC_ID_DVB_SUBTITLE;
-  }
-  else if(type == "TELETEXT") {
-    codectype = AVMEDIA_TYPE_SUBTITLE;
-    codecid = CODEC_ID_DVB_TELETEXT;
+  xbmc_codec_t codec = XBMC_INVALID_CODEC;
+
+  if(type == "MPEG2AUDIO") {
+    codec = CODEC->GetCodecByName("MP2");
   }
   else {
-    codectype = AVMEDIA_TYPE_UNKNOWN;
-    codecid = CODEC_ID_NONE;
+    codec = CODEC->GetCodecByName(type.c_str());
   }
+
+  codecid = codec.codec_id;
+  codectype = codec.codec_type;
 }
 
 
@@ -317,7 +293,7 @@ Packet* cXBMCClient::ContentInfo(const StreamProperties& p) {
   if (pkt != NULL) {
     PVR_STREAM_PROPERTIES props;
     props << p;
-    SetPacketData(pkt, (uint8_t*)&props, DMX_SPECIALID_STREAMINFO, 0, 0);
+    SetPacketData(pkt, (uint8_t*)&props, DMX_SPECIALID_STREAMCHANGE, 0, 0);
   }
 
   return pkt;

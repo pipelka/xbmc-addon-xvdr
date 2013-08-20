@@ -49,6 +49,7 @@ using namespace XVDR;
 CHelper_libXBMC_addon* XBMC = NULL;
 CHelper_libXBMC_gui* GUI = NULL;
 CHelper_libXBMC_pvr* PVR = NULL;
+CHelper_libXBMC_codec* CODEC = NULL;
 
 Demux* mDemuxer = NULL;
 cXBMCClient *mClient = NULL;
@@ -57,6 +58,17 @@ XVDR::Mutex addonMutex;
 int CurrentChannel = 0;
 
 static int priotable[] = { 0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,99,100 };
+
+void ADDON_Cleanup() {
+  delete GUI;
+  delete PVR;
+  delete XBMC;
+  delete CODEC;
+  GUI = NULL;
+  PVR = NULL;
+  XBMC = NULL;
+  CODEC = NULL;
+}
 
 extern "C" {
 
@@ -74,8 +86,7 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
   XBMC = new CHelper_libXBMC_addon;
   if (!XBMC->RegisterMe(hdl))
   {
-    delete XBMC;
-    XBMC = NULL;
+    ADDON_Cleanup();
     return ADDON_STATUS_UNKNOWN;
   }
 
@@ -86,12 +97,14 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
   PVR = new CHelper_libXBMC_pvr;
   if (!PVR->RegisterMe(hdl))
   {
-    delete GUI;
-    delete PVR;
-    delete XBMC;
-    GUI = NULL;
-    PVR = NULL;
-    XBMC = NULL;
+    ADDON_Cleanup();
+    return ADDON_STATUS_UNKNOWN;
+  }
+
+  CODEC = new CHelper_libXBMC_codec;
+  if (!CODEC->RegisterMe(hdl))
+  {
+    ADDON_Cleanup();
     return ADDON_STATUS_UNKNOWN;
   }
 
@@ -112,14 +125,7 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
 	XVDR::CondWait::SleepMs(100);
 
   if (!bConnected){
-    delete mClient;
-    delete GUI;
-    delete PVR;
-    delete XBMC;
-    mClient = NULL;
-    GUI = NULL;
-    PVR = NULL;
-    XBMC = NULL;
+    ADDON_Cleanup();
     return ADDON_STATUS_LOST_CONNECTION;
   }
 
@@ -152,15 +158,11 @@ ADDON_STATUS ADDON_GetStatus()
 void ADDON_Destroy()
 {
   XVDR::MutexLock lock(&addonMutex);
-  delete mClient;
-  delete GUI;
-  delete PVR;
-  delete XBMC;
 
+  ADDON_Cleanup();
+
+  delete mClient;
   mClient = NULL;
-  GUI = NULL;
-  PVR = NULL;
-  XBMC = NULL;
 }
 
 bool ADDON_HasSettings()
