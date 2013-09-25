@@ -159,10 +159,10 @@ void ADDON_Destroy()
 {
   XVDR::MutexLock lock(&addonMutex);
 
-  ADDON_Cleanup();
-
   delete mClient;
   mClient = NULL;
+
+  ADDON_Cleanup();
 }
 
 bool ADDON_HasSettings()
