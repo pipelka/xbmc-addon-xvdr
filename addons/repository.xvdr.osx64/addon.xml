@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="repository.xvdr.osx64" name="XVDR Updates (64bit)" version="1.0.0" provider-name="Alexander Pipelka">
 	<extension point="xbmc.addon.repository" name="XVDR Add-on Repository (Apple MacOS X 64bit)">
-		<info compressed="false">http://dl.dropbox.com/u/240579/xbmc-addon-xvdr/osx64/addons.xml</info>
-		<checksum>http://dl.dropbox.com/u/240579/xbmc-addon-xvdr/osx64/addons.xml.md5</checksum>
-		<datadir zip="true">http://dl.dropbox.com/u/240579/xbmc-addon-xvdr/osx64</datadir>
+		<info compressed="false">http://dl.dropbox.com/u/240579/xbmc-addon-xvdr-gotham/osx64/addons.xml</info>
+		<checksum>http://dl.dropbox.com/u/240579/xbmc-addon-xvdr-gotham/osx64/addons.xml.md5</checksum>
+		<datadir zip="true">http://dl.dropbox.com/u/240579/xbmc-addon-xvdr-gotham/osx64</datadir>
 	</extension>
 	<extension point="xbmc.addon.metadata">
 		<summary>XVDR Addon Repository for Apple MacOS X (64bit) clients</summary>
