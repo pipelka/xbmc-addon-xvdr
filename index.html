@@ -1,201 +1,52 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>xbmc-addon-xvdr by pipelka</title>
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-    <script src="javascripts/main.js"></script>
-    <!--[if lt IE 9]>
-      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="xbmc-addon-xvdr : Standalone XVDR addon for XBMC" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>xbmc-addon-xvdr</title>
   </head>
+
   <body>
 
-      <header>
-        <h1>xbmc-addon-xvdr</h1>
-        <p>Standalone XVDR addon for XBMC</p>
-      </header>
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/pipelka/xbmc-addon-xvdr">View on GitHub</a>
 
-      <div id="banner">
-        <span id="logo"></span>
+          <h1 id="project_title">xbmc-addon-xvdr</h1>
+          <h2 id="project_tagline">Standalone XVDR addon for XBMC</h2>
 
-        <a href="https://github.com/pipelka/xbmc-addon-xvdr" class="button fork"><strong>View On GitHub</strong></a>
-        <div class="downloads">
-          <span>Downloads:</span>
-          <ul>
-            <li><a href="https://github.com/pipelka/xbmc-addon-xvdr/zipball/master" class="button">ZIP</a></li>
-            <li><a href="https://github.com/pipelka/xbmc-addon-xvdr/tarball/master" class="button">TAR</a></li>
-          </ul>
-        </div>
-      </div><!-- end banner -->
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/pipelka/xbmc-addon-xvdr/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/pipelka/xbmc-addon-xvdr/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
 
-    <div class="wrapper">
-      <nav>
-        <ul></ul>
-      </nav>
-      <section>
-        <h2>XBMC Video Disk Recorder XVDR PVR Add-on</h2>
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <p>XVDR PVR Add-on</p>
 
-<p>This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 2 of the License, or
-(at your option) any later version.
-See the file COPYING for more information.</p>
-
-<h1>Introduction</h1>
-
-<p>This is a PVR add-on for XBMC to add <a href="http://www.tvdr.de">VDR</a> as a TV/PVR Backend to XBMC.</p>
-
-<p>It currently supports:</p>
-
-<ul>
-<li>Live TV</li>
-<li>replaying of recordings</li>
-<li>programming timers</li>
-<li>EPG TV Guide</li>
-<li>Real Time-Shift (pause Live TV)</li>
-<li>Use Enigma Picons as channel-logos</li>
-<li>Support for playcount and last played position</li>
-<li>Reporting of timer-conflicts</li>
-</ul><p>This add-on requires the <a href="http://github.com/pipelka/vdr-plugin-xvdr">vdr-plugin-xvdr</a> plugin on the VDR server.
-VDR itself doen't need any patches or modification to use all the current features.</p>
-
-<h1>Addon Repositories</h1>
-
-<p>The wonderful thing about XBMC Addons is that they can be installed via addon repositories.
-The repository will update your local addon automatically if a new precompiled version for
-your platform is available.</p>
-
-<p>Just download one of these addon repositories and install it in XBMC.
-You need a recent XBMC (Version 12 frodo) version.</p>
-
-<h2>Download</h2>
-
-<ul>
-<li>
-<a href="http://dl.dropbox.com/u/240579/xbmc-repositories/repository.xvdr.linux32.zip">Linux 32bit Addon-Repository</a> </li>
-<li><a href="http://dl.dropbox.com/u/240579/xbmc-repositories/repository.xvdr.linux64.zip">Linux 64bit Addon-Repository</a></li>
-<li><a href="http://dl.dropbox.com/u/240579/xbmc-repositories/repository.xvdr.win32.zip">Windows 32bit Addon-Repository</a></li>
-<li>
-<a href="http://dl.dropbox.com/u/240579/xbmc-repositories/repository.xvdr.rpi.zip">Linux Raspberry Pi Addon-Repository</a> (untested)</li>
-<li><a href="http://dl.dropbox.com/u/240579/xbmc-repositories/repository.xvdr.osx.zip">Apple MacOS X (x86) Addon-Repository</a></li>
-<li><a href="http://dl.dropbox.com/u/240579/xbmc-repositories/repository.xvdr.osx64.zip">Apple MacOS X (x86_64) Addon-Repository (untested)</a></li>
-</ul><h2>Install</h2>
-
-<p>Install the downloaded addon with <strong>Addons - Install from zip file</strong>.</p>
-
-<p>After installing the repository go to:
-<strong>Add-Ons - Get Add-ons</strong>
-and select <strong>PVR Clients / VDR XVDR Clients</strong> to install the addon.</p>
-
-<p>You may now enable Live TV and configure the XVDR addon.</p>
-
-<p>You may want to disable addon updates.</p>
-
-<h1>Building the addon</h1>
-
-<p>Please checkout the sources from the git repository:</p>
-
-<pre>
-git clone git://github.com/pipelka/xbmc-addon-xvdr.git
-</pre>
-
-<h2>Compiling for Linux</h2>
-
-<p>Quite straight forward. Please ensure that zlib (+headers) is installed on your system</p>
-
-<pre>
-cd xbmc-addon-xdr
-sh autogen.sh
-./configure --prefix={PATH_TO_XBMC}
-make install
-</pre>
-
-<p>Usually the addon is installed in your $HOME directory and your configuration command should be:</p>
-
-<pre>
-./configure --prefix=$HOME/.xbmc
-</pre>
-
-<h2>Compiling for Windows on Linux</h2>
-
-<p>You can also cross-compile the addon for Windows on Linux with the help of mingw32.
-Please ensure that MinGW32 is installed on your system.</p>
-
-<p>Debian/Ubuntu users can install mingw with (as root):</p>
-
-<pre>
-apt-get install mingw32
-</pre>
-
-<p>Please checkout the xvdr addon (all changes are already in master):</p>
-
-<pre>
-git clone git://github.com/pipelka/xbmc-addon-xvdr.git
-</pre>
-
-<p>Compilation is quite similar as for Linux:</p>
-
-<pre>
-cd xbmc-addon-xdr
-sh autogen.sh
-./configure --host=i586-mingw32msvc
-make
-</pre>
-
-<p>The compiler prefix (i586-mingw32msvc) depends on your setup.</p>
-
-<p>The built addon will be located in:</p>
-
-<pre>
-addons/pvr.vdr.xvdr/XBMC_VDR_xvdr_WIN32.pvr
-</pre>
-
-<h2>Compiling for Mac OSX on Linux (experimental)</h2>
-
-<p>You can also cross-compile the addon for Mac OSX on Linux (Debian / Ubuntu).
-You need to install these packages:</p>
-
-<pre>
-apple-uni-sdk-10.5
-apple-x86-odcctools
-apple-x86-gcc
-</pre>
-
-<p>from <a href="https://launchpad.net/%7Eflosoft/+archive/cross-apple/+packages">here</a>.</p>
-
-<p>Please checkout the xvdr addon (all changes are already in master):</p>
-
-<pre>
-git clone git://github.com/pipelka/xbmc-addon-xvdr.git
-</pre>
-
-<p>Compilation is straight forward:</p>
-
-<pre>
-cd xbmc-addon-xdr
-sh autogen.sh
-./configure --host=i686-apple-darwin10
-make
-</pre>
-
-<p>The built addon will be located in:</p>
-
-<pre>
-addons/pvr.vdr.xvdr/XBMC_VDR_xvdr_OSX.pvr
-</pre>
+<p>This site has moved.
+<a href="http://www.xvdr.tv">www.xvdr.tv</a></p>
       </section>
-      <footer>
-        <p>Project maintained by <a href="https://github.com/pipelka">pipelka</a></p>
-        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="http://twitter.com/#!/michigangraham">mattgraham</a></small></p>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">xbmc-addon-xvdr maintained by <a href="https://github.com/pipelka">pipelka</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
       </footer>
     </div>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+
     
+
   </body>
 </html>
