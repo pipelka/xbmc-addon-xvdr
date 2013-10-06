@@ -287,8 +287,8 @@ public:
     FLAG_TV = 1,
     FLAG_RADIO = 2,
     FLAG_FTA = 4,
-    FLAG_SCRAMBLED = 16,
-    FLAG_HDTV = 32
+    FLAG_SCRAMBLED = 8,
+    FLAG_HDTV = 16
   } Flags;
 
   Verbosity verbosity;
