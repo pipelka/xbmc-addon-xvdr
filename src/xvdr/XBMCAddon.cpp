@@ -902,4 +902,7 @@ const char * GetLiveStreamURL(const PVR_CHANNEL &channel) { return ""; }
 unsigned int GetChannelSwitchDelay(void) { return 0; }
 void SetSpeed(int speed) {};
 
+time_t GetPlayingTime() { return 0; }
+time_t GetBufferTimeStart() { return 0; }
+time_t GetBufferTimeEnd() { return 0; }
 }
