@@ -527,6 +527,8 @@ PVR_SIGNAL_STATUS& operator<< (PVR_SIGNAL_STATUS& lhs, const SignalStatus& rhs) 
 	lhs.iUNC = rhs.UNC;
 	strncpy(lhs.strAdapterName, rhs.AdapterName.c_str(), sizeof(lhs.strAdapterName));
 	strncpy(lhs.strAdapterStatus, rhs.AdapterStatus.c_str(), sizeof(lhs.strAdapterStatus));
+	strncpy(lhs.strProviderName, rhs.ProviderName.c_str(), sizeof(lhs.strProviderName));
+	strncpy(lhs.strServiceName, rhs.ServiceName.c_str(), sizeof(lhs.strServiceName));
 
 	return lhs;
 }
