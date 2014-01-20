@@ -184,6 +184,8 @@ public:
   uint32_t    Strength;
   uint32_t    BER;
   uint32_t    UNC;
+  std::string ProviderName;
+  std::string ServiceName;
 };
 
 SignalStatus& operator<< (SignalStatus& lhs, MsgPacket* rhs);

@@ -271,6 +271,11 @@ SignalStatus& XVDR::operator<< (SignalStatus& lhs, MsgPacket* rhs) {
   lhs.BER = rhs->get_U32();
   lhs.UNC = rhs->get_U32();
 
+  if(!rhs->eop()) {
+    lhs.ProviderName = rhs->get_String();
+    lhs.ServiceName = rhs->get_String();
+  }
+
   return lhs;
 }
 
