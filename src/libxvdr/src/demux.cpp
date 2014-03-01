@@ -116,7 +116,7 @@ Packet* Demux::Read()
 
     if (pkt == NULL) {
       m_lock.Unlock();
-      m_cond.Wait(1000);
+      m_cond.Wait(100);
       m_lock.Lock();
       pkt = m_buffer->get();
     }
@@ -174,7 +174,7 @@ Packet* Demux::Read()
              return NULL;
          }
 
-         m_cond.Wait(1000);
+         m_cond.Wait(100);
 
          m_lock.Lock();
          bEmpty = m_queue.empty();
