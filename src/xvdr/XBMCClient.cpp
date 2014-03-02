@@ -381,12 +381,14 @@ Timer& operator<< (Timer& lhs, const PVR_TIMER& rhs) {
 	lhs.Summary = rhs.strSummary;
 	lhs.Title = rhs.strTitle;
 
-	if(rhs.state == PVR_TIMER_STATE_RECORDING)
+  lhs.State = 0;
+
+  if(rhs.state == PVR_TIMER_STATE_RECORDING) {
 	  lhs.State = 8;
-  if(rhs.state == PVR_TIMER_STATE_SCHEDULED)
+  }
+  else if(rhs.state == PVR_TIMER_STATE_SCHEDULED) {
     lhs.State = 1;
-  if(rhs.state == PVR_TIMER_STATE_NEW)
-    lhs.State = 0;
+  }
 
 	return lhs;
 }
@@ -407,16 +409,20 @@ PVR_TIMER& operator<< (PVR_TIMER& lhs, const Timer& rhs) {
 	lhs.iWeekdays = rhs.WeekDays;
 	lhs.startTime = rhs.StartTime;
 
-  if(rhs.State == 0)
-    lhs.state = PVR_TIMER_STATE_NEW;
-  if(rhs.State & 1)
-    lhs.state = PVR_TIMER_STATE_SCHEDULED;
-  if(rhs.State & 1024)
-    lhs.state = PVR_TIMER_STATE_CONFLICT_OK;
-  if(rhs.State & 2048)
+  lhs.state = PVR_TIMER_STATE_CANCELLED;
+
+  if(rhs.State & 2048) {
     lhs.state = PVR_TIMER_STATE_CONFLICT_NOK;
-  if(rhs.State & 8)
+  }
+  else if(rhs.State & 1024) {
+    lhs.state = PVR_TIMER_STATE_CONFLICT_OK;
+  }
+  else if(rhs.State & 8) {
     lhs.state = PVR_TIMER_STATE_RECORDING;
+  }
+  else if(rhs.State & 1) {
+    lhs.state = PVR_TIMER_STATE_SCHEDULED;
+  }
 
 	strncpy(lhs.strDirectory, rhs.Directory.c_str(), sizeof(lhs.strDirectory));
 	strncpy(lhs.strSummary, rhs.Summary.c_str(), sizeof(lhs.strSummary));
