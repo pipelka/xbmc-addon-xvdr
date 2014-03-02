@@ -657,7 +657,6 @@ void Connection::Action()
         const char* str2 = vresp->get_String();
 
         m_client->Recording(str1, str2, on);
-        m_client->TriggerTimerUpdate();
       }
       else if (vresp->getMsgID() == XVDR_STATUS_TIMERCHANGE)
       {
