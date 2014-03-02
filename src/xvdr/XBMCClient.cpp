@@ -411,14 +411,14 @@ PVR_TIMER& operator<< (PVR_TIMER& lhs, const Timer& rhs) {
 
   lhs.state = PVR_TIMER_STATE_CANCELLED;
 
-  if(rhs.State & 2048) {
+  if(rhs.State & 8) {
+    lhs.state = PVR_TIMER_STATE_RECORDING;
+  }
+  else if(rhs.State & 2048) {
     lhs.state = PVR_TIMER_STATE_CONFLICT_NOK;
   }
   else if(rhs.State & 1024) {
     lhs.state = PVR_TIMER_STATE_CONFLICT_OK;
-  }
-  else if(rhs.State & 8) {
-    lhs.state = PVR_TIMER_STATE_RECORDING;
   }
   else if(rhs.State & 1) {
     lhs.state = PVR_TIMER_STATE_SCHEDULED;
