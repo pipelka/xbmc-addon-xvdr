@@ -156,6 +156,8 @@ private:
   int m_compressionlevel;
   int m_audiotype;
   int m_protocol;
+  
+  int m_supportsChannelScan;
 };
 
 } // namespace XVDR

@@ -47,6 +47,7 @@ Connection::Connection(ClientInterface* client)
  , m_protocol(0)
  , m_compressionlevel(0)
  , m_audiotype(0)
+ , m_supportsChannelScan(0)
 {
 }
 
@@ -212,15 +213,22 @@ bool Connection::GetDriveSpace(long long *total, long long *used)
 
 bool Connection::SupportChannelScan()
 {
-  MsgPacket vrp(XVDR_SCAN_SUPPORTED);
+  if(m_supportsChannelScan == 0) {
+    MsgPacket vrp(XVDR_SCAN_SUPPORTED);
 
-  MsgPacket* vresp = ReadResult(&vrp);
-  if (!vresp)
-    return false;
+    MsgPacket* vresp = ReadResult(&vrp);
+    if (!vresp) {
+      m_supportsChannelScan = 1;
+      return false;
+    }
 
-  uint32_t ret = vresp->get_U32();
-  delete vresp;
-  return ret == XVDR_RET_OK ? true : false;
+    uint32_t ret = vresp->get_U32();
+    delete vresp;
+
+    m_supportsChannelScan = (XVDR_RET_OK ? 2 : 1);
+  }
+    
+  return (m_supportsChannelScan == 2) ? true : false;
 }
 
 bool Connection::EnableStatusInterface(bool onOff)
