@@ -109,7 +109,6 @@ private:
   PacketBuffer* m_buffer;
   Mutex m_lock;
   CondWait m_cond;
-  bool m_queuelocked;
   bool m_paused;
   bool m_timeshiftmode;
   TimeMs m_lastsignal;
