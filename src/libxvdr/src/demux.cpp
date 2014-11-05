@@ -35,7 +35,7 @@
 using namespace XVDR;
 
 Demux::Demux(ClientInterface* client, PacketBuffer* buffer) : Connection(client), m_priority(50),
-    m_queuelocked(false), m_paused(false), m_timeshiftmode(false), m_channeluid(0), m_buffer(buffer),
+    m_paused(false), m_timeshiftmode(false), m_channeluid(0), m_buffer(buffer),
     m_iframestart(false)
 {
 }
@@ -105,11 +105,6 @@ Packet* Demux::Read()
   Packet* p = NULL;
   MsgPacket* pkt = NULL;
   m_lock.Lock();
-
-  if(m_queuelocked) {
-      m_lock.Unlock();
-      return m_client->AllocatePacket(0);
-  }
 
   if (m_buffer != NULL) {
     pkt = m_buffer->get();
@@ -196,12 +191,6 @@ Packet* Demux::Read()
 }
 
 bool Demux::OnResponsePacket(MsgPacket *resp) {
-  {
-    MutexLock lock(&m_lock);
-    if(m_queuelocked)
-      return false;
-  }
-
   if (resp->getType() != XVDR_CHANNEL_STREAM)
     return false;
 
@@ -294,12 +283,13 @@ Demux::SwitchStatus Demux::SwitchChannel(uint32_t channeluid)
 {
   m_client->Log(DEBUG, "changing to channel %d (priority %i)", channeluid, m_priority);
 
+  CleanupPacketQueue();
+
   {
     MutexLock lock(&m_lock);
-    m_queuelocked = true;
+    m_streams.clear();
   }
 
-  CleanupPacketQueue();
   m_cond.Signal();
 
   MsgPacket vrp(XVDR_CHANNELSTREAM_OPEN);
@@ -309,14 +299,8 @@ Demux::SwitchStatus Demux::SwitchChannel(uint32_t channeluid)
 
   MsgPacket* vresp = ReadResult(&vrp);
 
-  {
-    MutexLock lock(&m_lock);
-    m_queuelocked = false;
-    m_paused = false;
-    m_timeshiftmode = false;
-
-    m_streams.clear();
-  }
+  m_paused = false;
+  m_timeshiftmode = false;
 
   SwitchStatus status = SC_OK;
 
