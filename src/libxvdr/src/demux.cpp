@@ -263,15 +263,15 @@ bool Demux::OnResponsePacket(MsgPacket *resp) {
   if(pkt != NULL) {
 	  {
 	    MutexLock lock(&m_lock);
+	    m_queue.push(pkt);
 
 	    // limit queue size
-	    if(m_queue.size() > 200)
+	    while(m_queue.size() > 10)
 	    {
+	      pkt = m_queue.front();
+	      m_queue.pop();
 	      m_client->FreePacket(pkt);
-	      return false;
 	    }
-
-      m_queue.push(pkt);
 	  }
 	  m_cond.Signal();
   }
