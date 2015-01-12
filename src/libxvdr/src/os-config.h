@@ -24,6 +24,7 @@
 
 // WINDOWS
 #ifdef WIN32
+#include <stdint.h>
 
 #define syslog(s, msg, ...) std::cout << msg << std::endl;
 #define _WIN32_WINNT 0x0501
