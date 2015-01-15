@@ -48,7 +48,7 @@ ISAPPLE=false
 
 case $host in
   *-*-cygwin* | *-*-mingw32*)
-    LDFLAGS+="-no-undefined -no-cygwin"
+    LDFLAGS+="-no-undefined"
     ISMINGW32=true
     ADDONNAME=XBMC_VDR_xvdr_WIN32.pvr
     SOEXT=dll
