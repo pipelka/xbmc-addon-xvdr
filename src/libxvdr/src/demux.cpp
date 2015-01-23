@@ -266,7 +266,7 @@ bool Demux::OnResponsePacket(MsgPacket *resp) {
 	    m_queue.push(pkt);
 
 	    // limit queue size
-	    while(m_queue.size() > 10)
+	    while(m_queue.size() > 50)
 	    {
 	      pkt = m_queue.front();
 	      m_queue.pop();
