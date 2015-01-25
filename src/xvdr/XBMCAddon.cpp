@@ -888,6 +888,10 @@ PVR_ERROR GetRecordingEdl(const PVR_RECORDING& recording, PVR_EDL_ENTRY edl[], i
   return PVR_ERROR_NO_ERROR;
 }
 
+const char* GetBackendHostname() {
+  return cXBMCSettings::GetInstance().Hostname().c_str();
+}
+
 /** UNUSED API FUNCTIONS */
 PVR_ERROR DeleteChannel(const PVR_CHANNEL &channel) { return PVR_ERROR_NOT_IMPLEMENTED; }
 PVR_ERROR RenameChannel(const PVR_CHANNEL &channel) { return PVR_ERROR_NOT_IMPLEMENTED; }
