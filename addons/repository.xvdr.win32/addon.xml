@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addon id="repository.xvdr.win32" name="XVDR Updates (Windows 32bit)" version="1.0.0" provider-name="Alexander Pipelka">
 	<extension point="xbmc.addon.repository" name="XVDR Add-on Repository (Windows 32bit)">
-		<info compressed="false">http://dl.dropbox.com/u/240579/xbmc-addon-xvdr-gotham/win32/addons.xml</info>
-		<checksum>http://dl.dropbox.com/u/240579/xbmc-addon-xvdr-gotham/win32/addons.xml.md5</checksum>
-		<datadir zip="true">http://dl.dropbox.com/u/240579/xbmc-addon-xvdr-gotham/win32</datadir>
+		<info compressed="false">http://dl.dropbox.com/u/240579/xbmc-addon-xvdr-helix/win32/addons.xml</info>
+		<checksum>http://dl.dropbox.com/u/240579/xbmc-addon-xvdr-helix/win32/addons.xml.md5</checksum>
+		<datadir zip="true">http://dl.dropbox.com/u/240579/xbmc-addon-xvdr-helix/win32</datadir>
 	</extension>
 	<extension point="xbmc.addon.metadata">
 		<summary>XVDR Addon Repository for 32Bit Windows clients</summary>
