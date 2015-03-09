@@ -105,7 +105,6 @@ private:
   SignalStatus m_signal;
   int m_priority;
   uint32_t m_channeluid;
-  std::queue<Packet*> m_queue;
   PacketBuffer* m_buffer;
   Mutex m_lock;
   CondWait m_cond;
@@ -113,6 +112,7 @@ private:
   bool m_timeshiftmode;
   TimeMs m_lastsignal;
   bool m_iframestart;
+  bool mCanSeekStream;
 };
 
 } // namespace XVDR

@@ -55,7 +55,8 @@ XVDR::Packet* ConsoleClient::StreamChange(const XVDR::StreamProperties& streams)
   for(XVDR::StreamProperties::const_iterator i = streams.begin(); i != streams.end(); i++) {
     Log(INFO, "Stream #%i %s (%s) PID: %i", i->second.Index, i->second.Type.c_str(), i->second.Language.c_str(), i->first);
   }
-  return NULL;
+
+  return AllocatePacket(0);
 }
 
 XVDR::Packet* ConsoleClient::AllocatePacket(int length) {

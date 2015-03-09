@@ -38,16 +38,19 @@ Demux::Demux(ClientInterface* client, PacketBuffer* buffer) : Connection(client)
     m_paused(false), m_timeshiftmode(false), m_channeluid(0), m_buffer(buffer),
     m_iframestart(false)
 {
+  mCanSeekStream = (m_buffer != NULL);
+    
+  // create a small memory buffer as queue
+  if(m_buffer == NULL) {
+      m_buffer = PacketBuffer::create(10 * 1024 * 1024);
+  }
 }
 
 Demux::~Demux()
 {
   // wait for pending requests
   MutexLock lock(&m_lock);
-
-  if (m_buffer != NULL) {
-    delete m_buffer;
-  }
+  delete m_buffer;
 }
 
 Demux::SwitchStatus Demux::OpenChannel(const std::string& hostname, uint32_t channeluid, const std::string& clientname)
@@ -73,19 +76,7 @@ StreamProperties Demux::GetStreamProperties()
 void Demux::CleanupPacketQueue()
 {
   MutexLock lock(&m_lock);
-
-  if (m_buffer != NULL) {
-    m_buffer->clear();
-  }
-
-  Packet* p = NULL;
-
-  while(!m_queue.empty())
-  {
-    p = m_queue.front();
-    m_queue.pop();
-    m_client->FreePacket(p);
-  }
+  m_buffer->clear();
 }
 
 void Demux::Abort()
@@ -104,87 +95,53 @@ Packet* Demux::Read()
 
   Packet* p = NULL;
   MsgPacket* pkt = NULL;
-  m_lock.Lock();
 
-  if (m_buffer != NULL) {
+  // request packets in timeshift mode
+  if(m_timeshiftmode) {
+    MsgPacket req(XVDR_CHANNELSTREAM_REQUEST, XVDR_CHANNEL_STREAM);
+    if(!Session::TransmitMessage(&req)) {
+      return NULL;
+    }
+  }
+
+  // fetch packet from packetbuffer (queue))
+  {
+    MutexLock lock(&m_lock);
     pkt = m_buffer->get();
+  }
 
-    if (pkt == NULL) {
-      m_lock.Unlock();
-      m_cond.Wait(100);
-      m_lock.Lock();
-      pkt = m_buffer->get();
-    }
-
-    if (pkt != NULL) {
-      pkt->rewind();
-
-      switch (pkt->getMsgID()) {
-      case XVDR_STREAM_MUXPKT: {
-        uint16_t id = pkt->get_U16();
-        int64_t pts = pkt->get_S64();
-        int64_t dts = pkt->get_S64();
-        uint32_t duration = pkt->get_U32();
-        uint32_t length = pkt->get_U32();
-        uint8_t* payload = pkt->consume(length);
-        Stream& stream = m_streams[id];
-
-        if (stream.PhysicalId != id) {
-          m_client->Log(DEBUG, "stream id %i not found", id);
-        } else {
-          p = m_client->AllocatePacket(length);
-          m_client->SetPacketData(p, payload, stream.Index, dts, pts, duration);
-        }
-        break;
-      }
-      case XVDR_STREAM_CHANGE: {
-        StreamChange(pkt);
-        p = m_client->StreamChange(m_streams);
-        break;
-      }
-      }
-    }
-
-    if (p == NULL) {
-      p = m_client->AllocatePacket(0);
-    }
-
-    m_buffer->release(pkt);
-
-    m_lock.Unlock();
+  // empty queue -> return empty packet
+  if(pkt == NULL) {
+    m_cond.Wait(100);
+    p = m_client->AllocatePacket(0);
     return p;
   }
 
-  bool bEmpty = m_queue.empty();
-
-  // empty queue -> wait for packet
-  if (bEmpty) {
-         m_lock.Unlock();
-
-         // request packets in timeshift mode
-         if(m_timeshiftmode)
-         {
-           MsgPacket req(XVDR_CHANNELSTREAM_REQUEST, XVDR_CHANNEL_STREAM);
-           if(!Session::TransmitMessage(&req))
-             return NULL;
-         }
-
-         m_cond.Wait(100);
-
-         m_lock.Lock();
-         bEmpty = m_queue.empty();
+  if(pkt->getMsgID() == XVDR_STREAM_CHANGE) {
+    StreamChange(pkt);
+    p = m_client->StreamChange(m_streams);
+  }
+  else {
+    uint16_t id = pkt->get_U16();
+    int64_t pts = pkt->get_S64();
+    int64_t dts = pkt->get_S64();
+    uint32_t duration = pkt->get_U32();
+    uint32_t length = pkt->get_U32();
+    uint8_t* payload = pkt->consume(length);
+    
+    if(m_streams.find(id) == m_streams.end()) {
+      p = m_client->AllocatePacket(0);
+    }
+    else {
+      Stream& stream = m_streams[id];
+      p = m_client->AllocatePacket(length);
+      m_client->SetPacketData(p, payload, stream.Index, dts, pts, duration);
+    }
   }
 
-  if (!bEmpty)
   {
-    p = m_queue.front();
-    m_queue.pop();
-  }
-
-  m_lock.Unlock();
-
-  if(p == NULL) {
-    p = m_client->AllocatePacket(0);
+    MutexLock lock(&m_lock);
+    m_buffer->release(pkt);
   }
 
   return p;
@@ -194,27 +151,11 @@ bool Demux::OnResponsePacket(MsgPacket *resp) {
   if (resp->getType() != XVDR_CHANNEL_STREAM)
     return false;
 
-  Packet* pkt = NULL;
-  int iStreamId = -1;
-
   switch (resp->getMsgID())
   {
     case XVDR_STREAM_DETACH:
       m_client->OnDetach();
       Abort();
-      break;
-
-    case XVDR_STREAM_CHANGE:
-      if (m_buffer != NULL) {
-        m_lock.Lock();
-        m_buffer->put(resp);
-        m_lock.Unlock();
-        m_cond.Signal();
-        return true;
-      }
-
-      StreamChange(resp);
-      pkt = m_client->StreamChange(m_streams);
       break;
 
     case XVDR_STREAM_STATUS:
@@ -225,55 +166,18 @@ bool Demux::OnResponsePacket(MsgPacket *resp) {
       StreamSignalInfo(resp);
       break;
 
+    case XVDR_STREAM_CHANGE:
     case XVDR_STREAM_MUXPKT:
       {
-        if (m_buffer != NULL) {
-          m_lock.Lock();
-          m_buffer->put(resp);
-          m_lock.Unlock();
-          m_cond.Signal();
-          return true;
-        }
-
-        // figure out the stream for this packet
-        uint16_t id = resp->get_U16();
-        Stream& stream = m_streams[id];
-
-        if(stream.PhysicalId != id) {
-            m_client->Log(DEBUG, "stream id %i not found", id);
-            break;
-        }
-
-        int64_t pts = resp->get_S64();
-        int64_t dts = resp->get_S64();
-        uint32_t duration = resp->get_U32();
-        uint32_t length = resp->get_U32();
-        uint8_t* payload = resp->consume(length);
-        pkt = m_client->AllocatePacket(length);
-        m_client->SetPacketData(pkt, payload, stream.Index, dts, pts, duration);
+        MutexLock lock(&m_lock);
+        m_buffer->put(resp);
+        m_cond.Signal();
       }
-      break;
+      return true;
 
     // discard unknown packet types
     default:
-      pkt = NULL;
-      return false;
-  }
-
-  if(pkt != NULL) {
-	  {
-	    MutexLock lock(&m_lock);
-	    m_queue.push(pkt);
-
-	    // limit queue size
-	    while(m_queue.size() > 50)
-	    {
-	      pkt = m_queue.front();
-	      m_queue.pop();
-	      m_client->FreePacket(pkt);
-	    }
-	  }
-	  m_cond.Signal();
+      break;
   }
 
   return false;
@@ -451,7 +355,7 @@ void Demux::SetPriority(int priority)
 
 void Demux::Pause(bool on)
 {
-  if (m_buffer != NULL) {
+  if(!mCanSeekStream) {
     return;
   }
 
@@ -486,13 +390,13 @@ void Demux::RequestSignalInfo()
 }
 
 bool Demux::CanSeekStream() {
-  return m_buffer != NULL;
+  return mCanSeekStream;
 }
 
 bool Demux::SeekTime(int time, bool backwards, double *startpts) {
   MutexLock lock(&m_lock);
 
-  if (m_buffer == NULL) {
+  if (mCanSeekStream) {
     return false;
   }
 
