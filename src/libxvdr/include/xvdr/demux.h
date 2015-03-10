@@ -39,80 +39,181 @@ namespace XVDR {
 
 class ClientInterface;
 
-class Demux : public Connection
-{
+/**
+ * Demux class.
+ * Receives the demuxed stream of a TV channel.
+ */
+class Demux : public Connection {
 public:
 
-  // channel switch return codes
-  typedef enum {
-    SC_OK = XVDR_RET_OK,                            /* !< channel switch successful */
-    SC_ACTIVE_RECORDING = XVDR_RET_RECRUNNING,      /* !< active recording blocks channel switch */
-    SC_DEVICE_BUSY = XVDR_RET_DATALOCKED,           /* !< all devices busy */
-    SC_ENCRYPTED = XVDR_RET_ENCRYPTED,              /* !< encrypted channel cannot be decrypted */
-    SC_ERROR = XVDR_RET_ERROR,                      /* !< server (communication) error */
-    SC_INVALID_CHANNEL = XVDR_RET_DATAINVALID       /* !< invalid channel */
-  } SwitchStatus;
+	// channel switch return codes
+	typedef enum {
+	    SC_OK = XVDR_RET_OK,                            /* !< channel switch successful */
+	    SC_ACTIVE_RECORDING = XVDR_RET_RECRUNNING,      /* !< active recording blocks channel switch */
+	    SC_DEVICE_BUSY = XVDR_RET_DATALOCKED,           /* !< all devices busy */
+	    SC_ENCRYPTED = XVDR_RET_ENCRYPTED,              /* !< encrypted channel cannot be decrypted */
+	    SC_ERROR = XVDR_RET_ERROR,                      /* !< server (communication) error */
+	    SC_INVALID_CHANNEL = XVDR_RET_DATAINVALID       /* !< invalid channel */
+	} SwitchStatus;
 
 public:
 
-  Demux(ClientInterface* client, PacketBuffer* buffer);
-  ~Demux();
+    /**
+     * Demuxer constructor.
+     * Create a new Demux object.
+     * @param client pointer to client callback interface
+     * @param buffer pointer to custom PacketBuffer object, may be NULL
+     */
+	Demux(ClientInterface* client, PacketBuffer* buffer = NULL);
 
-  SwitchStatus OpenChannel(const std::string& hostname, uint32_t channeluid, const std::string& clientname = "");
-  void CloseChannel();
+	~Demux();
 
-  void Abort();
+    /**
+     * Open a TV channel.
+     * Starts streaming of a TV channel.
+     * @param hostname IP-Address or hostname of the backend to connect to
+     * @param channeluid unique id of the channel to stream
+     * @param clientname optional name of the demux client
+     * @return Status of the operation
+     */
+	SwitchStatus OpenChannel(const std::string& hostname, uint32_t channeluid, const std::string& clientname = "");
 
-  Packet* Read();
+    /**
+     * Close a TV channel.
+     * Stops streaming of a previously opened channel.
+     */
+	void CloseChannel();
 
-  template<class T>T* Read() {
-    return (T*)Read();
-  }
+    /**
+     * Abort connection.
+     * Immediately tears-down the backend connection.
+     */
+	void Abort();
 
-  SwitchStatus SwitchChannel(uint32_t channeluid);
-  void SetPriority(int priority);
-  void SetStartWithIFrame(bool on);
+    /**
+     * Read a packet.
+     * @return the next available stream packet
+     */
+	Packet* Read();
 
-  StreamProperties GetStreamProperties();
-  SignalStatus GetSignalStatus();
+    /**
+     * Templatized read function.
+     * @return casted type of a packet
+     */
+	template<class T>T* Read() {
+		return (T*)Read();
+	}
 
-  void Pause(bool on);
+    /**
+     * Switch to a different TV channel.
+     * Changes the channel on the backend without re-connecting.
+     * @param channeluid unique id of the new channel
+     * @return Status of the switch operation.
+     */
+	SwitchStatus SwitchChannel(uint32_t channeluid);
 
-  void RequestSignalInfo();
+    /**
+     * Set priority of stream receiver.
+     * Changes the backend priority of the stream receiver. Higher values
+     * block receivers with lower priority on the backend.
+     * @param priority backend priority of the stream receiver
+     */
+	void SetPriority(int priority);
 
-  bool CanSeekStream();
+    /**
+     * Wait for I-Frame on stream start.
+     * Sets the flag if streaming should always start with an I-Frame
+     * @param on true - streaming starts with an I-Frame
+     */
+	void SetStartWithIFrame(bool on);
 
-  bool SeekTime(int time, bool backwards, double *startpts);
+    /**
+     * Get stream properties.
+     * Returns information about all available streams of the current TV channel
+     * @return the stream properties structure
+     */
+	StreamProperties GetStreamProperties();
+
+    /**
+     * Get the signal status.
+     * Returns the signal status information of the current TV channel
+     * @return the signal status structure
+     */
+	SignalStatus GetSignalStatus();
+
+    /**
+     * Pause current TV channel.
+     * @param on true - pause channel / false - continue streaming
+     */
+	void Pause(bool on);
+
+    /**
+     * Request to fetch signal status information.
+     * Requests the backend to transmit signal status information of
+     * the current TV channel
+     */
+	void RequestSignalInfo();
+
+    /**
+     * Channel is seekable.
+     * Returns the status if the current channel is seekable (aka time-shift)
+     * @return the seekable status
+     */
+	bool CanSeekStream();
+
+    /**
+     * Seek in current stream.
+     * Jumps to a timestamp within the current playing TV channel
+     * @param time the timestamp to jump to
+     * @param backwards true - the jump is backwards in time
+     * @param startpts returns the PTS of the new jump destination
+     * @return true on success, otherwise false
+     */
+	bool SeekTime(int time, bool backwards, double* startpts);
 
 protected:
 
-  void OnDisconnect();
-  void OnReconnect();
+	void OnDisconnect();
 
-  bool OnResponsePacket(MsgPacket *resp);
+	void OnReconnect();
 
-  void StreamChange(MsgPacket *resp);
-  void StreamStatus(MsgPacket *resp);
-  void StreamSignalInfo(MsgPacket *resp);
+	bool OnResponsePacket(MsgPacket* resp);
+
+	void StreamChange(MsgPacket* resp);
+
+	void StreamStatus(MsgPacket* resp);
+
+	void StreamSignalInfo(MsgPacket* resp);
 
 private:
 
-  void GetContentFromType(const std::string& type, std::string& content);
+	void GetContentFromType(const std::string& type, std::string& content);
 
-  void CleanupPacketQueue();
+	void CleanupPacketQueue();
 
-  StreamProperties m_streams;
-  SignalStatus m_signal;
-  int m_priority;
-  uint32_t m_channeluid;
-  std::queue<Packet*> m_queue;
-  PacketBuffer* m_buffer;
-  Mutex m_lock;
-  CondWait m_cond;
-  bool m_paused;
-  bool m_timeshiftmode;
-  TimeMs m_lastsignal;
-  bool m_iframestart;
+	StreamProperties mStreams;
+
+	SignalStatus mSignalStatus;
+
+	int mPriority;
+
+	uint32_t mChannelUID;
+
+	PacketBuffer* mBuffer;
+
+	Mutex mLock;
+
+	CondWait mCondition;
+
+	bool mPaused;
+
+	bool mTimeShiftMode;
+
+	TimeMs mLastSignal;
+
+	bool mIFrameStart;
+
+	bool mCanSeekStream;
 };
 
 } // namespace XVDR

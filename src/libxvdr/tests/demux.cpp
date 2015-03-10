@@ -23,6 +23,7 @@
  */
 
 #include <stdlib.h>
+#include <unistd.h>
 #include "consoleclient.h"
 #include "xvdr/demux.h"
 #include "xvdr/connection.h"
@@ -75,14 +76,18 @@ int main(int argc, char* argv[]) {
 
   client.Log(INFO, "Switched to channel after %i ms", switchTime);
 
-  for(int i = 0; i < 100; i++) {
+  for(int i = 0; i < 100;) {
     p = demux.Read<ConsoleClient::Packet>();
 
     if(p == NULL) {
+      client.Log(INFO, "end of stream ...");
       break;
     }
 
-    if(p->data != NULL) {
+    if(p->data == NULL) {
+      //client.Log(INFO, "Wait ...");
+    }
+    else {
       if(firstPacket == 0) {
         firstPacket = t.Elapsed();
         client.Log(INFO, "Received first packet after %i ms", firstPacket);
@@ -93,6 +98,7 @@ int main(int argc, char* argv[]) {
       }
       uint32_t header = p->data[0] << 24 | p->data[1] << 16 | p->data[2] << 8 | p->data[3];
       client.Log(INFO, "Demux (index: %i length: %i bytes) Header: %08X PTS: %lli", p->index, p->length, header, p->pts);
+      i++;
     }
 
     client.FreePacket(p);
@@ -100,11 +106,6 @@ int main(int argc, char* argv[]) {
 
   client.Log(INFO, "Stopping ...");
   t.Set(0);
-
-  // wait for pending notifications
-  if(p == NULL) {
-    CondWait::SleepMs(5000);
-  }
 
   demux.CloseChannel();
   client.Close();

@@ -109,6 +109,9 @@ public:
       p = _current->packet();
       next();
     }
+    if(p != NULL) {
+      p->rewind();
+    }
     return p;
   }
 
