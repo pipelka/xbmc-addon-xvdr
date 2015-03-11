@@ -345,7 +345,7 @@ void Demux::SetPriority(int priority) {
 }
 
 void Demux::Pause(bool on) {
-	if(!mCanSeekStream) {
+	if(mCanSeekStream) {
 		return;
 	}
 
@@ -387,7 +387,7 @@ bool Demux::CanSeekStream() {
 bool Demux::SeekTime(int time, bool backwards, double* startpts) {
 	MutexLock lock(&mLock);
 
-	if(mCanSeekStream) {
+	if(!mCanSeekStream) {
 		return false;
 	}
 

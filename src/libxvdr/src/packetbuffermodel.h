@@ -157,25 +157,25 @@ public:
     if (backwards) {
       while((p = prev()) != NULL) {
         if(p->frametype() == 1 && t >= p->pts()) {
-          *startpts = p->dts();
+          *startpts = p->pts();
           return true;
         }
       }
 
       current_pop();
-      return true;
+      return false;
     }
 
     // fast-forward
     while((p = next()) != NULL) {
       if(p->frametype() == 1 && t <= p->pts()) {
-        *startpts = p->dts();
+        *startpts = p->pts();
         return true;
       }
     }
 
     current_pop();
-    return true;
+    return false;
   }
 
   void clear() {
