@@ -58,117 +58,117 @@ public:
 
 public:
 
-    /**
-     * Demuxer constructor.
-     * Create a new Demux object.
-     * @param client pointer to client callback interface
-     * @param buffer pointer to custom PacketBuffer object, may be NULL
-     */
+	/**
+	 * Demuxer constructor.
+	 * Create a new Demux object.
+	 * @param client pointer to client callback interface
+	 * @param buffer pointer to custom PacketBuffer object, may be NULL
+	 */
 	Demux(ClientInterface* client, PacketBuffer* buffer = NULL);
 
 	~Demux();
 
-    /**
-     * Open a TV channel.
-     * Starts streaming of a TV channel.
-     * @param hostname IP-Address or hostname of the backend to connect to
-     * @param channeluid unique id of the channel to stream
-     * @param clientname optional name of the demux client
-     * @return Status of the operation
-     */
+	/**
+	 * Open a TV channel.
+	 * Starts streaming of a TV channel.
+	 * @param hostname IP-Address or hostname of the backend to connect to
+	 * @param channeluid unique id of the channel to stream
+	 * @param clientname optional name of the demux client
+	 * @return Status of the operation
+	 */
 	SwitchStatus OpenChannel(const std::string& hostname, uint32_t channeluid, const std::string& clientname = "");
 
-    /**
-     * Close a TV channel.
-     * Stops streaming of a previously opened channel.
-     */
+	/**
+	 * Close a TV channel.
+	 * Stops streaming of a previously opened channel.
+	 */
 	void CloseChannel();
 
-    /**
-     * Abort connection.
-     * Immediately tears-down the backend connection.
-     */
+	/**
+	 * Abort connection.
+	 * Immediately tears-down the backend connection.
+	 */
 	void Abort();
 
-    /**
-     * Read a packet.
-     * @return the next available stream packet
-     */
+	/**
+	 * Read a packet.
+	 * @return the next available stream packet
+	 */
 	Packet* Read();
 
-    /**
-     * Templatized read function.
-     * @return casted type of a packet
-     */
+	/**
+	 * Templatized read function.
+	 * @return casted type of a packet
+	 */
 	template<class T>T* Read() {
 		return (T*)Read();
 	}
 
-    /**
-     * Switch to a different TV channel.
-     * Changes the channel on the backend without re-connecting.
-     * @param channeluid unique id of the new channel
-     * @return Status of the switch operation.
-     */
+	/**
+	 * Switch to a different TV channel.
+	 * Changes the channel on the backend without re-connecting.
+	 * @param channeluid unique id of the new channel
+	 * @return Status of the switch operation.
+	 */
 	SwitchStatus SwitchChannel(uint32_t channeluid);
 
-    /**
-     * Set priority of stream receiver.
-     * Changes the backend priority of the stream receiver. Higher values
-     * block receivers with lower priority on the backend.
-     * @param priority backend priority of the stream receiver
-     */
+	/**
+	 * Set priority of stream receiver.
+	 * Changes the backend priority of the stream receiver. Higher values
+	 * block receivers with lower priority on the backend.
+	 * @param priority backend priority of the stream receiver
+	 */
 	void SetPriority(int priority);
 
-    /**
-     * Wait for I-Frame on stream start.
-     * Sets the flag if streaming should always start with an I-Frame
-     * @param on true - streaming starts with an I-Frame
-     */
+	/**
+	 * Wait for I-Frame on stream start.
+	 * Sets the flag if streaming should always start with an I-Frame
+	 * @param on true - streaming starts with an I-Frame
+	 */
 	void SetStartWithIFrame(bool on);
 
-    /**
-     * Get stream properties.
-     * Returns information about all available streams of the current TV channel
-     * @return the stream properties structure
-     */
+	/**
+	 * Get stream properties.
+	 * Returns information about all available streams of the current TV channel
+	 * @return the stream properties structure
+	 */
 	StreamProperties GetStreamProperties();
 
-    /**
-     * Get the signal status.
-     * Returns the signal status information of the current TV channel
-     * @return the signal status structure
-     */
+	/**
+	 * Get the signal status.
+	 * Returns the signal status information of the current TV channel
+	 * @return the signal status structure
+	 */
 	SignalStatus GetSignalStatus();
 
-    /**
-     * Pause current TV channel.
-     * @param on true - pause channel / false - continue streaming
-     */
+	/**
+	 * Pause current TV channel.
+	 * @param on true - pause channel / false - continue streaming
+	 */
 	void Pause(bool on);
 
-    /**
-     * Request to fetch signal status information.
-     * Requests the backend to transmit signal status information of
-     * the current TV channel
-     */
+	/**
+	 * Request to fetch signal status information.
+	 * Requests the backend to transmit signal status information of
+	 * the current TV channel
+	 */
 	void RequestSignalInfo();
 
-    /**
-     * Channel is seekable.
-     * Returns the status if the current channel is seekable (aka time-shift)
-     * @return the seekable status
-     */
+	/**
+	 * Channel is seekable.
+	 * Returns the status if the current channel is seekable (aka time-shift)
+	 * @return the seekable status
+	 */
 	bool CanSeekStream();
 
-    /**
-     * Seek in current stream.
-     * Jumps to a timestamp within the current playing TV channel
-     * @param time the timestamp to jump to
-     * @param backwards true - the jump is backwards in time
-     * @param startpts returns the PTS of the new jump destination
-     * @return true on success, otherwise false
-     */
+	/**
+	 * Seek in current stream.
+	 * Jumps to a timestamp within the current playing TV channel
+	 * @param time the timestamp to jump to
+	 * @param backwards true - the jump is backwards in time
+	 * @param startpts returns the PTS of the new jump destination
+	 * @return true on success, otherwise false
+	 */
 	bool SeekTime(int time, bool backwards, double* startpts);
 
 protected:
