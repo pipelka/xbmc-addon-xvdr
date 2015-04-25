@@ -37,7 +37,7 @@
 
 using namespace XVDR;
 
-CGUIDialogChannelScanner::CGUIDialogChannelScanner(CHelper_libXBMC_gui* GUI, cXBMCClient* connection) : CGUIDialogBase("ChannelScan.xml", GUI), m_connection(connection) {
+CGUIDialogChannelScanner::CGUIDialogChannelScanner(CHelper_libKODI_guilib* GUI, cXBMCClient* connection) : CGUIDialogBase("ChannelScan.xml", GUI), m_connection(connection) {
 }
 
 CGUIDialogChannelScanner::~CGUIDialogChannelScanner(){

@@ -30,13 +30,13 @@ namespace XVDR {
 class CGUIDialogOk : public virtual CGUIDialogBase {
 public:
 
-  CGUIDialogOk(CHelper_libXBMC_gui* GUI, const char* heading, const char* line0, const char* line1 = NULL, const char* line2 = NULL);
+  CGUIDialogOk(CHelper_libKODI_guilib* GUI, const char* heading, const char* line0, const char* line1 = NULL, const char* line2 = NULL);
 
   virtual ~CGUIDialogOk();
 
   void SetLabels(const char* heading, const char* line0, const char* line1 = NULL, const char* line2 = NULL);
 
-  static void Show(CHelper_libXBMC_gui* GUI, const char* heading, const char* line0, const char* line1 = NULL, const char* line2 = NULL);
+  static void Show(CHelper_libKODI_guilib* GUI, const char* heading, const char* line0, const char* line1 = NULL, const char* line2 = NULL);
 
 protected:
 

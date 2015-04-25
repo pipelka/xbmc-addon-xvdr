@@ -30,13 +30,13 @@ namespace XVDR {
 class CGUIDialogYesNo : public CGUIDialogOk {
 public:
 
-  CGUIDialogYesNo(CHelper_libXBMC_gui* GUI, const char* heading, const char* line0, const char* line1 = NULL, const char* line2 = NULL);
+  CGUIDialogYesNo(CHelper_libKODI_guilib* GUI, const char* heading, const char* line0, const char* line1 = NULL, const char* line2 = NULL);
 
   virtual ~CGUIDialogYesNo();
 
   bool GetStatus();
 
-  static bool ShowAndGetInput(CHelper_libXBMC_gui* GUI, const char* heading, const char* line0, const char* line1 = NULL, const char* line2 = NULL);
+  static bool ShowAndGetInput(CHelper_libKODI_guilib* GUI, const char* heading, const char* line0, const char* line1 = NULL, const char* line2 = NULL);
 
 protected:
 

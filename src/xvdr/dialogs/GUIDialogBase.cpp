@@ -26,7 +26,7 @@
 
 using namespace XVDR;
 
-CGUIDialogBase::CGUIDialogBase(const char* xml,  CHelper_libXBMC_gui* GUI) : m_gui(GUI) {
+CGUIDialogBase::CGUIDialogBase(const char* xml,  CHelper_libKODI_guilib* GUI) : m_gui(GUI) {
   m_window = m_gui->Window_create(xml, "skin.confluence", false, true);
 
   m_window->m_cbhdl   = this;

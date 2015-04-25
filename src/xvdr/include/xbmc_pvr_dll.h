@@ -51,17 +51,17 @@ extern "C"
   const char* GetMininumPVRAPIVersion(void);
 
   /*!
-   * Get the XBMC_GUI_API_VERSION that was used to compile this add-on.
+   * Get the KODI_GUILIB_API_VERSION that was used to compile this add-on.
    * Used to check if this add-on is compatible with XBMC.
-   * @return The XBMC_GUI_API_VERSION that was used to compile this add-on.
+   * @return The KODI_GUILIB_API_VERSION that was used to compile this add-on.
    * @remarks Valid implementation required.
    */
   const char* GetGUIAPIVersion(void);
 
   /*!
-   * Get the XBMC_GUI_MIN_API_VERSION that was used to compile this add-on.
+   * Get the KODI_GUILIB_MIN_API_VERSION that was used to compile this add-on.
    * Used to check if this add-on is compatible with XBMC.
-   * @return The XBMC_GUI_MIN_API_VERSION that was used to compile this add-on.
+   * @return The KODI_GUILIB_MIN_API_VERSION that was used to compile this add-on.
    * @remarks Valid implementation required.
    */
   const char* GetMininumGUIAPIVersion(void);
