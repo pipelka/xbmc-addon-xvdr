@@ -47,7 +47,7 @@ using namespace XVDR;
 #define XVDR_HOOK_SETTINGS_CHANNELSCAN 1001
 
 CHelper_libXBMC_addon* XBMC = NULL;
-CHelper_libXBMC_gui* GUI = NULL;
+CHelper_libKODI_guilib* GUI = NULL;
 CHelper_libXBMC_pvr* PVR = NULL;
 CHelper_libXBMC_codec* CODEC = NULL;
 
@@ -90,7 +90,7 @@ ADDON_STATUS ADDON_Create(void* hdl, void* props)
     return ADDON_STATUS_UNKNOWN;
   }
 
-  GUI = new CHelper_libXBMC_gui;
+  GUI = new CHelper_libKODI_guilib;
   if (!GUI->RegisterMe(hdl))
     return ADDON_STATUS_UNKNOWN;
 
@@ -794,13 +794,13 @@ const char* GetMininumPVRAPIVersion(void)
 
 const char* GetGUIAPIVersion(void)
 {
-  static const char *strApiVersion = XBMC_GUI_API_VERSION;
+  static const char *strApiVersion = KODI_GUILIB_API_VERSION;
   return strApiVersion;
 }
 
 const char* GetMininumGUIAPIVersion(void)
 {
-  static const char *strMinApiVersion = XBMC_GUI_MIN_API_VERSION;
+  static const char *strMinApiVersion = KODI_GUILIB_MIN_API_VERSION;
   return strMinApiVersion;
 }
 

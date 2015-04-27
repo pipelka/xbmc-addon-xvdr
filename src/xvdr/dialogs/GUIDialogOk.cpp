@@ -26,7 +26,7 @@
 
 using namespace XVDR;
 
-CGUIDialogOk::CGUIDialogOk(CHelper_libXBMC_gui* GUI, const char* heading, const char* line0, const char* line1, const char* line2) : CGUIDialogBase("yesno.xml", GUI) {
+CGUIDialogOk::CGUIDialogOk(CHelper_libKODI_guilib* GUI, const char* heading, const char* line0, const char* line1, const char* line2) : CGUIDialogBase("yesno.xml", GUI) {
   m_heading = heading;
   m_line[0] = line0;
   m_line[1] = line1;
@@ -61,7 +61,7 @@ void CGUIDialogOk::SetLabels(const char* heading, const char* line0, const char*
   SetControlLabel(104, line2);
 }
 
-void CGUIDialogOk::Show(CHelper_libXBMC_gui* GUI, const char* heading, const char* line0, const char* line1, const char* line2) {
+void CGUIDialogOk::Show(CHelper_libKODI_guilib* GUI, const char* heading, const char* line0, const char* line1, const char* line2) {
   CGUIDialogOk dialog(GUI, heading, line0, line1, line2);
   dialog.DoModal();
 }

@@ -23,14 +23,14 @@
  *
  */
 
-#include "addons/library.xbmc.gui/libXBMC_gui.h"
+#include "addons/library.kodi.guilib/libKODI_guilib.h"
 
 namespace XVDR {
 
 class CGUIDialogBase {
 public:
 
-  CGUIDialogBase(const char* xml, CHelper_libXBMC_gui* GUI);
+  CGUIDialogBase(const char* xml, CHelper_libKODI_guilib* GUI);
 
   virtual ~CGUIDialogBase();
 
@@ -56,7 +56,7 @@ protected:
 
   CAddonGUIWindow* m_window;
 
-  CHelper_libXBMC_gui* m_gui;
+  CHelper_libKODI_guilib* m_gui;
 
 private:
 

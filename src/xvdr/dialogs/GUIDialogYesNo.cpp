@@ -26,7 +26,7 @@
 
 using namespace XVDR;
 
-CGUIDialogYesNo::CGUIDialogYesNo(CHelper_libXBMC_gui* GUI, const char* heading, const char* line0, const char* line1, const char* line2) : CGUIDialogOk(GUI, heading, line0, line1, line2), CGUIDialogBase("yesno.xml", GUI), m_status(false) {
+CGUIDialogYesNo::CGUIDialogYesNo(CHelper_libKODI_guilib* GUI, const char* heading, const char* line0, const char* line1, const char* line2) : CGUIDialogOk(GUI, heading, line0, line1, line2), CGUIDialogBase("yesno.xml", GUI), m_status(false) {
 }
 
 CGUIDialogYesNo::~CGUIDialogYesNo() {
@@ -36,7 +36,7 @@ bool CGUIDialogYesNo::GetStatus() {
   return m_status;
 }
 
-bool CGUIDialogYesNo::ShowAndGetInput(CHelper_libXBMC_gui* GUI, const char* heading, const char* line0, const char* line1, const char* line2) {
+bool CGUIDialogYesNo::ShowAndGetInput(CHelper_libKODI_guilib* GUI, const char* heading, const char* line0, const char* line1, const char* line2) {
   CGUIDialogYesNo dialog(GUI, heading, line0, line1, line2);
   dialog.DoModal();
 

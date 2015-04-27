@@ -33,7 +33,7 @@ namespace XVDR {
 class CGUIDialogChannelScanner : public CGUIDialogBase {
 public:
 
-  CGUIDialogChannelScanner(CHelper_libXBMC_gui* GUI, cXBMCClient* connection);
+  CGUIDialogChannelScanner(CHelper_libKODI_guilib* GUI, cXBMCClient* connection);
 
   virtual ~CGUIDialogChannelScanner();
 
