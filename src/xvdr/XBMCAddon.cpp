@@ -233,7 +233,6 @@ PVR_ERROR GetAddonCapabilities(PVR_ADDON_CAPABILITIES* pCapabilities)
   pCapabilities->bHandlesInputStream         = true;
   pCapabilities->bHandlesDemuxing            = true;
 
-  pCapabilities->bSupportsRecordingFolders   = true;
   pCapabilities->bSupportsRecordingPlayCount = true;
   pCapabilities->bSupportsRecordingEdl       = true;
   pCapabilities->bSupportsLastPlayedPosition = true;
@@ -377,6 +376,12 @@ PVR_ERROR GetChannelGroupMembers(ADDON_HANDLE handle, const PVR_CHANNEL_GROUP &g
 
 /*******************************************/
 /** PVR Timer Functions                   **/
+
+PVR_ERROR GetTimerTypes(PVR_TIMER_TYPE types[], int *size)
+{
+  /* TODO: Implement this to get support for the timer features introduced with PVR API 1.9.7 */
+  return PVR_ERROR_NOT_IMPLEMENTED;
+}
 
 int GetTimersAmount(void)
 {
@@ -890,6 +895,10 @@ PVR_ERROR GetRecordingEdl(const PVR_RECORDING& recording, PVR_EDL_ENTRY edl[], i
 
 const char* GetBackendHostname() {
   return cXBMCSettings::GetInstance().Hostname().c_str();
+}
+
+bool IsTimeshifting() {
+  return false;
 }
 
 /** UNUSED API FUNCTIONS */

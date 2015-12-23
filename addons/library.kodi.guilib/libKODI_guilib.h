@@ -36,10 +36,10 @@ typedef void* GUIHANDLE;
 #endif
 
 /* current ADDONGUI API version */
-#define KODI_GUILIB_API_VERSION "5.8.0"
+#define KODI_GUILIB_API_VERSION "5.11.0"
 
 /* min. ADDONGUI API version */
-#define KODI_GUILIB_MIN_API_VERSION "5.8.0"
+#define KODI_GUILIB_MIN_API_VERSION "5.10.0"
 
 #define ADDON_ACTION_PREVIOUS_MENU          10
 #define ADDON_ACTION_CLOSE_DIALOG           51
@@ -488,7 +488,7 @@ public:
 
   bool Dialog_Numeric_ShowAndGetNumber(char &strInput, unsigned int iMaxStringSize, const char *strHeading, unsigned int iAutoCloseTimeoutMs = 0)
   {
-    return GUI_dialog_numeric_show_and_get_number(m_Handle, m_Callbacks, strInput, iMaxStringSize, strHeading, iAutoCloseTimeoutMs = 0);
+    return GUI_dialog_numeric_show_and_get_number(m_Handle, m_Callbacks, strInput, iMaxStringSize, strHeading, iAutoCloseTimeoutMs);
   }
 
   bool Dialog_Numeric_ShowAndGetSeconds(char &strTime, unsigned int iMaxStringSize, const char *strHeading)
