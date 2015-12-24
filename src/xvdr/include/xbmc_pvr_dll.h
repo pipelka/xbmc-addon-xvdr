@@ -1,6 +1,8 @@
+#pragma once
+
 /*
- *      Copyright (C) 2005-2013 Team XBMC
- *      http://xbmc.org
+ *      Copyright (C) 2005-2015 Team Kodi
+ *      http://kodi.tv
  *
  *  This Program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -13,13 +15,10 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with XBMC; see the file COPYING.  If not, see
+ *  along with Kodi; see the file COPYING.  If not, see
  *  <http://www.gnu.org/licenses/>.
  *
  */
-
-#ifndef __XBMC_PVR_H__
-#define __XBMC_PVR_H__
 
 #include "xbmc_addon_dll.h"
 #include "xbmc_pvr_types.h"
@@ -51,17 +50,17 @@ extern "C"
   const char* GetMininumPVRAPIVersion(void);
 
   /*!
-   * Get the KODI_GUILIB_API_VERSION that was used to compile this add-on.
+   * Get the XBMC_GUI_API_VERSION that was used to compile this add-on.
    * Used to check if this add-on is compatible with XBMC.
-   * @return The KODI_GUILIB_API_VERSION that was used to compile this add-on.
+   * @return The XBMC_GUI_API_VERSION that was used to compile this add-on.
    * @remarks Valid implementation required.
    */
   const char* GetGUIAPIVersion(void);
 
   /*!
-   * Get the KODI_GUILIB_MIN_API_VERSION that was used to compile this add-on.
+   * Get the XBMC_GUI_MIN_API_VERSION that was used to compile this add-on.
    * Used to check if this add-on is compatible with XBMC.
-   * @return The KODI_GUILIB_MIN_API_VERSION that was used to compile this add-on.
+   * @return The XBMC_GUI_MIN_API_VERSION that was used to compile this add-on.
    * @remarks Valid implementation required.
    */
   const char* GetMininumGUIAPIVersion(void);
@@ -329,6 +328,15 @@ extern "C"
   * @remarks Required if bSupportsRecordingEdl is set to true. Return PVR_ERROR_NOT_IMPLEMENTED if this add-on won't provide this function.
   */
   PVR_ERROR GetRecordingEdl(const PVR_RECORDING&, PVR_EDL_ENTRY edl[], int *size);
+
+  /*!
+  * Retrieve the timer types supported by the backend.
+  * @param types out: The function has to write the definition of the supported timer types into this array.
+  * @param typesCount in: The maximum size of the list, out: the actual size of the list. default: PVR_ADDON_TIMERTYPE_ARRAY_SIZE
+  * @return PVR_ERROR_NO_ERROR if the types were successfully written to the array.
+  * @remarks Required if bSupportsTimers is set to true. Return PVR_ERROR_NOT_IMPLEMENTED if this add-on won't provide this function.
+  */
+  PVR_ERROR GetTimerTypes(PVR_TIMER_TYPE types[], int *typesCount);
 
   //@}
   /** @name PVR timer methods
@@ -621,6 +629,12 @@ extern "C"
   const char* GetBackendHostname();
 
   /*!
+   *  Check if timeshift is active
+   *  @return true if timeshift is active
+   */
+  bool IsTimeshifting();
+
+  /*!
    * Called by XBMC to assign the function pointers of this add-on to pClient.
    * @param pClient The struct to assign the function pointers to.
    */
@@ -664,6 +678,7 @@ extern "C"
     pClient->GetRecordingLastPlayedPosition = GetRecordingLastPlayedPosition;
     pClient->GetRecordingEdl                = GetRecordingEdl;
 
+    pClient->GetTimerTypes                  = GetTimerTypes;
     pClient->GetTimersAmount                = GetTimersAmount;
     pClient->GetTimers                      = GetTimers;
     pClient->AddTimer                       = AddTimer;
@@ -704,7 +719,8 @@ extern "C"
     pClient->GetBufferTimeEnd               = GetBufferTimeEnd;
 
     pClient->GetBackendHostname             = GetBackendHostname;
+
+    pClient->IsTimeshifting                 = IsTimeshifting;
   };
 };
 
-#endif

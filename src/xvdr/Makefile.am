@@ -24,7 +24,7 @@ libxvdraddon_la_SOURCES = \
 
 if MINGW32
 libxvdraddon_la_SOURCES += \
-    $(top_srcdir)/addons/library.xbmc.addon/dlfcn-win32.c
+    $(top_srcdir)/addons/library.xbmc.addon/dlfcn-win32.cpp
 endif
 
 libxvdraddon_la_LDFLAGS = \

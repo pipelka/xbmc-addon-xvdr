@@ -367,7 +367,6 @@ EPG_TAG& operator<< (EPG_TAG& lhs, const EpgItem& rhs) {
 }
 
 Timer& operator<< (Timer& lhs, const PVR_TIMER& rhs) {
-	lhs.IsRepeating = rhs.bIsRepeating;
 	lhs.EndTime = rhs.endTime + rhs.iMarginEnd * 60;
 	lhs.FirstDay = rhs.firstDay;
 	lhs.ChannelUID = rhs.iClientChannelUid;
@@ -396,7 +395,6 @@ Timer& operator<< (Timer& lhs, const PVR_TIMER& rhs) {
 PVR_TIMER& operator<< (PVR_TIMER& lhs, const Timer& rhs) {
 	memset(&lhs, 0, sizeof(lhs));
 
-	lhs.bIsRepeating = rhs.IsRepeating;
 	lhs.endTime = rhs.EndTime;
 	lhs.firstDay = rhs.FirstDay;
 	lhs.iClientChannelUid = rhs.ChannelUID;
